@@ -1,0 +1,32 @@
+# Build folders
+target/
+.next/
+node_modules/
+out/
+build/
+
+# Security
+.env
+.env*.local
+
+# IDEs and System
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Maven
+*.class
+.mvn/
+.settings/
+.classpath
+.project
+.mvn/wrapper/maven-wrapper.jar
+
+# Misc logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+coverage/
