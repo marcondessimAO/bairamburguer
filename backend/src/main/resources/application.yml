@@ -2,7 +2,7 @@ spring:
   application:
     name: bairamburguer-api
   datasource:
-    url: jdbc:postgresql://localhost:5432/bairamburguer
+    url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: 88jr83w88
     driver-class-name: org.postgresql.Driver

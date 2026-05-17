@@ -26,8 +26,9 @@ public class OrderService {
 
     public Order criarPedido(Order pedido) {
         // Passo 1 (Bairro): Busque o Neighborhood no banco
-        Neighborhood neighborhood = neighborhoodRepository.findById(pedido.getNeighborhood().getId())
-                .orElseThrow(() -> new RuntimeException("Bairro não encontrado"));
+        Integer neighborhoodId = pedido.getNeighborhood().getId();
+        Neighborhood neighborhood = neighborhoodRepository.findById(neighborhoodId)
+                .orElseThrow(() -> new RuntimeException("Bairro não encontrado com o ID: " + neighborhoodId));
 
         // Passo 2 (Produtos): Extraia todos os IDs de produtos e faça uma única consulta
         List<Integer> productIds = pedido.getItems().stream()

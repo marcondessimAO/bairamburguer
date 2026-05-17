@@ -1,5 +1,4 @@
 package com.bairamburguer.api.controllers;
-
 import com.bairamburguer.api.models.Order;
 import com.bairamburguer.api.services.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +16,10 @@ public class OrderController {
 
     @PostMapping
     public Order receberPedido(@RequestBody Order pedido) {
+        System.out.println("=== TESTE DE RECEBIMENTO ===");
+        System.out.println("Bairro recebido: " + pedido.getNeighborhood());
+        System.out.println("Itens recebidos: " + pedido.getItems());
+
         return orderService.criarPedido(pedido);
     }
 
