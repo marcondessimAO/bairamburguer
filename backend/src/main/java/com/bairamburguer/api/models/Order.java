@@ -18,8 +18,9 @@ public class Order {
     @JoinColumn(name = "neighborhood_id", nullable = false)
     private Neighborhood neighborhood;
 
-    @Column(name = "customer_name", nullable = false)
-    private String customerName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User customer;
 
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
@@ -41,8 +42,8 @@ public class Order {
     public void setId(Long id) { this.id = id; }
     public Neighborhood getNeighborhood() { return neighborhood; }
     public void setNeighborhood(Neighborhood neighborhood) { this.neighborhood = neighborhood; }
-    public String getCustomerName() { return customerName; }
-    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public User getCustomer() { return customer; }
+    public void setCustomer(User customer) { this.customer = customer; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     public String getPaymentStatus() { return paymentStatus; }
