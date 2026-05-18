@@ -22,4 +22,9 @@ public class OrderController {
     public List<Order> listarPedidos() {
         return orderService.listarTodos();
     }
+
+    @GetMapping("/customer/{customerId}")
+    public List<Order> listarPedidosDoCliente(@PathVariable Long customerId) {
+        return orderService.listarPorCliente(customerId);
+    }
 }

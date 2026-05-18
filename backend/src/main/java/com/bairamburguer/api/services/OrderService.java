@@ -81,4 +81,8 @@ public class OrderService {
     public List<Order> listarTodos() {
         return orderRepository.findAll();
     }
+
+    public List<Order> listarPorCliente(Long customerId) {
+        return orderRepository.findByCustomerId(customerId);
+    }
 }
