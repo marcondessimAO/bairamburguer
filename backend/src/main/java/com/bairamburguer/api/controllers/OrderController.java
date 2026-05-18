@@ -3,9 +3,9 @@ import com.bairamburguer.api.models.Order;
 import com.bairamburguer.api.services.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
