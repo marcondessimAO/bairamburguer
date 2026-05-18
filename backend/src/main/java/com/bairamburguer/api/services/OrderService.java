@@ -26,6 +26,7 @@ public class OrderService {
 
     public Order criarPedido(Order pedido) {
         // Passo 1 (Bairro): Busque o Neighborhood no banco
+        
         Integer neighborhoodId = pedido.getNeighborhood().getId();
         Neighborhood neighborhood = neighborhoodRepository.findById(neighborhoodId)
                 .orElseThrow(() -> new RuntimeException("Bairro não encontrado com o ID: " + neighborhoodId));
@@ -75,5 +76,9 @@ public class OrderService {
     public Order atualizarStatus(Long id, String novoStatus) {
         // dummy return
         return null;
+    }
+
+    public List<Order> listarTodos() {
+        return orderRepository.findAll();
     }
 }

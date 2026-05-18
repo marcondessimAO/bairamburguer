@@ -1,9 +1,11 @@
 package com.bairamburguer.api.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
 
     @Id
@@ -17,6 +19,7 @@ public class User {
     private String email;
 
     @Column(nullable = false, columnDefinition = "TEXT")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String password;
 
     @Column(nullable = false, length = 50)
