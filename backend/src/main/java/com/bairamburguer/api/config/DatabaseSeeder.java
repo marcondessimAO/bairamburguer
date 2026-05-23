@@ -2,8 +2,11 @@ package com.bairamburguer.api.config;
 
 import com.bairamburguer.api.models.Category;
 import com.bairamburguer.api.models.Product;
+import com.bairamburguer.api.models.User;
 import com.bairamburguer.api.repositories.CategoryRepository;
 import com.bairamburguer.api.repositories.ProductRepository;
+import com.bairamburguer.api.repositories.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -11,16 +14,48 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
+import com.bairamburguer.api.models.Neighborhood;
+import com.bairamburguer.api.repositories.NeighborhoodRepository;
+
 @Component
 @RequiredArgsConstructor
 public class DatabaseSeeder implements CommandLineRunner {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final NeighborhoodRepository neighborhoodRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(String... args) throws Exception {
+        // Verifica e garante que o Admin existe e tem a senha hasheada
+        User admin = userRepository.findByEmail("admin@bairamburguer.com").orElse(new User());
+        admin.setName("Bernardo Admin");
+        admin.setEmail("admin@bairamburguer.com");
+        admin.setRole("ADMIN");
+        
+        // Se a senha estiver nula ou não parecer um hash BCrypt (que começa com $2a$ ou $2b$)
+        if (admin.getPassword() == null || !admin.getPassword().startsWith("$2a$")) {
+            admin.setPassword(passwordEncoder.encode("admin"));
+            System.out.println("DatabaseSeeder: Senha do Admin foi (re)hasheada com BCrypt!");
+        }
+        userRepository.save(admin);
+        System.out.println("DatabaseSeeder: Usuário Admin validado com sucesso!");
+
+        if (neighborhoodRepository.count() == 0) {
+            String[] nomes = {"Mangabeira", "Bancários", "Cabo Branco", "Tambaú", "Centro"};
+            String[] taxas = {"5.00", "7.00", "10.00", "10.00", "8.00"};
+            for (int i = 0; i < nomes.length; i++) {
+                Neighborhood n = new Neighborhood();
+                n.setName(nomes[i]);
+                n.setDeliveryFee(new BigDecimal(taxas[i]));
+                neighborhoodRepository.save(n);
+            }
+            System.out.println("DatabaseSeeder: Bairros cadastrados com sucesso!");
+        }
+
         if (productRepository.count() == 0) {
             // Categorias
             Category catMaluca = new Category();

@@ -11,7 +11,7 @@ type Category = {
 type Produto = Product;
 
 export default function Cardapio() {
-  const { addToCart, setIsCartOpen, cartItems, subtotal } = useCart();
+  const { addToCart, setIsCartOpen, cartItems, subtotal, pendingPayment } = useCart();
   const [products, setProducts] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -186,6 +186,17 @@ export default function Cardapio() {
           ))
         )}
       </div>
+
+      {/* Banner de Pagamento Pendente */}
+      {pendingPayment && (
+        <div 
+          onClick={() => setIsCartOpen(true)}
+          className="fixed bottom-16 w-full bg-[#F1C40F] text-[#121212] py-3 px-4 text-center font-bold text-sm shadow-[0_-4px_10px_rgba(0,0,0,0.2)] cursor-pointer z-30 transition-colors hover:bg-[#D4AC0D] flex items-center justify-center gap-2"
+        >
+          <span>⚠️</span>
+          Pedido Iniciado - Aguardando Pagamento (Clique para ver o Pix)
+        </div>
+      )}
 
       {/* Bottom Navigation Bar */}
       <nav className="fixed bottom-0 w-full bg-[#121212] border-t border-[#1e1e1e] flex justify-around items-center h-16 pb-safe z-40">

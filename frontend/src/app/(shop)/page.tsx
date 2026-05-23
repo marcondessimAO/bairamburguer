@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
+
 type Neighborhood = {
   id: number;
   name: string;
@@ -15,6 +18,36 @@ type Order = {
   paymentStatus: string;
   orderStatus: string;
   createdAt: string;
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "PENDING": return "bg-[#F1C40F] text-[#121212]";
+    case "PREPARING": return "bg-[#3B82F6] text-white";
+    case "DISPATCHED": return "bg-[#10B981] text-white";
+    case "DELIVERED": return "bg-gray-500 text-white";
+    default: return "bg-gray-700 text-gray-300";
+  }
+};
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case "PENDING": return "Aguardando Confirmação";
+    case "PREPARING": return "Em Preparo";
+    case "DISPATCHED": return "Saiu para Entrega";
+    case "DELIVERED": return "Entregue";
+    default: return status;
+  }
+};
+
+const getProgressWidth = (status: string) => {
+  switch (status) {
+    case "PENDING": return "25%";
+    case "PREPARING": return "50%";
+    case "DISPATCHED": return "75%";
+    case "DELIVERED": return "100%";
+    default: return "0%";
+  }
 };
 
 export default function ShopHome() {
@@ -37,6 +70,47 @@ export default function ShopHome() {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (orders.length === 0) return;
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      debug: (str) => console.log("STOMP: " + str),
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+    });
+
+    client.onConnect = () => {
+      orders.forEach(order => {
+        // Subscreve ao tópico de cada pedido
+        client.subscribe(`/topic/orders/status/${order.id}`, (message) => {
+          if (message.body) {
+            const data = JSON.parse(message.body);
+            setOrders(prevOrders => 
+              prevOrders.map(o => {
+                if (o.id === order.id) {
+                  return {
+                    ...o,
+                    orderStatus: data.status || o.orderStatus,
+                    paymentStatus: data.paymentStatus || o.paymentStatus
+                  };
+                }
+                return o;
+              })
+            );
+          }
+        });
+      });
+    };
+
+    client.activate();
+
+    return () => {
+      client.deactivate();
+    };
+  }, [orders.length]); // Depende do tamanho para não re-subscrever a cada atualização de status
 
   if (loading) {
     return (
@@ -86,15 +160,23 @@ export default function ShopHome() {
             {orders.map((order) => (
               <div 
                 key={order.id} 
-                className="bg-[#1e1e1e] rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-gray-800 hover:shadow-[0_8px_30px_rgb(241,196,15,0.05)] transition-all duration-300 flex flex-col"
+                className="bg-[#1e1e1e] rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-gray-800 hover:shadow-[0_8px_30px_rgb(241,196,15,0.05)] transition-all duration-300 flex flex-col relative overflow-hidden"
               >
+                {/* Progress Bar na base do cartão */}
+                <div className="absolute bottom-0 left-0 h-1.5 bg-gray-800 w-full">
+                   <div 
+                     className="h-full bg-[#F1C40F] transition-all duration-1000 ease-in-out" 
+                     style={{ width: getProgressWidth(order.orderStatus) }}
+                   ></div>
+                </div>
+
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">
                       Pedido #{order.id}
                     </span>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#2A2A2A] text-[#F1C40F]">
-                      {order.orderStatus}
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(order.orderStatus)} transition-colors duration-500`}>
+                      {getStatusLabel(order.orderStatus)}
                     </span>
                   </div>
                   <div className="text-right">
@@ -119,11 +201,11 @@ export default function ShopHome() {
                     <svg className="w-5 h-5 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
-                    <span className="font-medium">Pagamento: {order.paymentStatus}</span>
+                    <span className="font-medium">Pagamento: {order.paymentStatus === "PAID" ? "Aprovado" : "Pendente"}</span>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-800 mt-auto text-xs text-gray-500 font-medium">
+                <div className="pt-4 border-t border-gray-800 mt-auto text-xs text-gray-500 font-medium mb-1">
                   {order.createdAt ? `Criado em ${new Date(order.createdAt).toLocaleDateString('pt-BR')} às ${new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : "Data não disponível"}
                 </div>
               </div>

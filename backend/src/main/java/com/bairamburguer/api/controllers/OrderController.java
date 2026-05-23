@@ -1,7 +1,10 @@
 package com.bairamburguer.api.controllers;
+import com.bairamburguer.api.dto.OrderCheckoutRequestDTO;
+import com.bairamburguer.api.dto.OrderCheckoutResponseDTO;
 import com.bairamburguer.api.models.Order;
 import com.bairamburguer.api.services.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -12,6 +15,12 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+
+    @PostMapping("/checkout")
+    @ResponseStatus(HttpStatus.CREATED)
+    public OrderCheckoutResponseDTO checkout(@RequestBody OrderCheckoutRequestDTO request) {
+        return orderService.createOrder(request);
+    }
 
     @PostMapping
     public Order receberPedido(@RequestBody Order pedido) {
@@ -26,5 +35,12 @@ public class OrderController {
     @GetMapping("/customer/{customerId}")
     public List<Order> listarPedidosDoCliente(@PathVariable Long customerId) {
         return orderService.listarPorCliente(customerId);
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public java.util.Map<String, String> handleExceptions(Exception e) {
+        e.printStackTrace(); // Também imprime no terminal
+        return java.util.Collections.singletonMap("error_message", e.getMessage() == null ? e.toString() : e.getMessage());
     }
 }

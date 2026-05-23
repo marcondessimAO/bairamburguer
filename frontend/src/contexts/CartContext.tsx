@@ -48,6 +48,8 @@ interface CartContextData {
   updateQuantity: (productId: number, quantity: number) => void;
   setNeighborhood: (neighborhoodName: string) => void;
   clearCart: () => void;
+  pendingPayment: any | null;
+  setPendingPayment: (payment: any | null) => void;
 }
 
 // ─── Contexto ─────────────────────────────────────────────────────────────────
@@ -60,6 +62,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [deliveryNeighborhood, setDeliveryNeighborhoodState] = useState<Neighborhood | null>(null);
+  const [pendingPayment, setPendingPayment] = useState<any | null>(null);
 
   const subtotal = useMemo(
     () => cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0),
@@ -118,6 +121,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateQuantity,
         setNeighborhood,
         clearCart,
+        pendingPayment,
+        setPendingPayment,
       }}
     >
       {children}
