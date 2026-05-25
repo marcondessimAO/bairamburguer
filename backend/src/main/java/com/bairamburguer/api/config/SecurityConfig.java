@@ -49,9 +49,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/categories", "/api/categories/**", "/api/v1/categories", "/api/v1/categories/**").permitAll()
                 .requestMatchers("/api/orders/checkout", "/api/v1/orders/checkout", "/api/orders/customer/**", "/api/v1/orders/customer/**").permitAll()
                 .requestMatchers("/api/webhooks/payment", "/api/v1/webhooks/payment").permitAll()
+                .requestMatchers("/api/v1/settings/store/status").permitAll()
                 .requestMatchers("/ws/**").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/error").permitAll()
-                .requestMatchers("/api/v1/admin/**").authenticated()
+                .requestMatchers("/api/v1/admin/dashboard/**").hasAuthority("ROLE_ADMIN")
+                .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                 .anyRequest().authenticated()
             );
 

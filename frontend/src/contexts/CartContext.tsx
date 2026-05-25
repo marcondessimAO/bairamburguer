@@ -10,6 +10,8 @@ export type Product = {
   description?: string;
   price: number;
   imageUrl?: string;
+  isAvailable: boolean;
+  isPromotion: boolean;
   category: { name: string };
 };
 
@@ -26,11 +28,21 @@ export type Neighborhood = {
 // ─── Tabela de Bairros (RF08) ─────────────────────────────────────────────────
 
 export const NEIGHBORHOODS: Neighborhood[] = [
-  { name: "Mangabeira", fee: 5.0 },
-  { name: "Bancários", fee: 7.0 },
-  { name: "Cabo Branco", fee: 10.0 },
-  { name: "Tambaú", fee: 10.0 },
-  { name: "Centro", fee: 8.0 },
+  { name: "Mangabeira", fee: 0.0 },
+  { name: "Gramame", fee: 4.0 },
+  { name: "Nova Mangabeira", fee: 4.0 },
+  { name: "Valentina", fee: 5.0 },
+  { name: "Parque do Sol", fee: 5.0 },
+  { name: "Muçumagro", fee: 5.0 },
+  { name: "Paratibe", fee: 5.0 },
+  { name: "Colinas do Sul", fee: 6.0 },
+  { name: "Bancários", fee: 6.0 },
+  { name: "Geisel", fee: 7.0 },
+  { name: "Cuiá", fee: 8.0 },
+  { name: "Bessa", fee: 12.0 },
+  { name: "Manaíra", fee: 12.0 },
+  { name: "Cabo Branco", fee: 12.0 },
+  { name: "Centro", fee: 15.0 },
 ];
 
 // ─── Interface do Contexto ────────────────────────────────────────────────────
@@ -50,6 +62,7 @@ interface CartContextData {
   clearCart: () => void;
   pendingPayment: any | null;
   setPendingPayment: (payment: any | null) => void;
+  isStoreOpen: boolean;
 }
 
 // ─── Contexto ─────────────────────────────────────────────────────────────────
@@ -63,6 +76,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [deliveryNeighborhood, setDeliveryNeighborhoodState] = useState<Neighborhood | null>(null);
   const [pendingPayment, setPendingPayment] = useState<any | null>(null);
+  const [isStoreOpen, setIsStoreOpen] = useState(true);
+
+  React.useEffect(() => {
+    fetch("http://localhost:8080/api/v1/settings/store/status")
+      .then((res) => res.json())
+      .then((data) => setIsStoreOpen(data.isOpen))
+      .catch((err) => console.error("Erro ao buscar status da loja:", err));
+  }, []);
 
   const subtotal = useMemo(
     () => cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0),
@@ -123,6 +144,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         pendingPayment,
         setPendingPayment,
+        isStoreOpen,
       }}
     >
       {children}

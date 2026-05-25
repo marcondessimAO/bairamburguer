@@ -31,9 +31,14 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final NeighborhoodRepository neighborhoodRepository;
     private final PixPaymentService pixPaymentService;
+    private final StoreSettingsService storeSettingsService;
     private final SimpMessagingTemplate messagingTemplate;
 
     public OrderCheckoutResponseDTO createOrder(OrderCheckoutRequestDTO request) {
+        if (!storeSettingsService.isStoreOpen()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A loja está fechada no momento.");
+        }
+
         // 1. Buscar Bairro
         Neighborhood neighborhood = neighborhoodRepository.findFirstByNameIgnoreCase(request.getNeighborhoodName())
                 .orElseThrow(() -> new RuntimeException("Bairro não encontrado com o Nome: " + request.getNeighborhoodName()));
@@ -51,6 +56,9 @@ public class OrderService {
         Order order = new Order();
         order.setCustomerName(request.getCustomerName());
         order.setCustomerPhone(request.getCustomerPhone());
+        order.setStreet(request.getStreet());
+        order.setNumber(request.getNumber());
+        order.setComplement(request.getComplement());
         order.setNeighborhood(neighborhood);
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderStatus("PENDING");
@@ -94,6 +102,10 @@ public class OrderService {
     }
 
     public Order criarPedido(Order pedido) {
+        if (!storeSettingsService.isStoreOpen()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A loja está fechada no momento.");
+        }
+
         // Passo 1 (Bairro): Busque o Neighborhood no banco
         
         Integer neighborhoodId = pedido.getNeighborhood().getId();

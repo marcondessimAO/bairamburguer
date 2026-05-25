@@ -32,6 +32,9 @@ public class Product {
     @Column(name = "is_available", columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean isAvailable = true;
 
+    @Column(name = "is_promotion", columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean isPromotion = false;
+
     // Getters and Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -47,4 +50,6 @@ public class Product {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public Boolean getIsAvailable() { return isAvailable; }
     public void setIsAvailable(Boolean isAvailable) { this.isAvailable = isAvailable; }
+    public Boolean getIsPromotion() { return isPromotion; }
+    public void setIsPromotion(Boolean isPromotion) { this.isPromotion = isPromotion; }
 }

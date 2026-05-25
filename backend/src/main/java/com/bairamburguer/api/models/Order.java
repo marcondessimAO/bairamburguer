@@ -28,6 +28,15 @@ public class Order {
     @Column(name = "customer_phone", length = 50)
     private String customerPhone;
 
+    @Column(name = "street", length = 255)
+    private String street;
+
+    @Column(name = "address_number", length = 20)
+    private String number;
+
+    @Column(name = "complement", length = 255)
+    private String complement;
+
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
@@ -54,6 +63,12 @@ public class Order {
     public void setCustomerName(String customerName) { this.customerName = customerName; }
     public String getCustomerPhone() { return customerPhone; }
     public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+    public String getStreet() { return street; }
+    public void setStreet(String street) { this.street = street; }
+    public String getNumber() { return number; }
+    public void setNumber(String number) { this.number = number; }
+    public String getComplement() { return complement; }
+    public void setComplement(String complement) { this.complement = complement; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     public String getPaymentStatus() { return paymentStatus; }

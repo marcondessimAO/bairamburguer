@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useCart, NEIGHBORHOODS } from "@/contexts/CartContext";
+import { getImageUrl } from "@/utils/imageUrl";
 
 const BRL = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -21,17 +22,21 @@ export function CartDrawer() {
     clearCart,
     pendingPayment,
     setPendingPayment,
+    isStoreOpen,
   } = useCart();
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [street, setStreet] = useState("");
+  const [number, setNumber] = useState("");
+  const [complement, setComplement] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
   // ─── Integração da API do Backend ─────────────────────────────────────────
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
-    if (!deliveryNeighborhood || !customerName || !customerPhone) {
-      alert("Por favor, preencha todos os campos e selecione o bairro.");
+    if (!deliveryNeighborhood || !customerName || !customerPhone || !street || !number) {
+      alert("Por favor, preencha todos os campos obrigatórios e selecione o bairro.");
       return;
     }
 
@@ -41,6 +46,9 @@ export function CartDrawer() {
       const payload = {
         customerName,
         customerPhone,
+        street,
+        number,
+        complement,
         neighborhoodName: deliveryNeighborhood.name,
         items: cartItems.map((item) => ({
           productId: item.product.id,
@@ -100,7 +108,7 @@ export function CartDrawer() {
   if (!isCartOpen) return null;
 
   const totalItems = cartItems.reduce((acc, i) => acc + i.quantity, 0);
-  const isValidToSubmit = cartItems.length > 0 && deliveryNeighborhood !== null && customerName.trim() !== "" && customerPhone.trim() !== "";
+  const isValidToSubmit = cartItems.length > 0 && deliveryNeighborhood !== null && customerName.trim() !== "" && customerPhone.trim() !== "" && street.trim() !== "" && number.trim() !== "";
 
   return (
     <>
@@ -214,7 +222,7 @@ export function CartDrawer() {
                     <div className="w-[72px] h-[72px] bg-[#2A2A2A] rounded-xl overflow-hidden flex-shrink-0 border border-gray-700">
                       {item.product.imageUrl ? (
                         <img
-                          src={item.product.imageUrl}
+                          src={getImageUrl(item.product.imageUrl)}
                           alt={item.product.name}
                           className="w-full h-full object-cover"
                         />
@@ -304,6 +312,29 @@ export function CartDrawer() {
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
                 />
+                <input
+                  type="text"
+                  placeholder="Sua Rua"
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                />
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    placeholder="Número"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value)}
+                    className="w-1/3 bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Complemento (Opcional)"
+                    value={complement}
+                    onChange={(e) => setComplement(e.target.value)}
+                    className="w-2/3 bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                  />
+                </div>
               </div>
 
               {/* Seletor de Bairro */}
@@ -347,10 +378,10 @@ export function CartDrawer() {
               {/* Botão Finalizar via API */}
               <button
                 onClick={handleCheckout}
-                disabled={!isValidToSubmit || isProcessing}
-                className="w-full flex items-center justify-center gap-2.5 bg-[#F1C40F] hover:bg-[#D4AC0D] active:scale-[0.98] text-[#121212] font-black py-4 rounded-xl shadow-lg shadow-[#F1C40F]/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={!isStoreOpen || !isValidToSubmit || isProcessing}
+                className={`w-full flex items-center justify-center gap-2.5 font-black py-4 rounded-xl shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ${!isStoreOpen ? "bg-red-600 text-white shadow-red-600/10" : "bg-[#F1C40F] hover:bg-[#D4AC0D] active:scale-[0.98] text-[#121212] shadow-[#F1C40F]/10"}`}
               >
-                {isProcessing ? "Processando..." : "Finalizar Pedido via Pix"}
+                {!isStoreOpen ? "Loja Fechada no momento" : (isProcessing ? "Processando..." : "Finalizar Pedido via Pix")}
               </button>
             </div>
           </>

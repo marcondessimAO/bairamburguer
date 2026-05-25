@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useCart, Product } from "@/contexts/CartContext";
 import { ProductDetailModal } from "@/components/ui/ProductDetailModal";
+import { Flame, Star } from "lucide-react";
+import { getImageUrl } from "@/utils/imageUrl";
 
 type Category = {
   name: string;
@@ -11,7 +13,7 @@ type Category = {
 type Produto = Product;
 
 export default function Cardapio() {
-  const { addToCart, setIsCartOpen, cartItems, subtotal, pendingPayment } = useCart();
+  const { addToCart, setIsCartOpen, cartItems, subtotal, pendingPayment, isStoreOpen } = useCart();
   const [products, setProducts] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -73,6 +75,8 @@ export default function Cardapio() {
 
   const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
+  const featuredProducts = products.filter(p => p.isAvailable && p.isPromotion);
+
   return (
     <main className="min-h-screen bg-[#121212] font-sans text-[#FFFFFF] relative flex flex-col">
       {/* Product Detail Modal */}
@@ -85,7 +89,7 @@ export default function Cardapio() {
       {/* Header & Busca Fixos no Topo */}
       <div className="pt-6 pb-2 px-4 sticky top-0 bg-[#121212] z-30">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-black text-white tracking-tight">Burger App</h1>
+          <h1 className="text-2xl font-black text-white tracking-tight">Bairam Burguer e Petiscaria</h1>
           <img src="/images/bairam-logo.jpg.jpg" alt="Logo" className="w-10 h-10 rounded-full object-cover border border-gray-800" />
         </div>
         
@@ -104,6 +108,84 @@ export default function Cardapio() {
           />
         </div>
       </div>
+
+      {/* Banner Loja Fechada */}
+      {!isStoreOpen && (
+        <div className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 flex items-center justify-center gap-2 font-bold text-sm sticky top-[108px] z-20 shadow-lg shadow-red-900/20">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          Estamos fechados no momento. Você pode navegar, mas não realizar pedidos.
+        </div>
+      )}
+
+      {/* Secção de Destaques Premium */}
+      {featuredProducts.length > 0 && (
+        <section className="mb-8 mt-2 px-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Flame className="w-8 h-8 text-[#F1C40F]" fill="#F1C40F" />
+            <h2 className="text-3xl font-black text-white tracking-tight">Destaques da Bairam</h2>
+          </div>
+          
+          <div className="flex overflow-x-auto pb-6 -mx-4 px-4 gap-6 snap-x snap-mandatory scrollbar-hide">
+            {featuredProducts.map((produto) => (
+              <article 
+                key={produto.id} 
+                className="relative min-w-[280px] w-[85vw] max-w-[320px] snap-center shrink-0 bg-[#1e1e1e] rounded-3xl overflow-hidden cursor-pointer flex flex-col hover:bg-[#242424] transition-all duration-300 border-2 border-[#F1C40F] shadow-[0_0_20px_rgba(241,196,15,0.2)]"
+                onClick={() => setSelectedProduct(produto)}
+              >
+                {/* O efeito de pulso na borda */}
+                <div className="absolute inset-0 rounded-3xl border-2 border-[#F1C40F] opacity-50 animate-pulse pointer-events-none"></div>
+
+                {/* Imagem de Destaque */}
+                <div className="relative w-full h-48 bg-[#2a2a2a]">
+                  {produto.imageUrl ? (
+                    <img 
+                      src={getImageUrl(produto.imageUrl)} 
+                      alt={produto.name} 
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-600">
+                      <Flame className="w-12 h-12 opacity-50" />
+                    </div>
+                  )}
+                  {/* Ícone Star Dourado no Canto Superior Direito */}
+                  <div className="absolute top-3 right-3 bg-[#121212]/80 backdrop-blur-md p-2 rounded-full border border-[#F1C40F] shadow-lg">
+                    <Star className="w-5 h-5 text-[#F1C40F]" fill="#F1C40F" />
+                  </div>
+                </div>
+                
+                {/* Textos e Botão */}
+                <div className="flex flex-col flex-1 p-5 relative z-10 bg-gradient-to-t from-[#121212] via-[#1e1e1e] to-[#1e1e1e]">
+                  <h3 className="text-white font-black text-xl mb-2 line-clamp-1">
+                    {produto.name}
+                  </h3>
+                  <p className="text-gray-400 text-sm line-clamp-2 mb-4 flex-grow">
+                    {produto.description || "O melhor sabor da Bairam em destaque para você."}
+                  </p>
+                  
+                  <div className="flex justify-between items-end mt-auto">
+                    <span className="text-[#F1C40F] font-black text-2xl">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.price)}
+                    </span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart(produto, 1);
+                      }}
+                      className="flex items-center justify-center w-10 h-10 bg-[#F1C40F] rounded-xl shadow-[0_4px_15px_rgba(241,196,15,0.4)] hover:bg-[#F39C12] hover:scale-110 transition-all z-20"
+                      aria-label="Adicionar destaque"
+                    >
+                      <span className="text-[#121212] font-black text-2xl mt-[-2px]">+</span>
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Carrossel de Categorias */}
       <div className="px-4 mt-4 mb-6">
@@ -144,7 +226,7 @@ export default function Cardapio() {
               <div className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden bg-[#2a2a2a]">
                 {produto.imageUrl ? (
                   <img 
-                    src={produto.imageUrl} 
+                    src={getImageUrl(produto.imageUrl)} 
                     alt={produto.name} 
                     className="object-cover w-full h-full"
                   />

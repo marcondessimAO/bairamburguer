@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Product, useCart } from "@/contexts/CartContext";
+import { getImageUrl } from "@/utils/imageUrl";
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -61,7 +62,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
           <div className="w-full h-64 sm:h-72 bg-[#2A2A2A] relative flex-shrink-0">
             {product.imageUrl ? (
               <img 
-                src={product.imageUrl} 
+                src={getImageUrl(product.imageUrl)} 
                 alt={product.name} 
                 className="w-full h-full object-cover"
               />

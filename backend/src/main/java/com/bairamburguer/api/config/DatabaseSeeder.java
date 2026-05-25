@@ -30,31 +30,26 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        // Verifica e garante que o Admin existe e tem a senha hasheada
-        User admin = userRepository.findByEmail("admin@bairamburguer.com").orElse(new User());
-        admin.setName("Bernardo Admin");
-        admin.setEmail("admin@bairamburguer.com");
-        admin.setRole("ADMIN");
-        
-        // Se a senha estiver nula ou não parecer um hash BCrypt (que começa com $2a$ ou $2b$)
-        if (admin.getPassword() == null || !admin.getPassword().startsWith("$2a$")) {
+        if (userRepository.count() == 0) {
+            User admin = new User();
+            admin.setName("Bernardo Admin");
+            admin.setEmail("admin@bairamburguer.com");
+            admin.setRole("ADMIN");
             admin.setPassword(passwordEncoder.encode("admin"));
-            System.out.println("DatabaseSeeder: Senha do Admin foi (re)hasheada com BCrypt!");
+            userRepository.save(admin);
+            System.out.println("DatabaseSeeder: Usuário Admin cadastrado com sucesso!");
         }
-        userRepository.save(admin);
-        System.out.println("DatabaseSeeder: Usuário Admin validado com sucesso!");
 
-        if (neighborhoodRepository.count() == 0) {
-            String[] nomes = {"Mangabeira", "Bancários", "Cabo Branco", "Tambaú", "Centro"};
-            String[] taxas = {"5.00", "7.00", "10.00", "10.00", "8.00"};
-            for (int i = 0; i < nomes.length; i++) {
-                Neighborhood n = new Neighborhood();
-                n.setName(nomes[i]);
-                n.setDeliveryFee(new BigDecimal(taxas[i]));
-                neighborhoodRepository.save(n);
-            }
-            System.out.println("DatabaseSeeder: Bairros cadastrados com sucesso!");
+        // Atualizar bairros garantindo que os 15 existem com as taxas corretas
+        String[] nomes = {"Mangabeira", "Gramame", "Nova Mangabeira", "Valentina", "Parque do Sol", "Muçumagro", "Paratibe", "Colinas do Sul", "Bancários", "Geisel", "Cuiá", "Bessa", "Manaíra", "Cabo Branco", "Centro"};
+        String[] taxas = {"0.00", "4.00", "4.00", "5.00", "5.00", "5.00", "5.00", "6.00", "6.00", "7.00", "8.00", "12.00", "12.00", "12.00", "15.00"};
+        for (int i = 0; i < nomes.length; i++) {
+            Neighborhood n = neighborhoodRepository.findFirstByNameIgnoreCase(nomes[i]).orElse(new Neighborhood());
+            n.setName(nomes[i]);
+            n.setDeliveryFee(new BigDecimal(taxas[i]));
+            neighborhoodRepository.save(n);
         }
+        System.out.println("DatabaseSeeder: Bairros atualizados/cadastrados com sucesso!");
 
         if (productRepository.count() == 0) {
             // Categorias
@@ -77,6 +72,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             p1.setPrice(new BigDecimal("45.00"));
             p1.setDescription("2 X-Bairam Repartidos ao Molho Cheddar e Batata Reta.");
             p1.setImageUrl("/images/combobairambarcacremosa.jpg");
+            p1.setIsPromotion(true);
             productRepository.save(p1);
 
             Product p2 = new Product();
@@ -85,6 +81,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             p2.setPrice(new BigDecimal("29.99"));
             p2.setDescription("Pão Brioche Amanteigado, 2 Carnes Artesanais, muito queijo e molho especial.");
             p2.setImageUrl("/images/bairambigmonstro.jpg");
+            p2.setIsPromotion(true);
             productRepository.save(p2);
 
             Product p3 = new Product();
