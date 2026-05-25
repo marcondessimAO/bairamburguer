@@ -98,7 +98,7 @@ public class OrderService {
         messagingTemplate.convertAndSend("/topic/orders/new", savedOrder);
 
         // 6. Gerar a cobrança Pix via Gateway
-        return pixPaymentService.generatePixCharge(savedOrder);
+        return pixPaymentService.generatePixCharge(savedOrder, request.getCustomerEmail(), request.getCustomerCpf());
     }
 
     public Order criarPedido(Order pedido) {

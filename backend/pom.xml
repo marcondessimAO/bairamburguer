@@ -58,6 +58,13 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+
+		<!-- Mercado Pago SDK -->
+		<dependency>
+			<groupId>com.mercadopago</groupId>
+			<artifactId>sdk-java</artifactId>
+			<version>2.1.26</version>
+		</dependency>
 		
 		<!-- JJWT -->
 		<dependency>

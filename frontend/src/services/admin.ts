@@ -115,5 +115,16 @@ export const adminService = {
       method: 'DELETE',
     });
     if (!response.ok) throw new Error('Falha ao inativar produto');
+  },
+
+  getStoreStatus: async () => {
+    const res = await fetch('http://localhost:8080/api/v1/settings/store/status');
+    return res.json();
+  },
+
+  toggleStoreStatus: async () => {
+    const res = await fetchWithAuth('/v1/admin/settings/store/toggle', { method: 'POST' });
+    if (!res.ok) throw new Error('Falha ao alternar status da loja');
+    return res.json();
   }
 };

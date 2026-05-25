@@ -1,5 +1,6 @@
 package com.bairamburguer.api.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 
 public class OrderCheckoutRequestDTO {
@@ -9,6 +10,13 @@ public class OrderCheckoutRequestDTO {
     private String number;
     private String complement;
     private String neighborhoodName;
+    
+    @NotBlank(message = "O e-mail é obrigatório")
+    private String customerEmail;
+    
+    @NotBlank(message = "O CPF é obrigatório")
+    private String customerCpf;
+    
     private List<OrderItemRequestDTO> items;
 
     public String getCustomerName() { return customerName; }
@@ -31,4 +39,10 @@ public class OrderCheckoutRequestDTO {
 
     public List<OrderItemRequestDTO> getItems() { return items; }
     public void setItems(List<OrderItemRequestDTO> items) { this.items = items; }
+
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
+
+    public String getCustomerCpf() { return customerCpf; }
+    public void setCustomerCpf(String customerCpf) { this.customerCpf = customerCpf; }
 }

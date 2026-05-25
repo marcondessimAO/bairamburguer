@@ -1,12 +1,51 @@
+"use client";
+
 import Link from 'next/link';
 import { LayoutDashboard, MenuSquare, LogOut, BarChart3, Store } from 'lucide-react';
 import { StoreToggle } from '@/components/ui/StoreToggle';
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { isAuthenticated, removeAuthToken } from '@/services/auth';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (pathname === '/admin/login') {
+      setIsAuthorized(true);
+      return;
+    }
+
+    if (!isAuthenticated()) {
+      router.push('/admin/login');
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [pathname, router]);
+
+  const handleLogout = () => {
+    removeAuthToken();
+    router.push('/admin/login');
+  };
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#F1C40F] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen bg-[#121212] flex text-zinc-100 font-sans">
       {/* Sidebar */}
@@ -51,13 +90,13 @@ export default function AdminLayout({
         </nav>
 
         <div className="p-4 border-t border-zinc-800">
-          <Link 
-            href="/"
-            className="flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-red-400 transition-colors"
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-red-400 transition-colors"
           >
             <LogOut className="w-5 h-5" />
-            <span className="font-medium">Sair / Voltar à Loja</span>
-          </Link>
+            <span className="font-medium">Sair do Painel</span>
+          </button>
         </div>
       </aside>
 

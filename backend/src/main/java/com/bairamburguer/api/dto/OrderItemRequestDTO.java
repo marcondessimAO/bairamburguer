@@ -1,6 +1,9 @@
 package com.bairamburguer.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class OrderItemRequestDTO {
+    @JsonProperty("product")
     private Long productId;
     private int quantity;
 

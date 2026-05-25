@@ -6,6 +6,7 @@ import com.bairamburguer.api.services.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import java.util.List;
 
 @CrossOrigin(origins = "http://localhost:3000")
@@ -18,7 +19,7 @@ public class OrderController {
 
     @PostMapping("/checkout")
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderCheckoutResponseDTO checkout(@RequestBody OrderCheckoutRequestDTO request) {
+    public OrderCheckoutResponseDTO checkout(@Valid @RequestBody OrderCheckoutRequestDTO request) {
         return orderService.createOrder(request);
     }
 

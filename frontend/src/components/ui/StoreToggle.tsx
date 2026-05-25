@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { adminService } from "@/services/admin";
 
 export function StoreToggle() {
   const [isOpen, setIsOpen] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/v1/settings/store/status")
-      .then((res) => res.json())
+    adminService.getStoreStatus()
       .then((data) => {
         setIsOpen(data.isOpen);
         setLoading(false);
@@ -22,24 +22,11 @@ export function StoreToggle() {
   const handleToggle = async () => {
     setLoading(true);
     try {
-      const authData = localStorage.getItem("auth_bairamburguer");
-      const token = authData ? JSON.parse(authData).token : "";
-
-      const response = await fetch("http://localhost:8080/api/v1/admin/settings/store/toggle", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setIsOpen(data.isOpen);
-      } else {
-        alert("Erro ao alterar o status da loja. Verifique o seu acesso.");
-      }
+      const data = await adminService.toggleStoreStatus();
+      setIsOpen(data.isOpen);
     } catch (err) {
       console.error(err);
-      alert("Erro de conexão ao tentar alterar status da loja.");
+      alert("Erro ao alterar o status da loja. Verifique o seu acesso.");
     } finally {
       setLoading(false);
     }

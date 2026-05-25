@@ -26,6 +26,8 @@ export function CartDrawer() {
   } = useCart();
 
   const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerCpf, setCustomerCpf] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
@@ -35,7 +37,7 @@ export function CartDrawer() {
   // ─── Integração da API do Backend ─────────────────────────────────────────
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
-    if (!deliveryNeighborhood || !customerName || !customerPhone || !street || !number) {
+    if (!deliveryNeighborhood || !customerName || !customerPhone || !customerEmail || !customerCpf || !street || !number) {
       alert("Por favor, preencha todos os campos obrigatórios e selecione o bairro.");
       return;
     }
@@ -46,12 +48,14 @@ export function CartDrawer() {
       const payload = {
         customerName,
         customerPhone,
+        customerEmail,
+        customerCpf,
         street,
         number,
         complement,
         neighborhoodName: deliveryNeighborhood.name,
         items: cartItems.map((item) => ({
-          productId: item.product.id,
+          product: item.product.id,
           quantity: item.quantity
         }))
       };
@@ -108,7 +112,7 @@ export function CartDrawer() {
   if (!isCartOpen) return null;
 
   const totalItems = cartItems.reduce((acc, i) => acc + i.quantity, 0);
-  const isValidToSubmit = cartItems.length > 0 && deliveryNeighborhood !== null && customerName.trim() !== "" && customerPhone.trim() !== "" && street.trim() !== "" && number.trim() !== "";
+  const isValidToSubmit = cartItems.length > 0 && deliveryNeighborhood !== null && customerName.trim() !== "" && customerPhone.trim() !== "" && customerEmail.trim() !== "" && customerCpf.trim() !== "" && street.trim() !== "" && number.trim() !== "";
 
   return (
     <>
@@ -161,14 +165,26 @@ export function CartDrawer() {
               <h3 className="text-2xl font-black text-white">Aguardando Pagamento</h3>
               <p className="text-gray-400 text-sm">Escaneie o QR Code abaixo com o aplicativo do seu banco para finalizar a compra no valor de <strong>{BRL(pendingPayment.totalAmount)}</strong>.</p>
             </div>
-            <div className="flex flex-col items-center mb-6">
+            <div className="flex flex-col items-center mb-6 w-full">
               <div className="bg-white p-4 rounded-xl mb-4">
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pendingPayment.pixCopiaECola)}`} 
-                  alt="QR Code Pix" 
-                  className="w-48 h-48 object-contain"
-                />
+                {pendingPayment.pixQrCodeBase64 ? (
+                  <img 
+                    src={`data:image/jpeg;base64,${pendingPayment.pixQrCodeBase64}`} 
+                    alt="QR Code Pix" 
+                    className="w-48 h-48 object-contain"
+                  />
+                ) : (
+                  <div className="w-48 h-48 bg-gray-200 flex items-center justify-center text-gray-500 text-center text-sm p-4">
+                    QR Code Indisponível (Sandbox/Teste)
+                  </div>
+                )}
               </div>
+              <input
+                type="text"
+                readOnly
+                value={pendingPayment.pixCopiaECola || ""}
+                className="w-full bg-[#1e1e1e] text-center text-gray-400 text-xs border border-[#2a2a2a] rounded-lg px-3 py-2 outline-none"
+              />
             </div>
 
             <button
@@ -303,6 +319,23 @@ export function CartDrawer() {
                   placeholder="Seu Nome"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                />
+                <input
+                  type="email"
+                  placeholder="Seu E-mail (obrigatório)"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Seu CPF (só números)"
+                  value={customerCpf}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').substring(0, 11);
+                    setCustomerCpf(val);
+                  }}
                   className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
                 />
                 <input
