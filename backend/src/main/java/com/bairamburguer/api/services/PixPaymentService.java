@@ -12,11 +12,19 @@ import com.mercadopago.resources.payment.Payment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.beans.factory.annotation.Value;
 
-import java.math.BigDecimal;
+import com.mercadopago.core.MPRequestOptions;
+import java.util.Map;
+import java.util.UUID;
+
+
 
 @Service
 public class PixPaymentService {
+
+    @Value("${app.baseUrl:https://seu-dominio-na-hostinger.com}")
+    private String baseUrl;
 
     public OrderCheckoutResponseDTO generatePixCharge(Order order, String customerEmail, String customerCpf) {
         OrderCheckoutResponseDTO response = new OrderCheckoutResponseDTO();
@@ -39,9 +47,14 @@ public class PixPaymentService {
                         .number(customerCpf.replaceAll("[^0-9]", ""))
                         .build())
                     .build())
+                .notificationUrl(baseUrl + "/api/webhooks/mercadopago")
                 .build();
             
-            Payment payment = client.create(request);
+            MPRequestOptions requestOptions = MPRequestOptions.builder()
+                .customHeaders(Map.of("X-Idempotency-Key", UUID.randomUUID().toString()))
+                .build();
+            
+            Payment payment = client.create(request, requestOptions);
             
             if (payment.getPointOfInteraction() != null && payment.getPointOfInteraction().getTransactionData() != null) {
                 response.setPixCopiaECola(payment.getPointOfInteraction().getTransactionData().getQrCode());

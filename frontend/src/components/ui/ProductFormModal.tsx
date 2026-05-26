@@ -27,12 +27,12 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
   const [isPromotion, setIsPromotion] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && categories.length === 0) {
       adminService.getCategories()
         .then(setCategories)
         .catch(err => console.error('Erro ao carregar categorias', err));
     }
-  }, [isOpen]);
+  }, [isOpen, categories.length]);
 
   useEffect(() => {
     if (product) {
@@ -54,7 +54,21 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
       setImagePreview(null);
       setImageFile(null);
     }
-  }, [product, isOpen]);
+  }, [product]);
+
+  const handleClose = () => {
+    onClose();
+    if (!product) {
+      setName('');
+      setDescription('');
+      setPrice('');
+      setCategoryId('');
+      setIsAvailable(true);
+      setIsPromotion(false);
+      setImagePreview(null);
+      setImageFile(null);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -96,7 +110,7 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
       }
       
       onSave();
-      onClose();
+      handleClose();
     } catch (err) {
       alert('Erro ao salvar produto');
       console.error(err);
@@ -114,7 +128,7 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
           <h2 className="text-xl font-bold text-zinc-100">
             {product ? 'Editar Produto' : 'Novo Produto'}
           </h2>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-100 p-2 rounded-full hover:bg-zinc-800 transition-colors">
+          <button onClick={handleClose} className="text-zinc-400 hover:text-zinc-100 p-2 rounded-full hover:bg-zinc-800 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -227,7 +241,7 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
           <div className="flex justify-end space-x-4 pt-6 border-t border-zinc-800">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="px-6 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
             >
               Cancelar

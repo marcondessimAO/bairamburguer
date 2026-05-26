@@ -39,9 +39,14 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A loja está fechada no momento.");
         }
 
-        // 1. Buscar Bairro
-        Neighborhood neighborhood = neighborhoodRepository.findFirstByNameIgnoreCase(request.getNeighborhoodName())
-                .orElseThrow(() -> new RuntimeException("Bairro não encontrado com o Nome: " + request.getNeighborhoodName()));
+        // 1. Buscar Bairro (opcional para retirada)
+        Neighborhood neighborhood = null;
+        if (request.getNeighborhoodName() != null 
+            && !request.getNeighborhoodName().isBlank() 
+            && !"null".equalsIgnoreCase(request.getNeighborhoodName())) {
+            neighborhood = neighborhoodRepository.findFirstByNameIgnoreCase(request.getNeighborhoodName())
+                    .orElseThrow(() -> new RuntimeException("Bairro não encontrado com o Nome: " + request.getNeighborhoodName()));
+        }
 
         // 2. Extrair IDs e buscar produtos do BD (Segurança de Preço)
         List<Integer> productIds = request.getItems().stream()
@@ -88,14 +93,13 @@ public class OrderService {
         order.setItems(orderItems);
 
         // 4. Somar Taxa de Entrega
-        totalAmount = totalAmount.add(neighborhood.getDeliveryFee());
+        if (neighborhood != null) {
+            totalAmount = totalAmount.add(neighborhood.getDeliveryFee());
+        }
         order.setTotalAmount(totalAmount);
 
         // 5. Salvar o pedido no banco
         Order savedOrder = orderRepository.save(order);
-
-        // Dispara evento WebSocket informando novo pedido
-        messagingTemplate.convertAndSend("/topic/orders/new", savedOrder);
 
         // 6. Gerar a cobrança Pix via Gateway
         return pixPaymentService.generatePixCharge(savedOrder, request.getCustomerEmail(), request.getCustomerCpf());

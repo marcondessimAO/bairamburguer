@@ -41,7 +41,7 @@ public class OrderController {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public java.util.Map<String, String> handleExceptions(Exception e) {
-        e.printStackTrace(); // Também imprime no terminal
+        System.err.println("Erro no Checkout: " + e.getMessage());
         return java.util.Collections.singletonMap("error_message", e.getMessage() == null ? e.toString() : e.getMessage());
     }
 }

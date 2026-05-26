@@ -33,12 +33,17 @@ export function CartDrawer() {
   const [number, setNumber] = useState("");
   const [complement, setComplement] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [deliveryMode, setDeliveryMode] = useState<"DELIVERY" | "TAKEOUT">("DELIVERY");
 
   // ─── Integração da API do Backend ─────────────────────────────────────────
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
-    if (!deliveryNeighborhood || !customerName || !customerPhone || !customerEmail || !customerCpf || !street || !number) {
-      alert("Por favor, preencha todos os campos obrigatórios e selecione o bairro.");
+    if (deliveryMode === "DELIVERY" && (!deliveryNeighborhood || !street || !number)) {
+      alert("Por favor, preencha todos os campos de endereço de entrega.");
+      return;
+    }
+    if (!customerName || !customerPhone || !customerEmail || !customerCpf) {
+      alert("Por favor, preencha seus dados pessoais (Nome, E-mail, CPF, WhatsApp).");
       return;
     }
 
@@ -50,10 +55,10 @@ export function CartDrawer() {
         customerPhone,
         customerEmail,
         customerCpf,
-        street,
-        number,
-        complement,
-        neighborhoodName: deliveryNeighborhood.name,
+        street: deliveryMode === "DELIVERY" ? street : "",
+        number: deliveryMode === "DELIVERY" ? number : "",
+        complement: deliveryMode === "DELIVERY" ? complement : "",
+        neighborhoodName: deliveryMode === "DELIVERY" && deliveryNeighborhood ? deliveryNeighborhood.name : null,
         items: cartItems.map((item) => ({
           product: item.product.id,
           quantity: item.quantity
@@ -104,7 +109,7 @@ export function CartDrawer() {
   const handleWhatsApp = () => {
     if (!pendingPayment) return;
     const mensagem = `Olá, Bairamburguer! O meu pedido é o #${pendingPayment.orderId}. Gostaria de acompanhar o status da minha entrega.`;
-    window.open('https://wa.me/5583999999999?text=' + encodeURIComponent(mensagem));
+    window.open('https://api.whatsapp.com/send?phone=558399327186&text=' + encodeURIComponent(mensagem));
     setPendingPayment(null);
     setIsCartOpen(false);
   };
@@ -112,7 +117,7 @@ export function CartDrawer() {
   if (!isCartOpen) return null;
 
   const totalItems = cartItems.reduce((acc, i) => acc + i.quantity, 0);
-  const isValidToSubmit = cartItems.length > 0 && deliveryNeighborhood !== null && customerName.trim() !== "" && customerPhone.trim() !== "" && customerEmail.trim() !== "" && customerCpf.trim() !== "" && street.trim() !== "" && number.trim() !== "";
+  const isValidToSubmit = cartItems.length > 0 && customerName.trim() !== "" && customerPhone.trim() !== "" && customerEmail.trim() !== "" && customerCpf.trim() !== "" && (deliveryMode === "TAKEOUT" || (deliveryNeighborhood !== null && street.trim() !== "" && number.trim() !== ""));
 
   return (
     <>
@@ -312,6 +317,20 @@ export function CartDrawer() {
             {/* ── Footer: Dados do Visitante, Bairro + Resumo + Botão ── */}
             <div className="px-6 py-5 bg-[#181818] border-t border-gray-800 space-y-4">
               
+              {/* Opção de Entrega */}
+              <div className="flex gap-4 mb-4">
+                <label className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl cursor-pointer border transition-colors ${deliveryMode === "DELIVERY" ? "bg-[#F1C40F]/10 border-[#F1C40F] text-[#F1C40F]" : "bg-[#1e1e1e] border-gray-800 text-gray-400"}`}>
+                  <input type="radio" name="deliveryMode" value="DELIVERY" checked={deliveryMode === "DELIVERY"} onChange={() => setDeliveryMode("DELIVERY")} className="hidden" />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  <span className="font-bold text-sm">Entregar em Casa</span>
+                </label>
+                <label className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl cursor-pointer border transition-colors ${deliveryMode === "TAKEOUT" ? "bg-[#F1C40F]/10 border-[#F1C40F] text-[#F1C40F]" : "bg-[#1e1e1e] border-gray-800 text-gray-400"}`}>
+                  <input type="radio" name="deliveryMode" value="TAKEOUT" checked={deliveryMode === "TAKEOUT"} onChange={() => setDeliveryMode("TAKEOUT")} className="hidden" />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                  <span className="font-bold text-sm">Retirar na Loja</span>
+                </label>
+              </div>
+
               {/* Inputs do Visitante */}
               <div className="space-y-3">
                 <input
@@ -345,50 +364,56 @@ export function CartDrawer() {
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
                 />
-                <input
-                  type="text"
-                  placeholder="Sua Rua"
-                  value={street}
-                  onChange={(e) => setStreet(e.target.value)}
-                  className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
-                />
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    placeholder="Número"
-                    value={number}
-                    onChange={(e) => setNumber(e.target.value)}
-                    className="w-1/3 bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Complemento (Opcional)"
-                    value={complement}
-                    onChange={(e) => setComplement(e.target.value)}
-                    className="w-2/3 bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
-                  />
-                </div>
+                {deliveryMode === "DELIVERY" && (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Sua Rua"
+                      value={street}
+                      onChange={(e) => setStreet(e.target.value)}
+                      className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                    />
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        placeholder="Número"
+                        value={number}
+                        onChange={(e) => setNumber(e.target.value)}
+                        className="w-1/3 bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Complemento (Opcional)"
+                        value={complement}
+                        onChange={(e) => setComplement(e.target.value)}
+                        className="w-2/3 bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Seletor de Bairro */}
-              <div className="space-y-2">
-                <select
-                  id="neighborhood-select"
-                  value={deliveryNeighborhood?.name ?? ""}
-                  onChange={(e) => setNeighborhood(e.target.value)}
-                  className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow cursor-pointer"
-                  style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", backgroundSize: "18px", paddingRight: "42px" }}
-                >
-                  <option value="" disabled className="bg-[#1e1e1e] text-gray-500">
-                    Selecione seu bairro...
-                  </option>
-                  {NEIGHBORHOODS.map((n) => (
-                    <option key={n.name} value={n.name} className="bg-[#1e1e1e] text-white">
-                      {n.name} — {BRL(n.fee)}
+              {deliveryMode === "DELIVERY" && (
+                <div className="space-y-2">
+                  <select
+                    id="neighborhood-select"
+                    value={deliveryNeighborhood?.name ?? ""}
+                    onChange={(e) => setNeighborhood(e.target.value)}
+                    className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow cursor-pointer"
+                    style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", backgroundSize: "18px", paddingRight: "42px" }}
+                  >
+                    <option value="" disabled className="bg-[#1e1e1e] text-gray-500">
+                      Selecione seu bairro...
                     </option>
-                  ))}
-                </select>
-              </div>
+                    {NEIGHBORHOODS.map((n) => (
+                      <option key={n.name} value={n.name} className="bg-[#1e1e1e] text-white">
+                        {n.name} — {BRL(n.fee)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Resumo de Valores */}
               <div className="space-y-2.5 text-sm pt-2">
@@ -398,13 +423,13 @@ export function CartDrawer() {
                 </div>
                 <div className="flex justify-between text-gray-400">
                   <span className="font-medium">Taxa de entrega</span>
-                  <span className={deliveryNeighborhood ? "text-[#FFFFFF] font-semibold" : "text-gray-500 italic"}>
-                    {deliveryNeighborhood ? BRL(deliveryFee) : "Selecione um bairro"}
+                  <span className={deliveryMode === "TAKEOUT" || deliveryNeighborhood ? "text-[#FFFFFF] font-semibold" : "text-gray-500 italic"}>
+                    {deliveryMode === "TAKEOUT" ? "Grátis (Retirada)" : (deliveryNeighborhood ? BRL(deliveryFee) : "Selecione um bairro")}
                   </span>
                 </div>
                 <div className="flex justify-between pt-3 border-t border-gray-700 items-center">
                   <span className="text-[#FFFFFF] font-bold">Total</span>
-                  <span className="text-2xl font-black text-[#F1C40F] tabular-nums">{BRL(totalAmount)}</span>
+                  <span className="text-2xl font-black text-[#F1C40F] tabular-nums">{BRL(deliveryMode === "TAKEOUT" ? subtotal : totalAmount)}</span>
                 </div>
               </div>
 

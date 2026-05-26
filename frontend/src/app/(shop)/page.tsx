@@ -110,6 +110,7 @@ export default function ShopHome() {
     return () => {
       client.deactivate();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders.length]); // Depende do tamanho para não re-subscrever a cada atualização de status
 
   if (loading) {

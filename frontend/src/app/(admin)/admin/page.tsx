@@ -9,7 +9,6 @@ import SockJS from 'sockjs-client';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [isExpedienteIniciado, setIsExpedienteIniciado] = useState(false);
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const stompClientRef = useRef<Client | null>(null);
@@ -42,13 +41,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const iniciarExpediente = () => {
-    setIsExpedienteIniciado(true);
-    playBeep(); // Desbloqueia o AudioContext do navegador com a primeira interação
-  };
-
   useEffect(() => {
-    if (!isExpedienteIniciado) return;
 
     // Carregar Pedidos
     adminService.getOrders()
@@ -95,7 +88,7 @@ export default function AdminDashboard() {
     return () => {
       client.deactivate();
     };
-  }, [isExpedienteIniciado]);
+  }, []);
 
   const handleAdvanceStatus = async (orderId: number, currentStatus: string) => {
     const flow = ["PENDING", "PREPARING", "DISPATCHED", "DELIVERED"];
@@ -157,32 +150,7 @@ export default function AdminDashboard() {
     return "Finalizado";
   };
 
-  if (!isExpedienteIniciado) {
-    return (
-      <div className="min-h-screen bg-[#121212] flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full bg-[#1E1E1E] p-8 rounded-2xl border border-gray-800 text-center shadow-2xl">
-          <div className="w-20 h-20 bg-[#F1C40F]/10 text-[#F1C40F] rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-black text-white mb-2">Painel de Cozinha</h1>
-          <p className="text-gray-400 mb-8">O sistema requer a tua interação para habilitar os alertas sonoros em tempo real.</p>
-          
-          <button 
-            onClick={iniciarExpediente}
-            className="w-full bg-[#F1C40F] text-[#121212] font-black text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(241,196,15,0.3)] hover:scale-105 transition-transform"
-          >
-            ⚡ Iniciar Expediente
-          </button>
-          
-          <button onClick={handleLogout} className="mt-6 text-gray-500 hover:text-white transition-colors text-sm font-medium">
-            Sair do sistema
-          </button>
-        </div>
-      </div>
-    );
-  }
+
 
   const pendentes = orders.filter(o => o.orderStatus === "PENDING");
   const preparo = orders.filter(o => o.orderStatus === "PREPARING");

@@ -15,7 +15,7 @@ public class Order {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "neighborhood_id", nullable = false)
+    @JoinColumn(name = "neighborhood_id", nullable = true)
     private Neighborhood neighborhood;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -56,8 +56,8 @@ public class AdminProductController {
             product.setDescription(request.description);
             product.setPrice(request.price);
             product.setCategory(categoryOpt.get());
-            product.setIsAvailable(request.isAvailable != null ? request.isAvailable : true);
-            product.setIsPromotion(request.isPromotion != null ? request.isPromotion : false);
+            product.setIsAvailable(request.isAvailable == null || request.isAvailable);
+            product.setIsPromotion(request.isPromotion != null && request.isPromotion);
 
             if (image != null && !image.isEmpty()) {
                 String imageUrl = saveImage(image);

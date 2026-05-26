@@ -14,22 +14,20 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
 
-  // Reset quantity when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setQuantity(1);
-    }
-  }, [isOpen]);
+  const handleClose = () => {
+    onClose();
+    setTimeout(() => setQuantity(1), 300);
+  };
 
   if (!isOpen || !product) return null;
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
-    onClose();
+    handleClose();
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClose();
+    if (e.target === e.currentTarget) handleClose();
   };
 
   const formattedPrice = new Intl.NumberFormat("pt-BR", {
@@ -49,7 +47,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
           
           {/* Close Button */}
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute top-4 right-4 z-20 w-10 h-10 bg-black/60 hover:bg-black/90 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors"
             aria-label="Fechar"
           >

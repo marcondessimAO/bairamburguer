@@ -58,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-            // Se o token for inválido, expirado, etc.
+            System.err.println("Token inválido ou expirado: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

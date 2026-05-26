@@ -18,7 +18,9 @@ public class AdminOrderController {
 
     @GetMapping
     public ResponseEntity<List<Order>> listarPedidos() {
-        return ResponseEntity.ok(orderService.listarTodos());
+        return ResponseEntity.ok(orderService.listarTodos().stream()
+                .filter(o -> "PAID".equals(o.getPaymentStatus()))
+                .toList());
     }
 
     @PatchMapping("/{id}/status")
