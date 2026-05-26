@@ -56,7 +56,8 @@ export default function ShopHome() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/orders/customer/1")
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://2.25.131.139:8080/api";
+    fetch(`${baseUrl}/orders/customer/1`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch");
         return res.json();
@@ -75,7 +76,10 @@ export default function ShopHome() {
     if (orders.length === 0) return;
 
     const client = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      webSocketFactory: () => {
+        const wsUrl = process.env.NEXT_PUBLIC_HOST_URL || "http://2.25.131.139:8080";
+        return new SockJS(`${wsUrl}/ws`);
+      },
       debug: (str) => console.log("STOMP: " + str),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,

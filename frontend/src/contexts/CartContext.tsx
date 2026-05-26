@@ -79,7 +79,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isStoreOpen, setIsStoreOpen] = useState(true);
 
   React.useEffect(() => {
-    fetch("http://localhost:8080/api/v1/settings/store/status")
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://2.25.131.139:8080/api";
+    fetch(`${baseUrl}/v1/settings/store/status`)
       .then((res) => res.json())
       .then((data) => setIsStoreOpen(data.isOpen))
       .catch((err) => console.error("Erro ao buscar status da loja:", err));

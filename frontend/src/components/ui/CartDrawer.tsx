@@ -65,7 +65,8 @@ export function CartDrawer() {
         }))
       };
 
-      const response = await fetch("http://localhost:8080/api/orders/checkout", {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://2.25.131.139:8080/api";
+      const response = await fetch(`${baseUrl}/orders/checkout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

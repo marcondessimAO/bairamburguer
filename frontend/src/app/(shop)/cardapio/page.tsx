@@ -23,7 +23,8 @@ export default function Cardapio() {
   const [activeCategory, setActiveCategory] = useState("Todos");
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/products")
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://2.25.131.139:8080/api";
+    fetch(`${baseUrl}/products`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch");
         return res.json();

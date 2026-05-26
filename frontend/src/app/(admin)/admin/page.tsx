@@ -55,7 +55,7 @@ export default function AdminDashboard() {
       });
 
     // Iniciar WebSocket
-    const socketUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '/ws') || 'http://localhost:8080/ws';
+    const socketUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '/ws') || 'http://2.25.131.139:8080/ws';
     const client = new Client({
       webSocketFactory: () => new SockJS(socketUrl),
       reconnectDelay: 5000,
