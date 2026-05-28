@@ -17,13 +17,13 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname === '/admin/login') {
+    if (pathname === '/login') {
       setIsAuthorized(true);
       return;
     }
 
     if (!isAuthenticated()) {
-      router.push('/admin/login');
+      router.push('/login');
     } else {
       setIsAuthorized(true);
     }
@@ -31,7 +31,7 @@ export default function AdminLayout({
 
   const handleLogout = () => {
     removeAuthToken();
-    router.push('/admin/login');
+    router.push('/login');
   };
 
   if (!isAuthorized) {
@@ -42,7 +42,7 @@ export default function AdminLayout({
     );
   }
 
-  if (pathname === '/admin/login') {
+  if (pathname === '/login') {
     return <>{children}</>;
   }
 

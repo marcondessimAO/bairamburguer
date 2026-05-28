@@ -178,7 +178,7 @@ export function CartDrawer() {
               <div className="bg-white p-4 rounded-xl mb-4">
                 {pendingPayment.pixQrCodeBase64 ? (
                   <img 
-                    src={`data:image/jpeg;base64,${pendingPayment.pixQrCodeBase64}`} 
+                    src={`data:image/png;base64,${pendingPayment.pixQrCodeBase64}`} 
                     alt="QR Code Pix" 
                     className="w-48 h-48 object-contain"
                   />

@@ -47,7 +47,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**", "/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/products", "/api/products/**", "/api/v1/products", "/api/v1/products/**").permitAll()
                 .requestMatchers("/api/categories", "/api/categories/**", "/api/v1/categories", "/api/v1/categories/**").permitAll()
-                .requestMatchers("/api/orders/checkout", "/api/v1/orders/checkout", "/api/orders/customer/**", "/api/v1/orders/customer/**").permitAll()
+                .requestMatchers("/api/orders/**", "/api/v1/orders/**").permitAll()
                 .requestMatchers("/api/webhook/**", "/api/v1/webhook/**", "/api/webhooks/**", "/api/v1/webhooks/**").permitAll()
                 .requestMatchers("/api/v1/settings/store/status").permitAll()
                 .requestMatchers("/ws/**").permitAll()
