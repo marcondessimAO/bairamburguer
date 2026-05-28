@@ -79,7 +79,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isStoreOpen, setIsStoreOpen] = useState(true);
 
   React.useEffect(() => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://2.25.131.139:8080/api";
+    const baseUrl = "/api";
     fetch(`${baseUrl}/v1/settings/store/status`)
       .then((res) => res.json())
       .then((data) => setIsStoreOpen(data.isOpen))

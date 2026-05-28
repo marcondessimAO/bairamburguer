@@ -65,7 +65,7 @@ export function CartDrawer() {
         }))
       };
 
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://2.25.131.139:8080/api";
+      const baseUrl = "/api";
       const response = await fetch(`${baseUrl}/orders/checkout`, {
         method: "POST",
         headers: {

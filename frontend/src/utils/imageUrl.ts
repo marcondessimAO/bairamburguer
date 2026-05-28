@@ -3,7 +3,7 @@ export function getImageUrl(url: string | undefined | null) {
   if (url.startsWith('http')) return url;
   
   
- const host = process.env.NEXT_PUBLIC_HOST_URL || 'http://2.25.131.139:8080';
+ const host = "";
   
   // Garante que a barra existe entre o host e o caminho
   const cleanUrl = url.startsWith('/') ? url : `/${url}`;

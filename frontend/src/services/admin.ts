@@ -118,7 +118,7 @@ export const adminService = {
   },
 
   getStoreStatus: async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://2.25.131.139:8080/api';
+    const baseUrl = '/api';
     const res = await fetch(`${baseUrl}/v1/settings/store/status`);
     return res.json();
   },
