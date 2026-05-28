@@ -27,8 +27,8 @@ services:
       SPRING_DATASOURCE_USERNAME: bairam_admin
       SPRING_DATASOURCE_PASSWORD: senha_super_segura_aqui
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      MERCADOPAGO_ACCESS_TOKEN: APP_USR-5587292634861284-052420-cb3f795b5bc083c7be000b473970648f-3423925426
-      JWT_SECRET: chave_super_secreta_jwt_para_producao_bairam_burguer
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
+      JWT_SECRET: ${JWT_SECRET}
 
 volumes:
   postgres_data:

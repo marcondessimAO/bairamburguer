@@ -5,9 +5,10 @@ node_modules/
 out/
 build/
 
-# Security
+# Security - NEVER commit credentials
 .env
-.env*.local
+.env.*
+!.env.example
 
 # IDEs and System
 .vscode/
