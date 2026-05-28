@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCart, NEIGHBORHOODS } from "@/contexts/CartContext";
 import { getImageUrl } from "@/utils/imageUrl";
 
@@ -8,6 +9,7 @@ const BRL = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
 export function CartDrawer() {
+  const router = useRouter();
   const {
     cartItems,
     isCartOpen,
@@ -105,6 +107,7 @@ export function CartDrawer() {
   const handleCloseAndReturn = () => {
     setPendingPayment(null);
     setIsCartOpen(false);
+    router.push("/");
   };
 
   const handleWhatsApp = () => {
@@ -227,7 +230,10 @@ export function CartDrawer() {
                     <p className="text-sm text-gray-600 mt-1">Adicione um lanche delicioso!</p>
                   </div>
                   <button
-                    onClick={() => setIsCartOpen(false)}
+                    onClick={() => {
+                      setIsCartOpen(false);
+                      router.push("/");
+                    }}
                     className="bg-[#F1C40F] text-[#121212] font-bold rounded-xl w-full py-3 mt-6"
                   >
                     Explorar Cardápio
