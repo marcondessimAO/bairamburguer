@@ -42,7 +42,7 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         // Atualizar bairros garantindo que os 15 existem com as taxas corretas
         String[] nomes = {"Mangabeira", "Gramame", "Nova Mangabeira", "Valentina", "Parque do Sol", "Muçumagro", "Paratibe", "Colinas do Sul", "Bancários", "Geisel", "Cuiá", "Bessa", "Manaíra", "Cabo Branco", "Centro"};
-        String[] taxas = {"0.00", "4.00", "4.00", "5.00", "5.00", "5.00", "5.00", "6.00", "6.00", "7.00", "8.00", "12.00", "12.00", "12.00", "15.00"};
+        String[] taxas = {"0.00", "7.00", "7.00", "7.00", "5.00", "5.00", "7.00", "7.00", "6.00", "7.00", "8.00", "12.00", "12.00", "12.00", "15.00"};
         for (int i = 0; i < nomes.length; i++) {
             Neighborhood n = neighborhoodRepository.findFirstByNameIgnoreCase(nomes[i]).orElse(new Neighborhood());
             n.setName(nomes[i]);

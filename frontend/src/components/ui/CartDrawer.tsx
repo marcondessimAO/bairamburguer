@@ -136,10 +136,10 @@ export function CartDrawer() {
         role="dialog"
         aria-modal="true"
         aria-label="Carrinho de compras"
-        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full md:w-[420px] bg-[#121212] shadow-[−8px_0_40px_rgba(0,0,0,0.8)] border-l border-gray-800"
+        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full md:w-[420px] h-[100dvh] bg-[#121212] shadow-[-8px_0_40px_rgba(0,0,0,0.8)] border-l border-gray-800"
       >
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
+        {/* ── Header (shrink-0 — nunca encolhe) ── */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800 shrink-0">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-black text-[#FFFFFF] tracking-tight">
               {pendingPayment ? "Pedido Concluído" : "Resumo do Pedido"}
@@ -217,7 +217,7 @@ export function CartDrawer() {
           </div>
         ) : (
           <>
-            {/* ── Lista de Itens ── */}
+            {/* ── Área scrollável: lista + formulário ── */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {cartItems.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-500 py-16">
@@ -319,13 +319,8 @@ export function CartDrawer() {
                   </button>
                 </>
               )}
-            </div>
-
-            {/* ── Footer: Dados do Visitante, Bairro + Resumo + Botão ── */}
-            <div className="px-6 py-5 bg-[#181818] border-t border-gray-800 space-y-4">
-              
-              {/* Opção de Entrega */}
-              <div className="flex gap-4 mb-4">
+              {/* ── Opção de Entrega (dentro da área scrollável) ── */}
+              <div className="flex gap-4 pt-2">
                 <label className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl cursor-pointer border transition-colors ${deliveryMode === "DELIVERY" ? "bg-[#F1C40F]/10 border-[#F1C40F] text-[#F1C40F]" : "bg-[#1e1e1e] border-gray-800 text-gray-400"}`}>
                   <input type="radio" name="deliveryMode" value="DELIVERY" checked={deliveryMode === "DELIVERY"} onChange={() => setDeliveryMode("DELIVERY")} className="hidden" />
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -421,9 +416,12 @@ export function CartDrawer() {
                   </select>
                 </div>
               )}
+            </div>
 
+            {/* ── Footer fixo: Totais + Botão (shrink-0 — sempre visível) ── */}
+            <div className="px-6 py-5 bg-[#181818] border-t border-gray-800 space-y-4 shrink-0">
               {/* Resumo de Valores */}
-              <div className="space-y-2.5 text-sm pt-2">
+              <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between text-gray-400">
                   <span className="font-medium">Subtotal</span>
                   <span className="text-[#FFFFFF] font-semibold">{BRL(subtotal)}</span>

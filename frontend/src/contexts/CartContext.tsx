@@ -29,13 +29,13 @@ export type Neighborhood = {
 
 export const NEIGHBORHOODS: Neighborhood[] = [
   { name: "Mangabeira", fee: 0.0 },
-  { name: "Gramame", fee: 4.0 },
-  { name: "Nova Mangabeira", fee: 4.0 },
-  { name: "Valentina", fee: 5.0 },
+  { name: "Gramame", fee: 7.0 },
+  { name: "Nova Mangabeira", fee: 7.0 },
+  { name: "Valentina", fee: 7.0 },
   { name: "Parque do Sol", fee: 5.0 },
   { name: "Muçumagro", fee: 5.0 },
-  { name: "Paratibe", fee: 5.0 },
-  { name: "Colinas do Sul", fee: 6.0 },
+  { name: "Paratibe", fee: 7.0 },
+  { name: "Colinas do Sul", fee: 7.0 },
   { name: "Bancários", fee: 6.0 },
   { name: "Geisel", fee: 7.0 },
   { name: "Cuiá", fee: 8.0 },
