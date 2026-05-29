@@ -51,18 +51,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         System.out.println("DatabaseSeeder: Bairros atualizados/cadastrados com sucesso!");
 
         if (productRepository.count() == 0) {
-            // Categorias
-            Category catMaluca = new Category();
-            catMaluca.setName("BAIRAM MALUCA");
-            catMaluca = categoryRepository.save(catMaluca);
-
-            Category catCombos = new Category();
-            catCombos.setName("COMBOS");
-            catCombos = categoryRepository.save(catCombos);
-
-            Category catComplementos = new Category();
-            catComplementos.setName("COMPLEMENTOS");
-            catComplementos = categoryRepository.save(catComplementos);
+            // Categorias (criadas via helper idempotente)
+            Category catMaluca     = upsertCategory("BAIRAM MALUCA");
+            Category catCombos     = upsertCategory("COMBOS");
+            Category catComplementos = upsertCategory("COMPLEMENTOS");
 
             // Produtos BAIRAM MALUCA
             Product p1 = new Product();
@@ -167,5 +159,24 @@ public class DatabaseSeeder implements CommandLineRunner {
             
             System.out.println("DatabaseSeeder: Categorias e Produtos reais cadastrados com sucesso!");
         }
+
+        // ─── Novas categorias (idempotente — seguro a cada restart) ──────────
+        upsertCategory("BAIRAM MALUCA");
+        upsertCategory("COMBOS");
+        upsertCategory("COMPLEMENTOS");
+        upsertCategory("Bairans individuais");
+        upsertCategory("Petiscos");
+        upsertCategory("Bebidas");
+        upsertCategory("Milkshakes");
+        System.out.println("DatabaseSeeder: Categorias verificadas/atualizadas com sucesso!");
+    }
+
+    /** Cria a categoria se não existir; devolve a entidade persistida. */
+    private Category upsertCategory(String name) {
+        return categoryRepository.findByNameIgnoreCase(name).orElseGet(() -> {
+            Category c = new Category();
+            c.setName(name);
+            return categoryRepository.save(c);
+        });
     }
 }
