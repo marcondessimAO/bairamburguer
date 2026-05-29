@@ -29,6 +29,8 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
       JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - ./uploads:/app/uploads
 
 volumes:
   postgres_data:
