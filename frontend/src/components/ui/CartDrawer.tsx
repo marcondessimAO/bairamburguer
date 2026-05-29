@@ -131,7 +131,7 @@ export function CartDrawer() {
 
     const client = new Client({
       webSocketFactory: () => {
-        const wsUrl = "/api/ws";
+        const wsUrl = "/ws";
         return new SockJS(wsUrl);
       },
       debug: (str) => console.log("STOMP: " + str),
