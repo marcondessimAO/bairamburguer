@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
 import { useCart, NEIGHBORHOODS } from "@/contexts/CartContext";
 import { getImageUrl } from "@/utils/imageUrl";
 
@@ -120,9 +122,42 @@ export function CartDrawer() {
   const handleCopyPix = () => {
     if (pendingPayment?.pixCopiaECola) {
       navigator.clipboard.writeText(pendingPayment.pixCopiaECola);
-      alert("Código Pix Copiado com sucesso!");
+      alert("Código Pix copiado com sucesso!");
     }
   };
+
+  useEffect(() => {
+    if (!pendingPayment || !pendingPayment.orderId) return;
+
+    const client = new Client({
+      webSocketFactory: () => {
+        const wsUrl = "/api/ws";
+        return new SockJS(wsUrl);
+      },
+      debug: (str) => console.log("STOMP: " + str),
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+    });
+
+    client.onConnect = () => {
+      client.subscribe(`/topic/orders/status/${pendingPayment.orderId}`, (message) => {
+        if (message.body) {
+          const data = JSON.parse(message.body);
+          if (data.paymentStatus === 'PAID') {
+            setPendingPayment(null);
+            router.push("/pedidos");
+          }
+        }
+      });
+    };
+
+    client.activate();
+
+    return () => {
+      client.deactivate();
+    };
+  }, [pendingPayment, router, setPendingPayment]);
 
   const closeDrawer = () => {
     if (pendingPayment) return;
