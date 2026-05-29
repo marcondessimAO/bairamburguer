@@ -27,6 +27,7 @@ services:
       SPRING_DATASOURCE_USERNAME: bairam_admin
       SPRING_DATASOURCE_PASSWORD: senha_super_segura_aqui
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      APP_BASEURL: https://bairamburguerpetiscaria.com
       MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
       JWT_SECRET: ${JWT_SECRET}
     volumes:

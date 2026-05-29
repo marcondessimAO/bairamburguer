@@ -23,7 +23,7 @@ import java.util.UUID;
 @Service
 public class PixPaymentService {
 
-    @Value("${app.baseUrl:https://seu-dominio-na-hostinger.com}")
+    @Value("${app.baseUrl:https://bairamburguerpetiscaria.com}")
     private String baseUrl;
 
     public OrderCheckoutResponseDTO generatePixCharge(Order order, String customerEmail, String customerCpf) {
