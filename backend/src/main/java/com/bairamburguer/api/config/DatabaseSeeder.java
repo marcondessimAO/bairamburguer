@@ -30,15 +30,14 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        if (userRepository.count() == 0) {
-            User admin = new User();
-            admin.setName("Bernardo Admin");
-            admin.setEmail("admin@bairamburguer.com");
-            admin.setRole("ADMIN");
-            admin.setPassword(passwordEncoder.encode("admin"));
-            userRepository.save(admin);
-            System.out.println("DatabaseSeeder: Usuário Admin cadastrado com sucesso!");
-        }
+        // Busca o admin existente ou cria um novo — sempre atualiza a senha
+        User admin = userRepository.findByEmail("admin@bairamburguer.com").orElse(new User());
+        admin.setName("Bernardo Admin");
+        admin.setEmail("admin@bairamburguer.com");
+        admin.setRole("ADMIN");
+        admin.setPassword(passwordEncoder.encode("#adminbernado10"));
+        userRepository.save(admin);
+        System.out.println("DatabaseSeeder: Usuário Admin criado/atualizado com sucesso!");
 
         // Atualizar bairros garantindo que os 15 existem com as taxas corretas
         String[] nomes = {"Mangabeira", "Gramame", "Nova Mangabeira", "Valentina", "Parque do Sol", "Muçumagro", "Paratibe", "Colinas do Sul", "Bancários", "Geisel", "Cuiá", "Bessa", "Manaíra", "Cabo Branco", "Centro"};

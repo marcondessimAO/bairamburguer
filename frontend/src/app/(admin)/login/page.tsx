@@ -70,7 +70,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@bairamburguer.com"
+              placeholder="Digite o seu e-mail"
               className="w-full bg-[#121212] border border-gray-800 text-white rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#F1C40F] focus:ring-1 focus:ring-[#F1C40F] transition-all placeholder:text-gray-600"
             />
           </div>
