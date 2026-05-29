@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart, NEIGHBORHOODS } from "@/contexts/CartContext";
 import { getImageUrl } from "@/utils/imageUrl";
@@ -36,6 +36,19 @@ export function CartDrawer() {
   const [complement, setComplement] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [deliveryMode, setDeliveryMode] = useState<"DELIVERY" | "TAKEOUT">("DELIVERY");
+
+  // Snapshot dos dados do pedido (preservado após clearCart para o WhatsApp)
+  const orderSnapshotRef = useRef<{
+    customerName: string;
+    customerPhone: string;
+    items: { name: string; quantity: number; price: number }[];
+    street: string;
+    number: string;
+    complement: string;
+    neighborhoodName: string;
+    deliveryMode: "DELIVERY" | "TAKEOUT";
+    total: number;
+  } | null>(null);
 
   // ─── Integração da API do Backend ─────────────────────────────────────────
   const handleCheckout = async () => {
@@ -78,6 +91,18 @@ export function CartDrawer() {
 
       if (response.status === 201) {
         const data = await response.json();
+        // Guardar snapshot antes de limpar o carrinho
+        orderSnapshotRef.current = {
+          customerName,
+          customerPhone,
+          items: cartItems.map(i => ({ name: i.product.name, quantity: i.quantity, price: i.product.price })),
+          street: deliveryMode === "DELIVERY" ? street : "",
+          number: deliveryMode === "DELIVERY" ? number : "",
+          complement: deliveryMode === "DELIVERY" ? complement : "",
+          neighborhoodName: deliveryMode === "DELIVERY" && deliveryNeighborhood ? deliveryNeighborhood.name : "Retirada na Loja",
+          deliveryMode,
+          total: deliveryMode === "TAKEOUT" ? subtotal : totalAmount,
+        };
         setPendingPayment(data);
         clearCart();
       } else {
@@ -112,8 +137,29 @@ export function CartDrawer() {
 
   const handleWhatsApp = () => {
     if (!pendingPayment) return;
-    const mensagem = `Olá, Bairamburguer! O meu pedido é o #${pendingPayment.orderId}. Gostaria de acompanhar o status da minha entrega.`;
-    window.open('https://api.whatsapp.com/send?phone=558399327186&text=' + encodeURIComponent(mensagem));
+    const snap = orderSnapshotRef.current;
+    const LOJA_WHATSAPP = "558399327186";
+
+    let mensagem = `🍔 *Novo Pedido - Bairamburguer!*\n`;
+    mensagem += `*Pedido:* #${pendingPayment.orderId}\n`;
+    if (snap) {
+      mensagem += `*Nome:* ${snap.customerName}\n`;
+      mensagem += `*WhatsApp:* ${snap.customerPhone}\n`;
+      mensagem += `\n*Itens:*\n`;
+      snap.items.forEach(item => {
+        mensagem += `  - ${item.quantity}x ${item.name}\n`;
+      });
+      mensagem += `\n*Total:* ${BRL(snap.total)}\n`;
+      if (snap.deliveryMode === "DELIVERY") {
+        const addr = [snap.street, snap.number, snap.complement].filter(Boolean).join(", ");
+        mensagem += `*Endereço:* ${addr} — ${snap.neighborhoodName}\n`;
+      } else {
+        mensagem += `*Modalidade:* Retirada na Loja\n`;
+      }
+    }
+    mensagem += `\n_Pix gerado. Aguardando confirmação de pagamento._`;
+
+    window.open(`https://wa.me/${LOJA_WHATSAPP}?text=${encodeURIComponent(mensagem)}`, '_blank');
     setPendingPayment(null);
     setIsCartOpen(false);
   };
@@ -204,9 +250,13 @@ export function CartDrawer() {
             </button>
             <button
               onClick={handleWhatsApp}
-              className="bg-[#25D366] text-[#121212] font-bold py-3 w-full rounded-xl hover:bg-[#20bd5a] transition-colors mt-3"
+              className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe59] active:scale-[0.98] text-white font-black py-4 w-full rounded-xl shadow-lg shadow-[#25D366]/20 transition-all mt-3"
             >
-              Acompanhar Pedido no WhatsApp
+              <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.556 4.121 1.528 5.854L0 24l6.316-1.508A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.015-1.373l-.36-.214-3.727.979.994-3.636-.234-.374A9.818 9.818 0 1112 21.818z"/>
+              </svg>
+              Avisar Loja no WhatsApp
             </button>
             <button
               onClick={handleCloseAndReturn}

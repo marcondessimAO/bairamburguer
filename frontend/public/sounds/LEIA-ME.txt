@@ -1,0 +1,2 @@
+Coloque aqui o ficheiro campainha.mp3 para o alerta sonoro do painel administrativo.
+O ficheiro deve chamar-se exatamente: campainha.mp3
