@@ -83,7 +83,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Libera explicitamente a origem do frontend Next.js
-        configuration.setAllowedOrigins(Arrays.asList("https://bairamburguer.vercel.app", "http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.asList("https://bairamburguer.vercel.app", "http://localhost:3000", "https://bairamburguerpetiscaria.com", "https://www.bairamburguerpetiscaria.com"));
         // Permite todos os métodos HTTP essenciais
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         // Permite o tráfego de todos os Headers
