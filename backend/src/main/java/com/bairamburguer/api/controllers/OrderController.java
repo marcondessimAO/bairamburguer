@@ -38,6 +38,11 @@ public class OrderController {
         return orderService.listarPorCliente(customerId);
     }
 
+    @GetMapping("/{id}")
+    public Order obterPedido(@PathVariable Long id) {
+        return orderService.buscarPorId(id);
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public java.util.Map<String, String> handleExceptions(Exception e) {

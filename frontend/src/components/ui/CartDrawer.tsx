@@ -130,10 +130,9 @@ export function CartDrawer() {
     const intervalId = setInterval(async () => {
       try {
         const baseUrl = "/api";
-        const response = await fetch(`${baseUrl}/orders/customer/1`); // Assuming we can get all orders or specifically this one
+        const response = await fetch(`${baseUrl}/orders/${pendingPayment.orderId}`);
         if (response.ok) {
-          const orders = await response.json();
-          const currentOrder = orders.find((o: any) => o.id === pendingPayment.orderId);
+          const currentOrder = await response.json();
           if (currentOrder && currentOrder.paymentStatus === 'PAID') {
             clearInterval(intervalId);
             setPendingPayment(null);

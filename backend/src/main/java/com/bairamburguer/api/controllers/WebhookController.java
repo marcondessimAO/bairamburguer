@@ -49,7 +49,7 @@ public class WebhookController {
                     Optional<Order> orderOpt = orderRepository.findById(orderId);
                     if (orderOpt.isPresent()) {
                         Order order = orderOpt.get();
-                        if ("PENDING".equals(order.getPaymentStatus())) {
+                        if ("AWAITING_PAYMENT".equals(order.getPaymentStatus())) {
                             order.setPaymentStatus("PAID");
                             Order savedOrder = orderRepository.save(order);
                             

@@ -165,7 +165,7 @@ public class OrderService {
 
     public Order atualizarStatus(Long id, String novoStatus) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido não encontrado"));
 
         String currentStatus = order.getOrderStatus();
         List<String> validFlow = List.of("PENDING", "PREPARING", "DISPATCHED", "DELIVERED");
@@ -190,6 +190,11 @@ public class OrderService {
         messagingTemplate.convertAndSend("/topic/orders/status/" + savedOrder.getId(), java.util.Collections.singletonMap("status", savedOrder.getOrderStatus()));
 
         return savedOrder;
+    }
+
+    public Order buscarPorId(Long id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido não encontrado"));
     }
 
     public List<Order> listarTodos() {
