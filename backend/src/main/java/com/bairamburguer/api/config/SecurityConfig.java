@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/orders/**", "/api/v1/orders/**").permitAll()
                 .requestMatchers("/api/webhook/**", "/api/v1/webhook/**", "/api/webhooks/**", "/api/v1/webhooks/**").permitAll()
                 .requestMatchers("/api/v1/settings/store/status").permitAll()
-                .requestMatchers("/ws/**").permitAll()
+                .requestMatchers("/api/ws/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/api/v1/admin/dashboard/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")

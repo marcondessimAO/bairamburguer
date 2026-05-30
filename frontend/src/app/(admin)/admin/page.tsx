@@ -42,7 +42,7 @@ export default function AdminDashboard() {
       });
 
     // Iniciar WebSocket
-    const socketUrl = '/ws';
+    const socketUrl = '/api/ws';
     const client = new Client({
       webSocketFactory: () => new SockJS(socketUrl),
       reconnectDelay: 5000,

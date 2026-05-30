@@ -80,7 +80,7 @@ export default function ShopHome() {
 
     const client = new Client({
       webSocketFactory: () => {
-        const wsUrl = "/ws";
+        const wsUrl = "/api/ws";
         return new SockJS(wsUrl);
       },
       debug: (str) => console.log("STOMP: " + str),

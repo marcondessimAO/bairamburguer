@@ -20,9 +20,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Regista o endpoint /ws e permite conexões do Next.js
-        registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:3000")
+        // Regista o endpoint /api/ws e permite conexões do Next.js
+        registry.addEndpoint("/api/ws")
+                .setAllowedOrigins("http://localhost:3000", "https://bairamburguer.vercel.app", "https://bairamburguerpetiscaria.com", "https://www.bairamburguerpetiscaria.com")
                 .withSockJS();
     }
 }

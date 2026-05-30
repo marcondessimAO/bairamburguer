@@ -65,7 +65,8 @@ public class WebhookController {
             return ResponseEntity.ok("OK");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.ok("Error processing webhook");
+            System.err.println("WEBHOOK ERROR: " + e.getMessage());
+            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing webhook: " + e.getMessage());
         }
     }
 }
