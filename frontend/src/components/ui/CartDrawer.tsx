@@ -2,8 +2,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Client } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
 import { useCart, NEIGHBORHOODS } from "@/contexts/CartContext";
 import { getImageUrl } from "@/utils/imageUrl";
 
@@ -129,34 +127,25 @@ export function CartDrawer() {
   useEffect(() => {
     if (!pendingPayment || !pendingPayment.orderId) return;
 
-    const client = new Client({
-      webSocketFactory: () => {
-        const wsUrl = "/api/ws";
-        return new SockJS(wsUrl);
-      },
-      debug: (str) => console.log("STOMP: " + str),
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-    });
-
-    client.onConnect = () => {
-      client.subscribe(`/topic/orders/status/${pendingPayment.orderId}`, (message) => {
-        if (message.body) {
-          const data = JSON.parse(message.body);
-          if (data.paymentStatus === 'PAID') {
+    const intervalId = setInterval(async () => {
+      try {
+        const baseUrl = "/api";
+        const response = await fetch(`${baseUrl}/orders/customer/1`); // Assuming we can get all orders or specifically this one
+        if (response.ok) {
+          const orders = await response.json();
+          const currentOrder = orders.find((o: any) => o.id === pendingPayment.orderId);
+          if (currentOrder && currentOrder.paymentStatus === 'PAID') {
+            clearInterval(intervalId);
             setPendingPayment(null);
             router.push("/pedidos");
           }
         }
-      });
-    };
+      } catch (err) {
+        console.error("Erro ao verificar status do pagamento:", err);
+      }
+    }, 3000);
 
-    client.activate();
-
-    return () => {
-      client.deactivate();
-    };
+    return () => clearInterval(intervalId);
   }, [pendingPayment, router, setPendingPayment]);
 
   const closeDrawer = () => {

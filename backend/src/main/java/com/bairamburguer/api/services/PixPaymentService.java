@@ -47,7 +47,7 @@ public class PixPaymentService {
                         .number(customerCpf.replaceAll("[^0-9]", ""))
                         .build())
                     .build())
-                .notificationUrl(baseUrl + "/api/webhooks/mercadopago")
+                .notificationUrl("https://bairamburguerpetiscaria.com/api/webhooks/mercadopago")
                 .build();
             
             MPRequestOptions requestOptions = MPRequestOptions.builder()

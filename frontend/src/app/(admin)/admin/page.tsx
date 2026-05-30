@@ -4,14 +4,12 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { removeAuthToken } from "@/services/auth";
 import { adminService, OrderDTO } from "@/services/admin";
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [loading, setLoading] = useState(true);
-  const stompClientRef = useRef<Client | null>(null);
+  const previousCountRef = useRef<number>(0);
 
   const handleLogout = () => {
     removeAuthToken();
@@ -34,6 +32,7 @@ export default function AdminDashboard() {
     adminService.getOrders()
       .then((data) => {
         setOrders(data);
+        previousCountRef.current = data.length;
         setLoading(false);
       })
       .catch((err) => {
@@ -41,40 +40,22 @@ export default function AdminDashboard() {
         setLoading(false);
       });
 
-    // Iniciar WebSocket
-    const socketUrl = '/api/ws';
-    const client = new Client({
-      webSocketFactory: () => new SockJS(socketUrl),
-      reconnectDelay: 5000,
-      onConnect: () => {
-        console.log("WebSocket Conectado!");
-
-        client.subscribe('/topic/orders/new', (message) => {
-          const newOrder: OrderDTO = JSON.parse(message.body);
-          setOrders((prev) => {
-            const exists = prev.find(o => o.id === newOrder.id);
-            if (exists) return prev.map(o => o.id === newOrder.id ? newOrder : o);
-            return [...prev, newOrder];
-          });
-          playBeep(); // Tocar o som para nova ordem
+    // HTTP Polling a cada 10 segundos
+    const intervalId = setInterval(() => {
+      adminService.getOrders()
+        .then((data) => {
+          setOrders(data);
+          if (data.length > previousCountRef.current) {
+            playBeep(); // Novo pedido chegou!
+          }
+          previousCountRef.current = data.length;
+        })
+        .catch((err) => {
+          console.error("Erro no polling de pedidos", err);
         });
+    }, 10000);
 
-        client.subscribe('/topic/orders/update', (message) => {
-          const updatedOrder: OrderDTO = JSON.parse(message.body);
-          setOrders((prev) => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
-        });
-      },
-      onStompError: (frame) => {
-        console.error('STOMP Error:', frame);
-      }
-    });
-
-    client.activate();
-    stompClientRef.current = client;
-
-    return () => {
-      client.deactivate();
-    };
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleAdvanceStatus = async (orderId: number, currentStatus: string) => {
