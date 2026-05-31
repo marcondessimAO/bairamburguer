@@ -36,6 +36,7 @@ export function CartDrawer() {
   const [complement, setComplement] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [deliveryMode, setDeliveryMode] = useState<"DELIVERY" | "TAKEOUT">("DELIVERY");
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   // Snapshot dos dados do pedido (preservado após clearCart para o WhatsApp)
   const orderSnapshotRef = useRef<{
@@ -135,8 +136,7 @@ export function CartDrawer() {
           const currentOrder = await response.json();
           if (currentOrder && currentOrder.paymentStatus === 'PAID') {
             clearInterval(intervalId);
-            setPendingPayment(null);
-            router.push("/pedidos");
+            setPaymentSuccess(true);
           }
         }
       } catch (err) {
@@ -183,8 +183,6 @@ export function CartDrawer() {
     mensagem += `\n_Pix gerado. Aguardando confirmação de pagamento._`;
 
     window.open(`https://wa.me/${LOJA_WHATSAPP}?text=${encodeURIComponent(mensagem)}`, '_blank');
-    setPendingPayment(null);
-    setIsCartOpen(false);
   };
 
   if (!isCartOpen) return null;
@@ -231,7 +229,48 @@ export function CartDrawer() {
         </div>
 
         {/* ── Conditional Render: Tela de Pagamento ou Carrinho ── */}
-        {pendingPayment ? (
+        {paymentSuccess ? (
+          <div className="flex flex-col items-center justify-center p-8 space-y-6 flex-1 overflow-y-auto">
+            <div className="w-24 h-24 bg-[#25D366]/20 text-[#25D366] rounded-full flex items-center justify-center mb-4 border-4 border-[#25D366]/30 animate-pulse">
+              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <div className="text-center space-y-2 mb-8">
+              <h3 className="text-3xl font-black text-white">Pagamento Confirmado!</h3>
+              <p className="text-gray-400 text-base">Seu pedido foi recebido e a nossa cozinha já vai começar o preparo com muito carinho.</p>
+            </div>
+
+            <button
+              onClick={() => {
+                handleWhatsApp();
+                setPaymentSuccess(false);
+                setPendingPayment(null);
+                setIsCartOpen(false);
+                router.push("/pedidos");
+              }}
+              className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe59] active:scale-[0.98] text-white font-black py-4 w-full rounded-xl shadow-lg shadow-[#25D366]/20 transition-all mt-3"
+            >
+              <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.556 4.121 1.528 5.854L0 24l6.316-1.508A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.015-1.373l-.36-.214-3.727.979.994-3.636-.234-.374A9.818 9.818 0 1112 21.818z"/>
+              </svg>
+              Avisar Loja no WhatsApp
+            </button>
+            <button
+              onClick={() => {
+                setPaymentSuccess(false);
+                setPendingPayment(null);
+                setIsCartOpen(false);
+                router.push("/pedidos");
+              }}
+              className="w-full mt-2 text-gray-400 hover:text-white bg-[#1A1A1A] py-4 rounded-xl font-bold transition-colors"
+            >
+              Acompanhar Pedido Pelo Site
+            </button>
+          </div>
+        ) : pendingPayment ? (
           <div className="flex flex-col items-center justify-center p-8 space-y-6 flex-1 overflow-y-auto">
             <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">

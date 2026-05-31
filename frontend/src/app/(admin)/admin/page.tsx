@@ -9,6 +9,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(false);
   const previousCountRef = useRef<number>(0);
 
   const handleLogout = () => {
@@ -24,6 +25,12 @@ export default function AdminDashboard() {
     } catch (e) {
       console.error("Audio playback failed", e);
     }
+  };
+
+  const handleEnableSound = () => {
+    setIsSoundEnabled(true);
+    // Play a silent or initial beep to unlock audio context in Safari/Chrome
+    playBeep();
   };
 
   useEffect(() => {
@@ -125,7 +132,27 @@ export default function AdminDashboard() {
   const entrega = orders.filter(o => o.orderStatus === "DISPATCHED");
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white p-4 font-sans">
+    <div className="min-h-screen bg-[#121212] text-white p-4 font-sans relative">
+      {!isSoundEnabled && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="bg-[#1A1A1A] p-8 rounded-2xl text-center max-w-md border border-[#333]">
+            <div className="w-20 h-20 bg-[#F1C40F]/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-[#F1C40F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Ativar Alertas Sonoros</h2>
+            <p className="text-gray-400 mb-8">Para que a campainha toque quando chegar um novo pedido, precisamos da sua permissão para reproduzir áudio.</p>
+            <button 
+              onClick={handleEnableSound}
+              className="w-full bg-[#F1C40F] text-[#121212] font-black py-4 rounded-xl hover:bg-[#F39C12] transition-colors text-lg"
+            >
+              Ativar Som e Entrar
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-[#F1C40F] rounded-xl flex items-center justify-center">
