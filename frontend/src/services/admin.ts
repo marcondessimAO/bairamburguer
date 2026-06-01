@@ -18,6 +18,9 @@ export interface OrderDTO {
   id: number;
   customerName: string;
   customerPhone: string;
+  street?: string;
+  number?: string;
+  complement?: string;
   neighborhood: {
     id: number;
     name: string;
@@ -37,6 +40,7 @@ export interface ProductDTO {
   price: number;
   imageUrl: string;
   isAvailable: boolean;
+  isPromotion?: boolean;
   category: {
     id: number;
     name: string;
@@ -74,7 +78,8 @@ export const adminService = {
       body: JSON.stringify({ status })
     });
     if (!response.ok) {
-      throw new Error('Falha ao atualizar o pedido');
+      const errorText = await response.text();
+      throw new Error(errorText || 'Falha ao atualizar o pedido');
     }
     return response.json();
   },

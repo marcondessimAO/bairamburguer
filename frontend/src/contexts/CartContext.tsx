@@ -25,18 +25,29 @@ export type Neighborhood = {
   fee: number;
 };
 
+export type PendingPayment = {
+  orderId: number;
+  totalAmount: number;
+  pixQrCodeBase64?: string;
+  pixCopiaECola?: string;
+};
+
 // ─── Tabela de Bairros (RF08) ─────────────────────────────────────────────────
 
 export const NEIGHBORHOODS: Neighborhood[] = [
   { name: "Mangabeira", fee: 0.0 },
-  { name: "Gramame", fee: 7.0 },
-  { name: "Nova Mangabeira", fee: 7.0 },
-  { name: "Valentina", fee: 7.0 },
-  { name: "Parque do Sol", fee: 5.0 },
-  { name: "Muçumagro", fee: 5.0 },
-  { name: "Paratibe", fee: 7.0 },
+  { name: "Valentina", fee: 5.99 },
+  { name: "Muçumagro", fee: 5.99 },
+  { name: "Gramame", fee: 5.99 },
+  { name: "Paratibe", fee: 5.99 },
+  { name: "Nova Mangabeira", fee: 5.99 },
+  { name: "Parque do Sol", fee: 5.99 },
+  { name: "Portal do Sol", fee: 5.99 },
+  { name: "José Américo", fee: 4.99 },
+  { name: "Colibris", fee: 4.99 },
+  { name: "Cidade Verde", fee: 4.99 },
+  { name: "Bancários", fee: 4.99 },
   { name: "Colinas do Sul", fee: 7.0 },
-  { name: "Bancários", fee: 6.0 },
   { name: "Geisel", fee: 7.0 },
   { name: "Cuiá", fee: 8.0 },
   { name: "Bessa", fee: 12.0 },
@@ -60,8 +71,8 @@ interface CartContextData {
   updateQuantity: (productId: number, quantity: number) => void;
   setNeighborhood: (neighborhoodName: string) => void;
   clearCart: () => void;
-  pendingPayment: any | null;
-  setPendingPayment: (payment: any | null) => void;
+  pendingPayment: PendingPayment | null;
+  setPendingPayment: (payment: PendingPayment | null) => void;
   isStoreOpen: boolean;
 }
 
@@ -75,7 +86,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [deliveryNeighborhood, setDeliveryNeighborhoodState] = useState<Neighborhood | null>(null);
-  const [pendingPayment, setPendingPayment] = useState<any | null>(null);
+  const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(null);
   const [isStoreOpen, setIsStoreOpen] = useState(true);
 
   React.useEffect(() => {

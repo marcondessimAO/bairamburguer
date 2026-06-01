@@ -14,7 +14,6 @@ export default function AdminMenuPage() {
 
   const fetchProducts = async () => {
     try {
-      setLoading(true);
       const data = await adminService.getProducts();
       setProducts(data);
     } catch (err) {
@@ -25,7 +24,22 @@ export default function AdminMenuPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    let isMounted = true;
+
+    adminService.getProducts()
+      .then((data) => {
+        if (isMounted) setProducts(data);
+      })
+      .catch((err) => {
+        console.error('Erro ao buscar produtos:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleOpenModal = (product?: ProductDTO) => {
@@ -101,7 +115,7 @@ export default function AdminMenuPage() {
                         <div>
                           <div className="font-medium text-zinc-100 flex items-center gap-2">
                             {product.name}
-                            {(product as any).isPromotion && (
+                            {product.isPromotion && (
                               <Flame className="w-4 h-4 text-orange-500" />
                             )}
                           </div>

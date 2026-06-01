@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { LayoutDashboard, MenuSquare, LogOut, BarChart3, Store } from 'lucide-react';
 import { StoreToggle } from '@/components/ui/StoreToggle';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { isAuthenticated, removeAuthToken } from '@/services/auth';
 
@@ -12,22 +12,16 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [isAuthorized, setIsAuthorized] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const isLoginPage = pathname === '/login';
+  const isAuthorized = isLoginPage || isAuthenticated();
 
   useEffect(() => {
-    if (pathname === '/login') {
-      setIsAuthorized(true);
-      return;
-    }
-
-    if (!isAuthenticated()) {
+    if (!isLoginPage && !isAuthenticated()) {
       router.push('/login');
-    } else {
-      setIsAuthorized(true);
     }
-  }, [pathname, router]);
+  }, [isLoginPage, router]);
 
   const handleLogout = () => {
     removeAuthToken();
@@ -42,7 +36,7 @@ export default function AdminLayout({
     );
   }
 
-  if (pathname === '/login') {
+  if (isLoginPage) {
     return <>{children}</>;
   }
 

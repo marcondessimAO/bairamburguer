@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +45,7 @@ public class OrderService {
         if (request.getNeighborhoodName() != null 
             && !request.getNeighborhoodName().isBlank() 
             && !"null".equalsIgnoreCase(request.getNeighborhoodName())) {
-            neighborhood = neighborhoodRepository.findFirstByNameIgnoreCase(request.getNeighborhoodName())
-                    .orElseThrow(() -> new RuntimeException("Bairro não encontrado com o Nome: " + request.getNeighborhoodName()));
+            neighborhood = findNeighborhoodByName(request.getNeighborhoodName());
         }
 
         // 2. Extrair IDs e buscar produtos do BD (Segurança de Preço)
@@ -203,5 +203,22 @@ public class OrderService {
 
     public List<Order> listarPorCliente(Long customerId) {
         return orderRepository.findByCustomerId(customerId);
+    }
+
+    private Neighborhood findNeighborhoodByName(String neighborhoodName) {
+        String trimmedName = neighborhoodName.trim();
+        return neighborhoodRepository.findFirstByNameIgnoreCase(trimmedName)
+                .orElseGet(() -> neighborhoodRepository.findAll().stream()
+                        .filter(neighborhood -> normalizeNeighborhoodName(neighborhood.getName()).equals(normalizeNeighborhoodName(trimmedName)))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Bairro não encontrado com o Nome: " + neighborhoodName)));
+    }
+
+    private String normalizeNeighborhoodName(String value) {
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replaceAll("\\s+", " ")
+                .trim()
+                .toLowerCase();
     }
 }

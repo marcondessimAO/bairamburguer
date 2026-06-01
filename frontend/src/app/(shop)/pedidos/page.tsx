@@ -35,7 +35,7 @@ const getStatusColor = (status: string) => {
 const getStatusLabel = (status: string) => {
   switch (status) {
     case "PENDING": return "Aguardando Confirmação";
-    case "PREPARING": return "Em Preparo";
+    case "PREPARING": return "Em Produção";
     case "DISPATCHED": return "Saiu para Entrega";
     case "DELIVERED": return "Entregue";
     default: return status;

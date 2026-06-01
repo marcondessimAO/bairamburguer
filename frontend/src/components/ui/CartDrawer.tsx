@@ -136,7 +136,11 @@ export function CartDrawer() {
           const currentOrder = await response.json();
           if (currentOrder && currentOrder.paymentStatus === 'PAID') {
             clearInterval(intervalId);
-            setPaymentSuccess(true);
+            const orderId = pendingPayment.orderId;
+            setPaymentSuccess(false);
+            setPendingPayment(null);
+            setIsCartOpen(false);
+            router.push(`/pedido-finalizado/${orderId}`);
           }
         }
       } catch (err) {
@@ -145,7 +149,7 @@ export function CartDrawer() {
     }, 3000);
 
     return () => clearInterval(intervalId);
-  }, [pendingPayment, router, setPendingPayment]);
+  }, [pendingPayment, router, setIsCartOpen, setPendingPayment]);
 
   const closeDrawer = () => {
     if (pendingPayment) return;

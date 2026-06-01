@@ -9,6 +9,8 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusError, setStatusError] = useState("");
+  const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [isSoundEnabled, setIsSoundEnabled] = useState(false);
   const previousCountRef = useRef<number>(0);
 
@@ -71,11 +73,18 @@ export default function AdminDashboard() {
     if (currentIndex === -1 || currentIndex >= flow.length - 1) return;
     
     const nextStatus = flow[currentIndex + 1];
+    setStatusError("");
+    setUpdatingOrderId(orderId);
     try {
       const updatedOrder = await adminService.updateOrderStatus(orderId, nextStatus);
       setOrders((prev) => prev.map(o => o.id === orderId ? updatedOrder : o));
+      const refreshedOrders = await adminService.getOrders();
+      setOrders(refreshedOrders);
     } catch (e) {
-      alert("Erro ao avançar o status.");
+      const message = e instanceof Error ? e.message : "Falha ao atualizar o pedido";
+      setStatusError(`Nao foi possivel avancar o pedido #${orderId}. ${message}`);
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -87,6 +96,11 @@ export default function AdminDashboard() {
 
   const renderCard = (order: OrderDTO, colorHex: string, buttonText: string) => {
     const colors = colorMap[colorHex];
+    const subtotal = order.items?.reduce((sum, item) => sum + Number(item.subtotal || 0), 0) ?? 0;
+    const total = Number(order.totalAmount || 0);
+    const deliveryFee = Math.max(total - subtotal, 0);
+    const address = [order.street, order.number, order.complement].filter(Boolean).join(", ");
+    const isUpdating = updatingOrderId === order.id;
     return (
       <div key={order.id} className={`${colors.bg} p-4 rounded-xl border ${colors.border} shadow-lg mb-4 flex flex-col`}>
         <div className="flex justify-between items-start mb-3">
@@ -99,27 +113,40 @@ export default function AdminDashboard() {
         
         <div className="text-sm text-gray-300 mb-4 bg-black/30 p-2 rounded-lg">
           <p className="font-semibold text-gray-100 mb-1">📍 {order.neighborhood?.name || "Bairro não informado"}</p>
+          {address && <p className="text-xs text-gray-400 mb-2">{address}</p>}
           <ul className="space-y-1">
             {order.items?.map(item => (
               <li key={item.id} className="flex justify-between">
                 <span>{item.quantity}x {item.product.name}</span>
+                <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.subtotal || 0))}</span>
               </li>
             ))}
           </ul>
+          <div className="mt-3 pt-3 border-t border-gray-800 space-y-1 text-xs">
+            <div className="flex justify-between text-gray-400">
+              <span>Frete</span>
+              <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deliveryFee)}</span>
+            </div>
+            <div className="flex justify-between text-gray-100 font-black">
+              <span>Total</span>
+              <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total)}</span>
+            </div>
+          </div>
         </div>
 
         <button
           onClick={() => handleAdvanceStatus(order.id, order.orderStatus)}
-          className={`w-full py-2.5 rounded-lg font-bold transition-all ${colors.btnBg} ${colors.text} ${colors.btnHover} border ${colors.border}`}
+          disabled={isUpdating}
+          className={`w-full py-2.5 rounded-lg font-bold transition-all ${colors.btnBg} ${colors.text} ${colors.btnHover} border ${colors.border} disabled:opacity-50 disabled:cursor-wait`}
         >
-          {buttonText}
+          {isUpdating ? "Atualizando..." : buttonText}
         </button>
       </div>
     );
   };
 
   const getButtonText = (status: string) => {
-    if (status === "PENDING") return "Iniciar Preparo";
+    if (status === "PENDING") return "Iniciar Produção";
     if (status === "PREPARING") return "Despachar p/ Entrega";
     if (status === "DISPATCHED") return "Marcar como Entregue";
     return "Finalizado";
@@ -167,6 +194,12 @@ export default function AdminDashboard() {
         </button>
       </div>
 
+      {statusError && (
+        <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">
+          {statusError}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin w-8 h-8 border-4 border-[#F1C40F] border-t-transparent rounded-full"></div>
@@ -199,14 +232,14 @@ export default function AdminDashboard() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-[#3B82F6] font-black text-lg flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[#3B82F6]"></div>
-                EM PREPARO
+                EM PRODUÇÃO
               </h2>
               <span className="bg-[#3B82F6]/20 text-[#3B82F6] px-2 py-1 rounded-md text-xs font-bold">{preparo.length}</span>
             </div>
             <div className="overflow-y-auto pr-2 pb-20 flex-1 custom-scrollbar">
               {preparo.map(order => renderCard(order, "#3B82F6", getButtonText("PREPARING")))}
               {preparo.length === 0 && (
-                <div className="text-center text-gray-500 mt-10 text-sm">Nenhum pedido em preparo</div>
+                <div className="text-center text-gray-500 mt-10 text-sm">Nenhum pedido em produção</div>
               )}
             </div>
           </div>

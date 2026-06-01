@@ -35,13 +35,14 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
   }, [isOpen, categories.length]);
 
   useEffect(() => {
+    const syncForm = () => {
     if (product) {
       setName(product.name);
       setDescription(product.description || '');
       setPrice(product.price.toString());
       setCategoryId(product.category?.id?.toString() || '');
       setIsAvailable(product.isAvailable);
-      setIsPromotion((product as any).isPromotion || false);
+      setIsPromotion(product.isPromotion || false);
       setImagePreview(product.imageUrl || null);
       setImageFile(null);
     } else {
@@ -54,6 +55,9 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
       setImagePreview(null);
       setImageFile(null);
     }
+    };
+
+    queueMicrotask(syncForm);
   }, [product]);
 
   const handleClose = () => {

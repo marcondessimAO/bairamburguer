@@ -158,7 +158,7 @@ export default function DashboardPage() {
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#121212', borderColor: '#2a2a2a', borderRadius: '12px', color: '#fff' }}
                   itemStyle={{ color: '#F1C40F', fontWeight: 'bold' }}
-                  formatter={(value: any) => [formatCurrency(Number(value) || 0), 'Faturamento']}
+                  formatter={(value: number | string | readonly (number | string)[] | undefined) => [formatCurrency(Number(value) || 0), 'Faturamento']}
                   labelStyle={{ color: '#a1a1aa', marginBottom: '4px' }}
                 />
                 <Line 
