@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/orders/**", "/api/v1/orders/**").permitAll()
                 .requestMatchers("/api/webhook/**", "/api/v1/webhook/**", "/api/webhooks/**", "/api/v1/webhooks/**").permitAll()
                 .requestMatchers("/api/v1/settings/store/status").permitAll()
+                .requestMatchers("/api/version").permitAll()
                 .requestMatchers("/api/ws/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/error").permitAll()
@@ -87,7 +88,7 @@ public class SecurityConfig {
         // Permite todos os métodos HTTP essenciais
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
         // Permite os headers usados pelo frontend/admin em requisições autenticadas.
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         // Permite credenciais se for necessário envio de cookies/sessões (opcional mas boa prática)
         configuration.setAllowCredentials(true);
 

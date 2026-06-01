@@ -42,8 +42,25 @@ class SecurityConfigTest {
         assertThat(cors.checkOrigin("https://bairamburguerpetiscaria.com"))
                 .isEqualTo("https://bairamburguerpetiscaria.com");
         assertThat(cors.checkHttpMethod(HttpMethod.PATCH)).contains(HttpMethod.PATCH);
-        assertThat(cors.checkHeaders(java.util.List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With")))
-                .containsExactlyInAnyOrder("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With");
+        assertThat(cors.checkHeaders(java.util.List.of("authorization", "content-type")))
+                .containsExactlyInAnyOrder("authorization", "content-type");
+        assertThat(cors.checkHeaders(java.util.List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "Origin",
+                "X-Requested-With",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"
+        ))).containsExactlyInAnyOrder(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "Origin",
+                "X-Requested-With",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"
+        );
         assertThat(cors.getAllowedHeaders()).doesNotContain("*");
         assertThat(cors.getAllowCredentials()).isTrue();
     }

@@ -19,12 +19,4 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("file:" + uploadPath + "/");
     }
 
-    @Override
-    public void addCorsMappings(org.springframework.web.servlet.config.annotation.CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins("https://bairamburguer.vercel.app", "http://localhost:3000", "https://bairamburguerpetiscaria.com", "https://www.bairamburguerpetiscaria.com")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
-                .allowedHeaders("*")
-                .allowCredentials(true);
-    }
 }
