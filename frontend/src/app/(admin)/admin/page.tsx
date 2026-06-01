@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { removeAuthToken } from "@/services/auth";
 import { adminService, OrderDTO } from "@/services/admin";
 
+const BELL_SOUND_URL = "/sounds/campainha.mp3.mp3";
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [orders, setOrders] = useState<OrderDTO[]>([]);
@@ -12,27 +14,46 @@ export default function AdminDashboard() {
   const [statusError, setStatusError] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [isSoundEnabled, setIsSoundEnabled] = useState(false);
-  const previousCountRef = useRef<number>(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const knownOrderIdsRef = useRef<Set<number>>(new Set());
+  const isSoundEnabledRef = useRef(false);
 
   const handleLogout = () => {
     removeAuthToken();
     router.push("/login");
   };
 
-  const playBeep = () => {
+  const playBeep = async () => {
     try {
-      const audio = new Audio("/sounds/campainha.mp3");
+      const audio = audioRef.current ?? new Audio(BELL_SOUND_URL);
+      audioRef.current = audio;
+      audio.muted = false;
       audio.volume = 1.0;
-      audio.play().catch(e => console.warn("Audio bloqueado pelo browser (interação necessária):", e));
+      audio.currentTime = 0;
+      await audio.play();
     } catch (e) {
-      console.error("Audio playback failed", e);
+      console.warn("Nao foi possivel tocar a campainha do admin. Verifique permissao de audio do navegador.", e);
     }
   };
 
-  const handleEnableSound = () => {
+  const handleEnableSound = async () => {
+    const audio = audioRef.current ?? new Audio(BELL_SOUND_URL);
+    audioRef.current = audio;
+    audio.volume = 1.0;
+
+    try {
+      audio.muted = true;
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = false;
+    } catch (e) {
+      console.warn("Nao foi possivel preparar a campainha no clique inicial.", e);
+    }
+
+    knownOrderIdsRef.current = new Set(orders.map((order) => order.id));
+    isSoundEnabledRef.current = true;
     setIsSoundEnabled(true);
-    // Play a silent or initial beep to unlock audio context in Safari/Chrome
-    playBeep();
   };
 
   useEffect(() => {
@@ -41,7 +62,7 @@ export default function AdminDashboard() {
     adminService.getOrders()
       .then((data) => {
         setOrders(data);
-        previousCountRef.current = data.length;
+        knownOrderIdsRef.current = new Set(data.map((order) => order.id));
         setLoading(false);
       })
       .catch((err) => {
@@ -53,11 +74,14 @@ export default function AdminDashboard() {
     const intervalId = setInterval(() => {
       adminService.getOrders()
         .then((data) => {
+          const currentIds = new Set(data.map((order) => order.id));
+          const hasNewOrder = data.some((order) => !knownOrderIdsRef.current.has(order.id));
+
           setOrders(data);
-          if (data.length > previousCountRef.current) {
-            playBeep(); // Novo pedido chegou!
+          if (isSoundEnabledRef.current && hasNewOrder) {
+            void playBeep();
           }
-          previousCountRef.current = data.length;
+          knownOrderIdsRef.current = currentIds;
         })
         .catch((err) => {
           console.error("Erro no polling de pedidos", err);

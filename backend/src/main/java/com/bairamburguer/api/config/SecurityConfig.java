@@ -86,8 +86,8 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList("https://bairamburguer.vercel.app", "http://localhost:3000", "https://bairamburguerpetiscaria.com", "https://www.bairamburguerpetiscaria.com"));
         // Permite todos os métodos HTTP essenciais
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
-        // Permite o tráfego de todos os Headers
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Permite os headers usados pelo frontend/admin em requisições autenticadas.
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         // Permite credenciais se for necessário envio de cookies/sessões (opcional mas boa prática)
         configuration.setAllowCredentials(true);
 
