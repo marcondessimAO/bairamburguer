@@ -141,7 +141,12 @@ export default function AdminDashboard() {
           <ul className="space-y-1">
             {order.items?.map(item => (
               <li key={item.id} className="flex justify-between">
-                <span>{item.quantity}x {item.product.name}</span>
+                <span>
+                  {item.quantity}x {item.product.name}
+                  {item.addonsSummary && (
+                    <span className="block text-[11px] text-gray-500">{item.addonsSummary}</span>
+                  )}
+                </span>
                 <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.subtotal || 0))}</span>
               </li>
             ))}

@@ -42,7 +42,7 @@ export function CartDrawer() {
   const orderSnapshotRef = useRef<{
     customerName: string;
     customerPhone: string;
-    items: { name: string; quantity: number; price: number }[];
+    items: { name: string; quantity: number; price: number; addonsSummary?: string; addonsTotal: number }[];
     street: string;
     number: string;
     complement: string;
@@ -77,7 +77,9 @@ export function CartDrawer() {
         neighborhoodName: deliveryMode === "DELIVERY" && deliveryNeighborhood ? deliveryNeighborhood.name : null,
         items: cartItems.map((item) => ({
           product: item.product.id,
-          quantity: item.quantity
+          quantity: item.quantity,
+          beverageAddon: item.addons?.beverageAddon,
+          friesAddon: item.addons?.friesAddon === true,
         }))
       };
 
@@ -96,7 +98,7 @@ export function CartDrawer() {
         orderSnapshotRef.current = {
           customerName,
           customerPhone,
-          items: cartItems.map(i => ({ name: i.product.name, quantity: i.quantity, price: i.product.price })),
+          items: cartItems.map(i => ({ name: i.product.name, quantity: i.quantity, price: i.product.price, addonsSummary: i.addonsSummary, addonsTotal: i.addonsTotal })),
           street: deliveryMode === "DELIVERY" ? street : "",
           number: deliveryMode === "DELIVERY" ? number : "",
           complement: deliveryMode === "DELIVERY" ? complement : "",
@@ -175,6 +177,7 @@ export function CartDrawer() {
       mensagem += `\n*Itens:*\n`;
       snap.items.forEach(item => {
         mensagem += `  - ${item.quantity}x ${item.name}\n`;
+        if (item.addonsSummary) mensagem += `    Complementos: ${item.addonsSummary}\n`;
       });
       mensagem += `\n*Total:* ${BRL(snap.total)}\n`;
       if (snap.deliveryMode === "DELIVERY") {
@@ -359,7 +362,7 @@ export function CartDrawer() {
                 <>
                   {cartItems.map((item) => (
                     <div
-                    key={item.product.id}
+                    key={item.id}
                     className="flex gap-3 bg-[#1a1a1a] rounded-2xl p-3 border border-gray-800/60"
                   >
                     {/* Miniatura */}
@@ -387,7 +390,7 @@ export function CartDrawer() {
                           {item.product.name}
                         </h3>
                         <button
-                          onClick={() => removeFromCart(item.product.id)}
+                          onClick={() => removeFromCart(item.id)}
                           className="text-gray-600 hover:text-red-400 transition-colors flex-shrink-0"
                           aria-label={`Remover ${item.product.name}`}
                         >
@@ -398,15 +401,20 @@ export function CartDrawer() {
                         </button>
                       </div>
 
-                      <div className="flex items-center justify-between mt-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
                         <span className="text-[#F1C40F] font-black text-sm">
-                          {BRL(item.product.price * item.quantity)}
+                          {BRL((item.product.price + item.addonsTotal) * item.quantity)}
                         </span>
+                        {item.addonsSummary && (
+                          <span className="w-full text-[11px] text-gray-400 line-clamp-2">
+                            {item.addonsSummary}
+                          </span>
+                        )}
 
                         {/* Controles de Quantidade */}
                         <div className="flex items-center gap-2 bg-[#242424] rounded-lg p-1 border border-gray-700">
                           <button
-                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-white bg-[#2e2e2e] hover:bg-gray-700 rounded-md transition-colors font-bold"
                             aria-label="Diminuir quantidade"
                           >
@@ -416,7 +424,7 @@ export function CartDrawer() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             className="w-7 h-7 flex items-center justify-center text-[#121212] bg-[#F1C40F] hover:bg-[#D4AC0D] rounded-md transition-colors font-bold"
                             aria-label="Aumentar quantidade"
                           >

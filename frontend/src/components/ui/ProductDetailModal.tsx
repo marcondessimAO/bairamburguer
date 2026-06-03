@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Product, useCart } from "@/contexts/CartContext";
+import React, { useState } from "react";
+import { CartAddonSelection, Product, useCart } from "@/contexts/CartContext";
 import { getImageUrl } from "@/utils/imageUrl";
 
 interface ProductDetailModalProps {
@@ -10,19 +10,33 @@ interface ProductDetailModalProps {
   product: Product | null;
 }
 
+const normalizeName = (value: string) =>
+  value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+const isIndividualProduct = (product: Product) => {
+  const category = normalizeName(product.category?.name ?? "");
+  return category.includes("bairam individuais") || category.includes("bairans individuais");
+};
+
 export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailModalProps) {
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [beverageAddon, setBeverageAddon] = useState<CartAddonSelection["beverageAddon"]>("FANTA");
+  const [friesAddon, setFriesAddon] = useState(false);
 
   const handleClose = () => {
     onClose();
-    setTimeout(() => setQuantity(1), 300);
+    setTimeout(() => {
+      setQuantity(1);
+      setBeverageAddon("FANTA");
+      setFriesAddon(false);
+    }, 300);
   };
 
   if (!isOpen || !product) return null;
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
+    addToCart(product, quantity, isIndividualProduct(product) ? { beverageAddon, friesAddon } : {});
     handleClose();
   };
 
@@ -30,10 +44,14 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     if (e.target === e.currentTarget) handleClose();
   };
 
+  const addonTotal = isIndividualProduct(product)
+    ? (beverageAddon === "COCA_COLA" || beverageAddon === "GUARANA" ? 4 : 0) + (friesAddon ? 10 : 0)
+    : 0;
+
   const formattedPrice = new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(product.price * quantity);
+  }).format((product.price + addonTotal) * quantity);
 
   return (
     <>
@@ -79,7 +97,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
           {/* Content Section */}
           <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col bg-[#121212]">
-            <h2 className="text-2xl font-black text-[#FFFFFF] tracking-tight mb-2">
+            <h2 className="text-2xl font-black text-[#FFFFFF] tracking-tight mb-2 uppercase">
               {product.name}
             </h2>
             <p className="text-gray-400 text-sm sm:text-base leading-relaxed mb-8">
@@ -87,9 +105,48 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
             </p>
 
             <div className="mt-auto pt-4 space-y-6">
+              {isIndividualProduct(product) && (
+                <div className="space-y-4">
+                  <div className="bg-[#1e1e1e] p-4 rounded-2xl border border-gray-800">
+                    <span className="block text-gray-300 font-black uppercase text-sm mb-3">Refrigerante</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        ["FANTA", "Fanta", 0],
+                        ["PEPSI", "Pepsi", 0],
+                        ["COCA_COLA", "Coca-Cola", 4],
+                        ["GUARANA", "Guarana", 4],
+                      ].map(([value, label, price]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setBeverageAddon(value as CartAddonSelection["beverageAddon"])}
+                          className={`rounded-xl border px-3 py-3 text-sm font-bold uppercase transition-colors ${
+                            beverageAddon === value
+                              ? "border-[#F1C40F] bg-[#F1C40F] text-[#121212]"
+                              : "border-gray-700 bg-[#242424] text-gray-300"
+                          }`}
+                        >
+                          {label} {price ? `+ R$ ${price},00` : "+ R$ 0,00"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <label className="flex items-center justify-between bg-[#1e1e1e] p-4 rounded-2xl border border-gray-800 cursor-pointer">
+                    <span className="text-gray-300 font-black uppercase text-sm">Batata frita + R$ 10,00</span>
+                    <input
+                      type="checkbox"
+                      checked={friesAddon}
+                      onChange={(event) => setFriesAddon(event.target.checked)}
+                      className="h-5 w-5 accent-[#F1C40F]"
+                    />
+                  </label>
+                </div>
+              )}
+
               {/* Quantity Selector */}
               <div className="flex items-center justify-between bg-[#1e1e1e] p-4 rounded-2xl border border-gray-800">
-                <span className="text-gray-300 font-medium">Quantidade</span>
+                <span className="text-gray-300 font-medium uppercase">Quantidade</span>
                 <div className="flex items-center gap-4">
                   <button 
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -115,7 +172,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                 onClick={handleAddToCart}
                 className="w-full flex items-center justify-center py-4 bg-[#F1C40F] hover:bg-[#D4AC0D] text-[#121212] rounded-2xl font-black text-lg shadow-[0_4px_14px_rgba(241,196,15,0.4)] active:scale-[0.98] transition-all"
               >
-                <span>Adicionar ao carrinho</span>
+                <span>ADICIONAR AO CARRINHO</span>
                 <span className="mx-3 w-1.5 h-1.5 rounded-full bg-[#121212]/30"></span>
                 <span>{formattedPrice}</span>
               </button>

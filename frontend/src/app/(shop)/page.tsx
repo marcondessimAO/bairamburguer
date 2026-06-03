@@ -7,21 +7,34 @@ import { Flame, Star } from "lucide-react";
 import { getImageUrl } from "@/utils/imageUrl";
 import Link from "next/link";
 
-type Category = {
-  name: string;
-};
-
 type Produto = Product;
 
+const CATEGORY_ORDER = ["BAIRAM MALUCA", "BAIRAM INDIVIDUAIS", "COMBOS", "COMPLEMENTOS", "PETISCOS"];
+
+const normalizeName = (value: string) =>
+  value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+const categoryLabel = (name: string) => {
+  const normalized = normalizeName(name);
+  if (normalized.includes("bairam maluca")) return "BAIRAM MALUCA";
+  if (normalized.includes("bairam individuais") || normalized.includes("bairans individuais")) return "BAIRAM INDIVIDUAIS";
+  if (normalized.includes("combo")) return "COMBOS";
+  if (normalized.includes("complement")) return "COMPLEMENTOS";
+  if (normalized.includes("petisco")) return "PETISCOS";
+  return name.toUpperCase();
+};
+
+const isIndividualProduct = (product: Product) => categoryLabel(product.category?.name ?? "") === "BAIRAM INDIVIDUAIS";
+
 export default function Cardapio() {
-  const { addToCart, setIsCartOpen, cartItems, subtotal, pendingPayment, isStoreOpen } = useCart();
+  const { addToCart, setIsCartOpen, cartItems, pendingPayment, isStoreOpen } = useCart();
   const [products, setProducts] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Produto | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState("Todos");
+  const [activeCategory, setActiveCategory] = useState("BAIRAM MALUCA");
 
   useEffect(() => {
     const baseUrl = "/api";
@@ -66,12 +79,14 @@ export default function Cardapio() {
     );
   }
 
-  const categories = ["Todos", ...Array.from(new Set(products.map(p => p.category?.name || "OUTROS")))];
+  const availableCategories = new Set(products.map(p => categoryLabel(p.category?.name || "OUTROS")));
+  const categories = CATEGORY_ORDER.filter((category) => availableCategories.has(category));
+  const selectedCategory = categories.includes(activeCategory) ? activeCategory : categories[0];
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = activeCategory === "Todos" || (product.category?.name || "OUTROS") === activeCategory;
+    const matchesCategory = categoryLabel(product.category?.name || "OUTROS") === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -80,7 +95,7 @@ export default function Cardapio() {
   const featuredProducts = products.filter(p => p.isAvailable && p.isPromotion);
 
   return (
-    <main className="min-h-screen bg-[#121212] font-sans text-[#FFFFFF] relative flex flex-col">
+    <main className="min-h-screen bg-[#121212] font-sans text-[#FFFFFF] relative flex flex-col uppercase">
       {/* Product Detail Modal */}
       <ProductDetailModal 
         isOpen={!!selectedProduct} 
@@ -174,7 +189,11 @@ export default function Cardapio() {
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        addToCart(produto, 1);
+                         if (isIndividualProduct(produto)) {
+                           setSelectedProduct(produto);
+                         } else {
+                           addToCart(produto, 1);
+                         }
                       }}
                       className="flex items-center justify-center w-10 h-10 bg-[#F1C40F] rounded-xl shadow-[0_4px_15px_rgba(241,196,15,0.4)] hover:bg-[#F39C12] hover:scale-110 transition-all z-20"
                       aria-label="Adicionar destaque"
@@ -197,7 +216,7 @@ export default function Cardapio() {
               key={cat}
               onClick={() => setActiveCategory(cat)}
               className={`whitespace-nowrap font-bold text-sm pb-2 border-b-2 transition-all ${
-                activeCategory === cat 
+                selectedCategory === cat
                   ? "text-[#F1C40F] border-[#F1C40F]" 
                   : "text-gray-500 border-transparent hover:text-gray-300"
               }`}
@@ -259,7 +278,11 @@ export default function Cardapio() {
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  addToCart(produto, 1);
+                  if (isIndividualProduct(produto)) {
+                    setSelectedProduct(produto);
+                  } else {
+                    addToCart(produto, 1);
+                  }
                 }}
                 className="absolute bottom-3 right-3 flex items-center justify-center w-8 h-8 bg-[#F1C40F] rounded-full hover:scale-105 transition-transform z-10"
                 aria-label="Adicionar 1 unidade"

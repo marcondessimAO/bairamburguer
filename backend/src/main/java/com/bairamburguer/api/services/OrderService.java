@@ -28,6 +28,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderService {
 
+    private static final Map<String, AddonOption> BEVERAGE_ADDONS = Map.of(
+            "FANTA", new AddonOption("Fanta", BigDecimal.ZERO),
+            "PEPSI", new AddonOption("Pepsi", BigDecimal.ZERO),
+            "COCA_COLA", new AddonOption("Coca-Cola", new BigDecimal("4.00")),
+            "GUARANA", new AddonOption("Guarana", new BigDecimal("4.00"))
+    );
+    private static final AddonOption FRIES_ADDON = new AddonOption("Batata frita", new BigDecimal("10.00"));
+    private static final List<String> BLOCKED_NEIGHBORHOODS = List.of("manaira", "bessa", "colinas do sul");
+
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final NeighborhoodRepository neighborhoodRepository;
@@ -37,18 +46,16 @@ public class OrderService {
 
     public OrderCheckoutResponseDTO createOrder(OrderCheckoutRequestDTO request) {
         if (!storeSettingsService.isStoreOpen()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A loja está fechada no momento.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A loja esta fechada no momento.");
         }
 
-        // 1. Buscar Bairro (opcional para retirada)
         Neighborhood neighborhood = null;
-        if (request.getNeighborhoodName() != null 
-            && !request.getNeighborhoodName().isBlank() 
-            && !"null".equalsIgnoreCase(request.getNeighborhoodName())) {
+        if (request.getNeighborhoodName() != null
+                && !request.getNeighborhoodName().isBlank()
+                && !"null".equalsIgnoreCase(request.getNeighborhoodName())) {
             neighborhood = findNeighborhoodByName(request.getNeighborhoodName());
         }
 
-        // 2. Extrair IDs e buscar produtos do BD (Segurança de Preço)
         List<Integer> productIds = request.getItems().stream()
                 .map(item -> item.getProductId().intValue())
                 .collect(Collectors.toList());
@@ -57,7 +64,6 @@ public class OrderService {
         Map<Integer, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
 
-        // 3. Montar a entidade Order
         Order order = new Order();
         order.setCustomerName(request.getCustomerName());
         order.setCustomerPhone(request.getCustomerPhone());
@@ -75,16 +81,22 @@ public class OrderService {
         for (OrderItemRequestDTO itemDto : request.getItems()) {
             Product product = productMap.get(itemDto.getProductId().intValue());
             if (product == null) {
-                throw new RuntimeException("Produto não encontrado no banco de dados: ID " + itemDto.getProductId());
+                throw new RuntimeException("Produto nao encontrado no banco de dados: ID " + itemDto.getProductId());
             }
+
+            AddonCalculation addons = calculateAddons(product, itemDto);
 
             OrderItem orderItem = new OrderItem();
             orderItem.setProduct(product);
             orderItem.setQuantity(itemDto.getQuantity());
+            orderItem.setAddonsSummary(addons.summary());
+            orderItem.setAddonsTotal(addons.total().multiply(new BigDecimal(itemDto.getQuantity())));
 
-            BigDecimal subtotal = product.getPrice().multiply(new BigDecimal(itemDto.getQuantity()));
+            BigDecimal subtotal = product.getPrice()
+                    .add(addons.total())
+                    .multiply(new BigDecimal(itemDto.getQuantity()));
             orderItem.setSubtotal(subtotal);
-            orderItem.setOrder(order); // Vínculo bidirecional
+            orderItem.setOrder(order);
 
             totalAmount = totalAmount.add(subtotal);
             orderItems.add(orderItem);
@@ -92,47 +104,37 @@ public class OrderService {
 
         order.setItems(orderItems);
 
-        // 4. Somar Taxa de Entrega
         if (neighborhood != null) {
             totalAmount = totalAmount.add(neighborhood.getDeliveryFee());
         }
         order.setTotalAmount(totalAmount);
 
-        // 5. Salvar o pedido no banco
         Order savedOrder = orderRepository.save(order);
-
-        // 6. Gerar a cobrança Pix via Gateway
         return pixPaymentService.generatePixCharge(savedOrder, request.getCustomerEmail(), request.getCustomerCpf());
     }
 
     public Order criarPedido(Order pedido) {
         if (!storeSettingsService.isStoreOpen()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A loja está fechada no momento.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A loja esta fechada no momento.");
         }
 
-        // Passo 1 (Bairro): Busque o Neighborhood no banco
-        
         Integer neighborhoodId = pedido.getNeighborhood().getId();
         Neighborhood neighborhood = neighborhoodRepository.findById(neighborhoodId)
-                .orElseThrow(() -> new RuntimeException("Bairro não encontrado com o ID: " + neighborhoodId));
+                .orElseThrow(() -> new RuntimeException("Bairro nao encontrado com o ID: " + neighborhoodId));
 
-        // Passo 2 (Produtos): Extraia todos os IDs de produtos e faça uma única consulta
         List<Integer> productIds = pedido.getItems().stream()
                 .map(item -> item.getProduct().getId())
                 .collect(Collectors.toList());
 
         List<Product> products = productRepository.findAllById(productIds);
-
-        // Passo 3 (Mapeamento): Transforme a lista em um Map<Integer, Product>
         Map<Integer, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
 
-        // Passo 4 (Cálculo dos Itens)
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (OrderItem item : pedido.getItems()) {
             Product product = productMap.get(item.getProduct().getId());
             if (product == null) {
-                throw new RuntimeException("Produto não encontrado no banco de dados");
+                throw new RuntimeException("Produto nao encontrado no banco de dados");
             }
 
             item.setProduct(product);
@@ -141,12 +143,9 @@ public class OrderService {
             item.setSubtotal(subtotal);
 
             totalAmount = totalAmount.add(subtotal);
-
-            // Garanta o vínculo bidirecional
             item.setOrder(pedido);
         }
 
-        // Passo 5 (Taxa e Metadados)
         totalAmount = totalAmount.add(neighborhood.getDeliveryFee());
 
         pedido.setTotalAmount(totalAmount);
@@ -154,10 +153,7 @@ public class OrderService {
         pedido.setOrderStatus("PENDING");
         pedido.setCreatedAt(LocalDateTime.now());
 
-        // Passo 6 (Persistência)
         Order savedOrder = orderRepository.save(pedido);
-
-        // Dispara evento WebSocket
         messagingTemplate.convertAndSend("/topic/orders/new", savedOrder);
 
         return savedOrder;
@@ -165,7 +161,7 @@ public class OrderService {
 
     public Order atualizarStatus(Long id, String novoStatus) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido nao encontrado"));
 
         String currentStatus = order.getOrderStatus();
         List<String> validFlow = List.of("PENDING", "PREPARING", "DISPATCHED", "DELIVERED");
@@ -174,19 +170,17 @@ public class OrderService {
         int nextIndex = validFlow.indexOf(novoStatus);
 
         if (nextIndex == -1) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido: " + novoStatus);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status invalido: " + novoStatus);
         }
 
         if (nextIndex < currentIndex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transição inválida: Não é permitido retroceder de " + currentStatus + " para " + novoStatus);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transicao invalida: nao e permitido retroceder de " + currentStatus + " para " + novoStatus);
         }
 
         order.setOrderStatus(novoStatus);
         Order savedOrder = orderRepository.save(order);
 
-        // Avisa a cozinha
         messagingTemplate.convertAndSend("/topic/orders/update", savedOrder);
-        // Avisa o cliente
         messagingTemplate.convertAndSend("/topic/orders/status/" + savedOrder.getId(), java.util.Collections.singletonMap("status", savedOrder.getOrderStatus()));
 
         return savedOrder;
@@ -194,7 +188,7 @@ public class OrderService {
 
     public Order buscarPorId(Long id) {
         return orderRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido nao encontrado"));
     }
 
     public List<Order> listarTodos() {
@@ -207,18 +201,82 @@ public class OrderService {
 
     private Neighborhood findNeighborhoodByName(String neighborhoodName) {
         String trimmedName = neighborhoodName.trim();
+        if (isBlockedNeighborhood(trimmedName)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bairro nao atendido para entrega: " + neighborhoodName);
+        }
+
         return neighborhoodRepository.findFirstByNameIgnoreCase(trimmedName)
+                .filter(neighborhood -> !isBlockedNeighborhood(neighborhood.getName()))
                 .orElseGet(() -> neighborhoodRepository.findAll().stream()
-                        .filter(neighborhood -> normalizeNeighborhoodName(neighborhood.getName()).equals(normalizeNeighborhoodName(trimmedName)))
+                        .filter(neighborhood -> !isBlockedNeighborhood(neighborhood.getName()))
+                        .filter(neighborhood -> normalizeName(neighborhood.getName()).equals(normalizeName(trimmedName)))
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Bairro não encontrado com o Nome: " + neighborhoodName)));
+                        .orElseThrow(() -> new RuntimeException("Bairro nao encontrado com o Nome: " + neighborhoodName)));
     }
 
-    private String normalizeNeighborhoodName(String value) {
+    private AddonCalculation calculateAddons(Product product, OrderItemRequestDTO itemDto) {
+        String beverageCode = itemDto.getBeverageAddon();
+        boolean hasAddons = (beverageCode != null && !beverageCode.isBlank()) || itemDto.isFriesAddon();
+        if (!hasAddons) {
+            return new AddonCalculation(BigDecimal.ZERO, null);
+        }
+
+        if (!isIndividualProduct(product)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Complementos permitidos apenas para Bairam Individuais.");
+        }
+
+        BigDecimal total = BigDecimal.ZERO;
+        List<String> summary = new ArrayList<>();
+
+        if (beverageCode != null && !beverageCode.isBlank()) {
+            AddonOption beverage = BEVERAGE_ADDONS.get(normalizeAddonCode(beverageCode));
+            if (beverage == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Refrigerante invalido: " + beverageCode);
+            }
+            total = total.add(beverage.price());
+            summary.add("Refrigerante: " + beverage.label());
+        }
+
+        if (itemDto.isFriesAddon()) {
+            total = total.add(FRIES_ADDON.price());
+            summary.add(FRIES_ADDON.label());
+        }
+
+        return new AddonCalculation(total, String.join("; ", summary));
+    }
+
+    private boolean isIndividualProduct(Product product) {
+        if (product.getCategory() == null || product.getCategory().getName() == null) {
+            return false;
+        }
+        String categoryName = normalizeName(product.getCategory().getName());
+        return categoryName.contains("bairam individuais") || categoryName.contains("bairans individuais");
+    }
+
+    private boolean isBlockedNeighborhood(String value) {
+        return BLOCKED_NEIGHBORHOODS.contains(normalizeName(value));
+    }
+
+    private String normalizeAddonCode(String value) {
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace("-", "_")
+                .replaceAll("\\s+", "_")
+                .trim()
+                .toUpperCase();
+    }
+
+    private String normalizeName(String value) {
         return Normalizer.normalize(value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")
                 .replaceAll("\\s+", " ")
                 .trim()
                 .toLowerCase();
+    }
+
+    private record AddonOption(String label, BigDecimal price) {
+    }
+
+    private record AddonCalculation(BigDecimal total, String summary) {
     }
 }

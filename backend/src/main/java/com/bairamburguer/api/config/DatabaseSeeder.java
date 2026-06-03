@@ -40,8 +40,8 @@ public class DatabaseSeeder implements CommandLineRunner {
         System.out.println("DatabaseSeeder: Usuário Admin criado/atualizado com sucesso!");
 
         // Atualizar bairros garantindo que existem com as taxas corretas.
-        String[] nomes = {"Mangabeira", "Valentina", "Muçumagro", "Gramame", "Paratibe", "Nova Mangabeira", "Parque do Sol", "Portal do Sol", "José Américo", "Colibris", "Cidade Verde", "Bancários", "Colinas do Sul", "Geisel", "Cuiá", "Bessa", "Manaíra", "Cabo Branco", "Centro"};
-        String[] taxas = {"0.00", "5.99", "5.99", "5.99", "5.99", "5.99", "5.99", "5.99", "4.99", "4.99", "4.99", "4.99", "7.00", "7.00", "8.00", "12.00", "12.00", "12.00", "15.00"};
+        String[] nomes = {"Mangabeira", "Valentina", "Muçumagro", "Gramame", "Paratibe", "Nova Mangabeira", "Parque do Sol", "Portal do Sol", "José Américo", "Colibris", "Cidade Verde", "Bancários", "Geisel", "Cuiá", "Cabo Branco", "Centro"};
+        String[] taxas = {"0.00", "5.99", "5.99", "5.99", "5.99", "5.99", "5.99", "5.99", "4.99", "4.99", "4.99", "4.99", "7.00", "8.00", "12.00", "15.00"};
         for (int i = 0; i < nomes.length; i++) {
             Neighborhood n = neighborhoodRepository.findFirstByNameIgnoreCase(nomes[i]).orElse(new Neighborhood());
             n.setName(nomes[i]);
@@ -164,10 +164,8 @@ public class DatabaseSeeder implements CommandLineRunner {
         upsertCategory("BAIRAM MALUCA");
         upsertCategory("COMBOS");
         upsertCategory("COMPLEMENTOS");
-        upsertCategory("Bairans individuais");
-        upsertCategory("Petiscos");
-        upsertCategory("Bebidas");
-        upsertCategory("Milkshakes");
+        upsertCategory("BAIRAM INDIVIDUAIS");
+        upsertCategory("PETISCOS");
         System.out.println("DatabaseSeeder: Categorias verificadas/atualizadas com sucesso!");
     }
 

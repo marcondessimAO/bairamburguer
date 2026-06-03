@@ -61,5 +61,6 @@ class DatabaseSeederTest {
         assertThat(savedFees).containsEntry("Colibris", new BigDecimal("4.99"));
         assertThat(savedFees).containsEntry("Cidade Verde", new BigDecimal("4.99"));
         assertThat(savedFees).containsEntry("Bancários", new BigDecimal("4.99"));
+        assertThat(savedFees).doesNotContainKeys("Manaíra", "Bessa", "Colinas do Sul");
     }
 }

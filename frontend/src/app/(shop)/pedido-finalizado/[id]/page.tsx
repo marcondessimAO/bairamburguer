@@ -9,6 +9,8 @@ type OrderItem = {
   id: number;
   quantity: number;
   subtotal: number;
+  addonsSummary?: string;
+  addonsTotal?: number;
   product: {
     name: string;
     price: number;
@@ -112,6 +114,7 @@ export default function FinishedOrderPage() {
     message += `Itens:\n`;
     order.items?.forEach((item) => {
       message += `- ${item.quantity}x ${item.product.name}\n`;
+      if (item.addonsSummary) message += `  Complementos: ${item.addonsSummary}\n`;
     });
     message += `\nSubtotal: ${BRL(subtotal)}\n`;
     message += `Frete: ${BRL(deliveryFee)}\n`;
@@ -186,9 +189,12 @@ export default function FinishedOrderPage() {
                 <h2 className="mb-3 font-black">Resumo</h2>
                 <ul className="space-y-2 text-sm text-gray-300">
                   {order.items?.map((item) => (
-                    <li key={item.id} className="flex justify-between gap-3">
+                    <li key={item.id} className="flex flex-wrap justify-between gap-2">
                       <span>{item.quantity}x {item.product.name}</span>
                       <span className="font-bold text-white">{BRL(Number(item.subtotal))}</span>
+                      {item.addonsSummary && (
+                        <span className="w-full text-xs text-gray-400">{item.addonsSummary}</span>
+                      )}
                     </li>
                   ))}
                 </ul>

@@ -27,6 +27,12 @@ public class OrderItem {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
 
+    @Column(name = "addons_summary", length = 255)
+    private String addonsSummary;
+
+    @Column(name = "addons_total", precision = 10, scale = 2)
+    private BigDecimal addonsTotal = BigDecimal.ZERO;
+
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -38,4 +44,8 @@ public class OrderItem {
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
     public BigDecimal getSubtotal() { return subtotal; }
     public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
+    public String getAddonsSummary() { return addonsSummary; }
+    public void setAddonsSummary(String addonsSummary) { this.addonsSummary = addonsSummary; }
+    public BigDecimal getAddonsTotal() { return addonsTotal; }
+    public void setAddonsTotal(BigDecimal addonsTotal) { this.addonsTotal = addonsTotal; }
 }

@@ -1,8 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useMemo, ReactNode } from "react";
-
-// ─── Tipos ────────────────────────────────────────────────────────────────────
+import React, { createContext, useContext, useMemo, useState, ReactNode } from "react";
 
 export type Product = {
   id: number;
@@ -15,9 +13,18 @@ export type Product = {
   category: { name: string };
 };
 
+export type CartAddonSelection = {
+  beverageAddon?: "FANTA" | "PEPSI" | "COCA_COLA" | "GUARANA";
+  friesAddon?: boolean;
+};
+
 export type CartItem = {
+  id: string;
   product: Product;
   quantity: number;
+  addons?: CartAddonSelection;
+  addonsSummary?: string;
+  addonsTotal: number;
 };
 
 export type Neighborhood = {
@@ -32,31 +39,56 @@ export type PendingPayment = {
   pixCopiaECola?: string;
 };
 
-// ─── Tabela de Bairros (RF08) ─────────────────────────────────────────────────
-
 export const NEIGHBORHOODS: Neighborhood[] = [
   { name: "Mangabeira", fee: 0.0 },
   { name: "Valentina", fee: 5.99 },
-  { name: "Muçumagro", fee: 5.99 },
+  { name: "Mucumagro", fee: 5.99 },
   { name: "Gramame", fee: 5.99 },
   { name: "Paratibe", fee: 5.99 },
   { name: "Nova Mangabeira", fee: 5.99 },
   { name: "Parque do Sol", fee: 5.99 },
   { name: "Portal do Sol", fee: 5.99 },
-  { name: "José Américo", fee: 4.99 },
+  { name: "Jose Americo", fee: 4.99 },
   { name: "Colibris", fee: 4.99 },
   { name: "Cidade Verde", fee: 4.99 },
-  { name: "Bancários", fee: 4.99 },
-  { name: "Colinas do Sul", fee: 7.0 },
+  { name: "Bancarios", fee: 4.99 },
   { name: "Geisel", fee: 7.0 },
-  { name: "Cuiá", fee: 8.0 },
-  { name: "Bessa", fee: 12.0 },
-  { name: "Manaíra", fee: 12.0 },
+  { name: "Cuia", fee: 8.0 },
   { name: "Cabo Branco", fee: 12.0 },
   { name: "Centro", fee: 15.0 },
 ];
 
-// ─── Interface do Contexto ────────────────────────────────────────────────────
+const ADDON_PRICES: Record<NonNullable<CartAddonSelection["beverageAddon"]>, number> = {
+  FANTA: 0,
+  PEPSI: 0,
+  COCA_COLA: 4,
+  GUARANA: 4,
+};
+
+const ADDON_LABELS: Record<NonNullable<CartAddonSelection["beverageAddon"]>, string> = {
+  FANTA: "Fanta",
+  PEPSI: "Pepsi",
+  COCA_COLA: "Coca-Cola",
+  GUARANA: "Guarana",
+};
+
+const normalizeAddons = (addons: CartAddonSelection): CartAddonSelection => ({
+  beverageAddon: addons.beverageAddon,
+  friesAddon: addons.friesAddon === true,
+});
+
+const getAddonsTotal = (addons: CartAddonSelection) =>
+  (addons.beverageAddon ? ADDON_PRICES[addons.beverageAddon] : 0) + (addons.friesAddon ? 10 : 0);
+
+const getAddonsSummary = (addons: CartAddonSelection) => {
+  const summary = [];
+  if (addons.beverageAddon) summary.push(`Refrigerante: ${ADDON_LABELS[addons.beverageAddon]}`);
+  if (addons.friesAddon) summary.push("Batata frita");
+  return summary.join("; ");
+};
+
+const getCartItemId = (productId: number, addons: CartAddonSelection) =>
+  `${productId}:${addons.beverageAddon ?? "NO_DRINK"}:${addons.friesAddon ? "FRIES" : "NO_FRIES"}`;
 
 interface CartContextData {
   cartItems: CartItem[];
@@ -66,9 +98,9 @@ interface CartContextData {
   deliveryFee: number;
   totalAmount: number;
   setIsCartOpen: (isOpen: boolean) => void;
-  addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number) => void;
+  addToCart: (product: Product, quantity?: number, addons?: CartAddonSelection) => void;
+  removeFromCart: (itemId: string | number) => void;
+  updateQuantity: (itemId: string | number, quantity: number) => void;
   setNeighborhood: (neighborhoodName: string) => void;
   clearCart: () => void;
   pendingPayment: PendingPayment | null;
@@ -76,11 +108,7 @@ interface CartContextData {
   isStoreOpen: boolean;
 }
 
-// ─── Contexto ─────────────────────────────────────────────────────────────────
-
 const CartContext = createContext<CartContextData>({} as CartContextData);
-
-// ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -90,45 +118,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isStoreOpen, setIsStoreOpen] = useState(true);
 
   React.useEffect(() => {
-    const baseUrl = "/api";
-    fetch(`${baseUrl}/v1/settings/store/status`)
+    fetch("/api/v1/settings/store/status")
       .then((res) => res.json())
       .then((data) => setIsStoreOpen(data.isOpen))
       .catch((err) => console.error("Erro ao buscar status da loja:", err));
   }, []);
 
   const subtotal = useMemo(
-    () => cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0),
+    () => cartItems.reduce((acc, item) => acc + (item.product.price + item.addonsTotal) * item.quantity, 0),
     [cartItems]
   );
 
   const deliveryFee = deliveryNeighborhood?.fee ?? 0;
   const totalAmount = subtotal + deliveryFee;
 
-  const addToCart = (product: Product, quantity: number = 1) => {
+  const addToCart = (product: Product, quantity: number = 1, addons: CartAddonSelection = {}) => {
+    const normalizedAddons = normalizeAddons(addons);
+    const itemId = getCartItemId(product.id, normalizedAddons);
+    const addonsTotal = getAddonsTotal(normalizedAddons);
+    const addonsSummary = getAddonsSummary(normalizedAddons);
+
     setCartItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
+      const existing = prev.find((i) => i.id === itemId);
       if (existing) {
         return prev.map((i) =>
-          i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i
+          i.id === itemId ? { ...i, quantity: i.quantity + quantity } : i
         );
       }
-      return [...prev, { product, quantity }];
+      return [...prev, { id: itemId, product, quantity, addons: normalizedAddons, addonsSummary, addonsTotal }];
     });
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (productId: number) => {
-    setCartItems((prev) => prev.filter((i) => i.product.id !== productId));
+  const removeFromCart = (itemId: string | number) => {
+    setCartItems((prev) => prev.filter((i) => i.id !== String(itemId)));
   };
 
-  const updateQuantity = (productId: number, quantity: number) => {
+  const updateQuantity = (itemId: string | number, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(itemId);
       return;
     }
     setCartItems((prev) =>
-      prev.map((i) => (i.product.id === productId ? { ...i, quantity } : i))
+      prev.map((i) => (i.id === String(itemId) ? { ...i, quantity } : i))
     );
   };
 
@@ -163,7 +195,5 @@ export function CartProvider({ children }: { children: ReactNode }) {
     </CartContext.Provider>
   );
 }
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export const useCart = () => useContext(CartContext);

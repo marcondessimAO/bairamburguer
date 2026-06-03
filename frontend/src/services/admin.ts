@@ -12,6 +12,8 @@ export interface OrderItemDTO {
   };
   quantity: number;
   subtotal: number;
+  addonsSummary?: string;
+  addonsTotal?: number;
 }
 
 export interface OrderDTO {
