@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class DatabaseSeederTest {
@@ -25,6 +26,7 @@ class DatabaseSeederTest {
     void seedsRequestedDeliveryFeesByNeighborhood() throws Exception {
         NeighborhoodRepository neighborhoods = mock(NeighborhoodRepository.class);
         ProductRepository products = mock(ProductRepository.class);
+        CategoryRepository categories = mock(CategoryRepository.class);
         UserRepository users = mock(UserRepository.class);
         PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
         Map<String, BigDecimal> savedFees = new LinkedHashMap<>();
@@ -40,7 +42,7 @@ class DatabaseSeederTest {
         when(products.count()).thenReturn(1L);
 
         DatabaseSeeder seeder = new DatabaseSeeder(
-                mock(CategoryRepository.class),
+                categories,
                 products,
                 neighborhoods,
                 users,
@@ -62,5 +64,6 @@ class DatabaseSeederTest {
         assertThat(savedFees).containsEntry("Cidade Verde", new BigDecimal("4.99"));
         assertThat(savedFees).containsEntry("Bancários", new BigDecimal("4.99"));
         assertThat(savedFees).doesNotContainKeys("Manaíra", "Bessa", "Colinas do Sul");
+        verify(categories).findByNameIgnoreCase("MILKSHAKES");
     }
 }

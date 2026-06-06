@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart, Product } from "@/contexts/CartContext";
 import { ProductDetailModal } from "@/components/ui/ProductDetailModal";
 import { Flame, Star } from "lucide-react";
@@ -9,7 +9,7 @@ import Link from "next/link";
 
 type Produto = Product;
 
-const CATEGORY_ORDER = ["BAIRAM MALUCA", "BAIRAM INDIVIDUAIS", "COMBOS", "COMPLEMENTOS", "PETISCOS"];
+const CATEGORY_ORDER = ["BAIRAM MALUCA", "BAIRAM INDIVIDUAIS", "COMBOS", "COMPLEMENTOS", "PETISCOS", "MILKSHAKES"];
 
 const normalizeName = (value: string) =>
   value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
@@ -21,6 +21,7 @@ const categoryLabel = (name: string) => {
   if (normalized.includes("combo")) return "COMBOS";
   if (normalized.includes("complement")) return "COMPLEMENTOS";
   if (normalized.includes("petisco")) return "PETISCOS";
+  if (normalized.includes("milkshake")) return "MILKSHAKES";
   return name.toUpperCase();
 };
 
@@ -35,6 +36,7 @@ export default function Cardapio() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("BAIRAM MALUCA");
+  const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
     const baseUrl = "/api";
@@ -52,6 +54,65 @@ export default function Cardapio() {
         setLoading(false);
       });
   }, []);
+
+  const categories = useMemo(() => {
+    const availableCategories = new Set(products.map(p => categoryLabel(p.category?.name || "OUTROS")));
+    return CATEGORY_ORDER.filter((category) => availableCategories.has(category));
+  }, [products]);
+  const selectedCategory = categories.includes(activeCategory) ? activeCategory : categories[0];
+
+  const filteredProducts = useMemo(() => products.filter(product => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) return true;
+
+    return product.name.toLowerCase().includes(normalizedSearch) ||
+      Boolean(product.description?.toLowerCase().includes(normalizedSearch));
+  }), [products, searchTerm]);
+
+  const productSections = useMemo(() => categories
+    .map(category => ({
+      category,
+      products: filteredProducts.filter(product => categoryLabel(product.category?.name || "OUTROS") === category),
+    }))
+    .filter(section => section.products.length > 0), [categories, filteredProducts]);
+
+  useEffect(() => {
+    const visibleCategories = new Map<string, number>();
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const category = entry.target.getAttribute("data-category");
+        if (!category) return;
+
+        if (entry.isIntersecting) {
+          visibleCategories.set(category, entry.boundingClientRect.top);
+        } else {
+          visibleCategories.delete(category);
+        }
+      });
+
+      const nextCategory = Array.from(visibleCategories.entries())
+        .sort((first, second) => Math.abs(first[1]) - Math.abs(second[1]))[0]?.[0];
+
+      if (nextCategory) {
+        setActiveCategory(nextCategory);
+      }
+    }, {
+      rootMargin: "-190px 0px -55% 0px",
+      threshold: [0, 0.15, 0.35],
+    });
+
+    productSections.forEach(({ category }) => {
+      const section = categoryRefs.current[category];
+      if (section) observer.observe(section);
+    });
+
+    return () => observer.disconnect();
+  }, [productSections]);
+
+  const scrollToCategory = (category: string) => {
+    setActiveCategory(category);
+    categoryRefs.current[category]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   if (loading) {
     return (
@@ -78,17 +139,6 @@ export default function Cardapio() {
       </main>
     );
   }
-
-  const availableCategories = new Set(products.map(p => categoryLabel(p.category?.name || "OUTROS")));
-  const categories = CATEGORY_ORDER.filter((category) => availableCategories.has(category));
-  const selectedCategory = categories.includes(activeCategory) ? activeCategory : categories[0];
-
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = categoryLabel(product.category?.name || "OUTROS") === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
 
   const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -214,7 +264,7 @@ export default function Cardapio() {
           {categories.map(cat => (
             <button
               key={cat}
-              onClick={() => setActiveCategory(cat)}
+              onClick={() => scrollToCategory(cat)}
               className={`whitespace-nowrap font-bold text-sm pb-2 border-b-2 transition-all ${
                 selectedCategory === cat
                   ? "text-[#F1C40F] border-[#F1C40F]" 
@@ -229,7 +279,7 @@ export default function Cardapio() {
 
       {/* Listagem de Produtos */}
       <div className="flex-1 px-4 space-y-4 pb-28">
-        {filteredProducts.length === 0 ? (
+        {productSections.length === 0 ? (
            <div className="text-center py-16 bg-[#1e1e1e] rounded-3xl border border-gray-800/60 mx-auto max-w-sm mt-8">
              <svg className="w-12 h-12 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -237,7 +287,18 @@ export default function Cardapio() {
              <p className="text-gray-400 font-medium">Nenhum lanche encontrado.</p>
            </div>
         ) : (
-          filteredProducts.map((produto) => (
+          productSections.flatMap(({ category, products: sectionProducts }) => [
+            <h2
+              key={`${category}-heading`}
+              ref={(element) => {
+                categoryRefs.current[category] = element;
+              }}
+              data-category={category}
+              className="scroll-mt-48 pt-2 text-lg font-black tracking-wide text-white"
+            >
+              {category}
+            </h2>,
+            ...sectionProducts.map((produto) => (
             <article 
               key={produto.id} 
               className="relative flex flex-row items-center gap-4 p-3 bg-[#1e1e1e] rounded-2xl overflow-hidden cursor-pointer w-full hover:bg-[#242424] transition-colors border border-gray-800/60"
@@ -290,7 +351,7 @@ export default function Cardapio() {
                 <span className="text-[#121212] font-black text-lg leading-none mt-[1px]">+</span>
               </button>
             </article>
-          ))
+          ))])
         )}
       </div>
 
