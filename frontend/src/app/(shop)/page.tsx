@@ -9,7 +9,7 @@ import Link from "next/link";
 
 type Produto = Product;
 
-const PROMOTION_CATEGORY = "PROMOCOES BAIRAM";
+const PROMOTION_CATEGORY = "PROMOÇÕES BAIRAM";
 const CATEGORY_ORDER = [PROMOTION_CATEGORY, "BAIRAM MALUCA", "BAIRAM INDIVIDUAIS", "COMBOS", "COMPLEMENTOS", "PETISCOS", "MILKSHAKES"];
 
 const normalizeName = (value: string) =>
