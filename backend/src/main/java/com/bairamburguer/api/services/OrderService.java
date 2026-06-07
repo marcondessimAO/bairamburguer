@@ -40,7 +40,6 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final NeighborhoodRepository neighborhoodRepository;
-    private final PixPaymentService pixPaymentService;
     private final StoreSettingsService storeSettingsService;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -73,7 +72,7 @@ public class OrderService {
         order.setNeighborhood(neighborhood);
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderStatus("PENDING");
-        order.setPaymentStatus("AWAITING_PAYMENT");
+        order.setPaymentStatus("WHATSAPP");
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
@@ -113,7 +112,12 @@ public class OrderService {
         order.setTotalAmount(totalAmount);
 
         Order savedOrder = orderRepository.save(order);
-        return pixPaymentService.generatePixCharge(savedOrder, request.getCustomerEmail(), request.getCustomerCpf());
+        messagingTemplate.convertAndSend("/topic/orders/new", savedOrder);
+
+        OrderCheckoutResponseDTO response = new OrderCheckoutResponseDTO();
+        response.setOrderId(savedOrder.getId());
+        response.setTotalAmount(savedOrder.getTotalAmount());
+        return response;
     }
 
     public Order criarPedido(Order pedido) {

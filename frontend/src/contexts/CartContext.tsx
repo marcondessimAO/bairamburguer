@@ -35,8 +35,6 @@ export type Neighborhood = {
 export type PendingPayment = {
   orderId: number;
   totalAmount: number;
-  pixQrCodeBase64?: string;
-  pixCopiaECola?: string;
 };
 
 export const NEIGHBORHOODS: Neighborhood[] = [

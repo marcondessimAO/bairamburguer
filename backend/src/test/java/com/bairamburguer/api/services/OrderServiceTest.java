@@ -31,7 +31,6 @@ class OrderServiceTest {
         OrderRepository orders = mock(OrderRepository.class);
         ProductRepository products = mock(ProductRepository.class);
         NeighborhoodRepository neighborhoods = mock(NeighborhoodRepository.class);
-        PixPaymentService pix = mock(PixPaymentService.class);
         StoreSettingsService storeSettings = mock(StoreSettingsService.class);
 
         Product product = new Product();
@@ -49,18 +48,11 @@ class OrderServiceTest {
         when(neighborhoods.findAll()).thenReturn(List.of(joseAmerico));
         when(products.findAllById(List.of(10))).thenReturn(List.of(product));
         when(orders.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(pix.generatePixCharge(any(Order.class), anyString(), anyString())).thenAnswer(invocation -> {
-            Order savedOrder = invocation.getArgument(0);
-            OrderCheckoutResponseDTO response = new OrderCheckoutResponseDTO();
-            response.setTotalAmount(savedOrder.getTotalAmount());
-            return response;
-        });
 
         OrderService service = new OrderService(
                 orders,
                 products,
                 neighborhoods,
-                pix,
                 storeSettings,
                 mock(SimpMessagingTemplate.class)
         );
@@ -75,7 +67,6 @@ class OrderServiceTest {
         OrderRepository orders = mock(OrderRepository.class);
         ProductRepository products = mock(ProductRepository.class);
         NeighborhoodRepository neighborhoods = mock(NeighborhoodRepository.class);
-        PixPaymentService pix = mock(PixPaymentService.class);
         StoreSettingsService storeSettings = mock(StoreSettingsService.class);
 
         Category category = new Category();
@@ -96,18 +87,11 @@ class OrderServiceTest {
         when(neighborhoods.findFirstByNameIgnoreCase("Mangabeira")).thenReturn(Optional.of(mangabeira));
         when(products.findAllById(List.of(10))).thenReturn(List.of(product));
         when(orders.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(pix.generatePixCharge(any(Order.class), anyString(), anyString())).thenAnswer(invocation -> {
-            Order savedOrder = invocation.getArgument(0);
-            OrderCheckoutResponseDTO response = new OrderCheckoutResponseDTO();
-            response.setTotalAmount(savedOrder.getTotalAmount());
-            return response;
-        });
 
         OrderService service = new OrderService(
                 orders,
                 products,
                 neighborhoods,
-                pix,
                 storeSettings,
                 mock(SimpMessagingTemplate.class)
         );
@@ -126,7 +110,6 @@ class OrderServiceTest {
         OrderRepository orders = mock(OrderRepository.class);
         ProductRepository products = mock(ProductRepository.class);
         NeighborhoodRepository neighborhoods = mock(NeighborhoodRepository.class);
-        PixPaymentService pix = mock(PixPaymentService.class);
         StoreSettingsService storeSettings = mock(StoreSettingsService.class);
 
         when(storeSettings.isStoreOpen()).thenReturn(true);
@@ -135,7 +118,6 @@ class OrderServiceTest {
                 orders,
                 products,
                 neighborhoods,
-                pix,
                 storeSettings,
                 mock(SimpMessagingTemplate.class)
         );
@@ -150,7 +132,6 @@ class OrderServiceTest {
         OrderRepository orders = mock(OrderRepository.class);
         ProductRepository products = mock(ProductRepository.class);
         NeighborhoodRepository neighborhoods = mock(NeighborhoodRepository.class);
-        PixPaymentService pix = mock(PixPaymentService.class);
         StoreSettingsService storeSettings = mock(StoreSettingsService.class);
 
         Product product = new Product();
@@ -172,7 +153,6 @@ class OrderServiceTest {
                 orders,
                 products,
                 neighborhoods,
-                pix,
                 storeSettings,
                 mock(SimpMessagingTemplate.class)
         );

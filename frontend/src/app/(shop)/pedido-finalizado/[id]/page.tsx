@@ -39,6 +39,7 @@ const BRL = (value: number) =>
 
 const paymentLabel = (status: string) => {
   if (status === "PAID") return "Pagamento aprovado";
+  if (status === "WHATSAPP") return "Confirmacao via WhatsApp";
   if (status === "AWAITING_PAYMENT") return "Aguardando pagamento";
   return status || "Nao informado";
 };

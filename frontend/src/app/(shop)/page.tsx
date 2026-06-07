@@ -324,7 +324,7 @@ export default function Cardapio() {
           className="fixed bottom-16 w-full bg-[#F6B51B] text-[#07110B] py-3 px-4 text-center font-bold text-sm shadow-[0_-4px_10px_rgba(0,0,0,0.2)] cursor-pointer z-30 transition-colors hover:bg-[#FFD33D] flex items-center justify-center gap-2"
         >
           <span>âš ï¸</span>
-          Pedido Iniciado - Aguardando Pagamento (Clique para ver o Pix)
+          Pedido iniciado - abra o WhatsApp para confirmar
         </div>
       )}
 
