@@ -20,6 +20,6 @@ public class ProductController {
 
     @GetMapping
     public List<Product> listarProdutos() {
-        return productRepository.findAll();
+        return productRepository.findByIsAvailableTrue();
     }
 }

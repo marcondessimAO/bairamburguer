@@ -61,12 +61,12 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
         onClick={handleOverlayClick}
       >
         {/* Modal Container */}
-        <div className="bg-[#121212] w-full sm:w-[480px] sm:rounded-[2rem] rounded-t-[2rem] overflow-hidden flex flex-col max-h-[90vh] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] sm:shadow-[0_20px_60px_rgba(0,0,0,0.5)] border-t sm:border border-gray-800 transition-transform duration-300 relative">
+        <div className="bg-[#07110B] w-full sm:w-[480px] sm:rounded-[2rem] rounded-t-[2rem] overflow-hidden flex flex-col max-h-[90vh] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] sm:shadow-[0_20px_60px_rgba(0,0,0,0.5)] border-t sm:border border-[#2B4725] transition-transform duration-300 relative">
           
           {/* Close Button */}
           <button 
             onClick={handleClose}
-            className="absolute top-4 right-4 z-20 w-10 h-10 bg-black/60 hover:bg-black/90 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors"
+            className="absolute top-4 right-4 z-20 w-10 h-10 bg-[#07110B]/70 hover:bg-[#07110B] text-[#FFF8E6] rounded-full flex items-center justify-center backdrop-blur-md transition-colors border border-[#35532A]"
             aria-label="Fechar"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,15 +75,15 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
           </button>
 
           {/* Image Section */}
-          <div className="w-full h-64 sm:h-72 bg-[#2A2A2A] relative flex-shrink-0">
+          <div className="w-full h-64 sm:h-72 bg-[#172315] relative flex-shrink-0">
             {product.imageUrl ? (
               <img 
                 src={getImageUrl(product.imageUrl)} 
                 alt={product.name} 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover scale-75"
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-gray-600">
+              <div className="w-full h-full flex flex-col items-center justify-center text-[#6F8064]">
                 <svg className="w-16 h-16 mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
@@ -92,23 +92,23 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
             )}
             
             {/* Gradient Overlay for smooth transition to dark background */}
-            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#121212] to-transparent"></div>
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#07110B] to-transparent"></div>
           </div>
 
           {/* Content Section */}
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col bg-[#121212]">
-            <h2 className="text-2xl font-black text-[#FFFFFF] tracking-tight mb-2 uppercase">
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col bg-[#07110B]">
+            <h2 className="text-2xl font-black text-[#FFF8E6] tracking-tight mb-2 uppercase">
               {product.name}
             </h2>
-            <p className="text-gray-400 text-sm sm:text-base leading-relaxed mb-8">
+            <p className="text-[#C7D3B6] text-sm sm:text-base leading-relaxed mb-8">
               {product.description || "Delicioso produto preparado com ingredientes selecionados e muito carinho."}
             </p>
 
             <div className="mt-auto pt-4 space-y-6">
               {isIndividualProduct(product) && (
                 <div className="space-y-4">
-                  <div className="bg-[#1e1e1e] p-4 rounded-2xl border border-gray-800">
-                    <span className="block text-gray-300 font-black uppercase text-sm mb-3">Refrigerante</span>
+                  <div className="bg-[#101A12] p-4 rounded-2xl border border-[#2B4725]">
+                    <span className="block text-[#C7D3B6] font-black uppercase text-sm mb-3">Refrigerante</span>
                     <div className="grid grid-cols-2 gap-2">
                       {[
                         ["FANTA", "Fanta", 0],
@@ -122,8 +122,8 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                           onClick={() => setBeverageAddon(value as CartAddonSelection["beverageAddon"])}
                           className={`rounded-xl border px-3 py-3 text-sm font-bold uppercase transition-colors ${
                             beverageAddon === value
-                              ? "border-[#F1C40F] bg-[#F1C40F] text-[#121212]"
-                              : "border-gray-700 bg-[#242424] text-gray-300"
+                              ? "border-[#F6B51B] bg-[#F6B51B] text-[#07110B]"
+                              : "border-[#35532A] bg-[#172315] text-[#C7D3B6]"
                           }`}
                         >
                           {label} {price ? `+ R$ ${price},00` : "+ R$ 0,00"}
@@ -132,35 +132,35 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                     </div>
                   </div>
 
-                  <label className="flex items-center justify-between bg-[#1e1e1e] p-4 rounded-2xl border border-gray-800 cursor-pointer">
-                    <span className="text-gray-300 font-black uppercase text-sm">Batata frita + R$ 10,00</span>
+                  <label className="flex items-center justify-between bg-[#101A12] p-4 rounded-2xl border border-[#2B4725] cursor-pointer">
+                    <span className="text-[#C7D3B6] font-black uppercase text-sm">Batata frita + R$ 10,00</span>
                     <input
                       type="checkbox"
                       checked={friesAddon}
                       onChange={(event) => setFriesAddon(event.target.checked)}
-                      className="h-5 w-5 accent-[#F1C40F]"
+                      className="h-5 w-5 accent-[#F6B51B]"
                     />
                   </label>
                 </div>
               )}
 
               {/* Quantity Selector */}
-              <div className="flex items-center justify-between bg-[#1e1e1e] p-4 rounded-2xl border border-gray-800">
-                <span className="text-gray-300 font-medium uppercase">Quantidade</span>
+              <div className="flex items-center justify-between bg-[#101A12] p-4 rounded-2xl border border-[#2B4725]">
+                <span className="text-[#C7D3B6] font-medium uppercase">Quantidade</span>
                 <div className="flex items-center gap-4">
                   <button 
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={quantity <= 1}
-                    className="w-10 h-10 flex items-center justify-center bg-[#2A2A2A] hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-bold text-lg"
+                    className="w-10 h-10 flex items-center justify-center bg-[#172315] hover:bg-[#20351E] disabled:opacity-50 disabled:cursor-not-allowed text-[#FFF8E6] rounded-xl transition-colors font-bold text-lg"
                   >
                     −
                   </button>
-                  <span className="text-xl font-black text-white w-8 text-center tabular-nums">
+                  <span className="text-xl font-black text-[#FFF8E6] w-8 text-center tabular-nums">
                     {quantity}
                   </span>
                   <button 
                     onClick={() => setQuantity(quantity + 1)}
-                    className="w-10 h-10 flex items-center justify-center bg-[#2A2A2A] hover:bg-gray-700 text-white rounded-xl transition-colors font-bold text-lg"
+                    className="w-10 h-10 flex items-center justify-center bg-[#172315] hover:bg-[#20351E] text-[#FFF8E6] rounded-xl transition-colors font-bold text-lg"
                   >
                     +
                   </button>
@@ -170,10 +170,10 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
               {/* Add to Cart Button */}
               <button 
                 onClick={handleAddToCart}
-                className="w-full flex items-center justify-center py-4 bg-[#F1C40F] hover:bg-[#D4AC0D] text-[#121212] rounded-2xl font-black text-lg shadow-[0_4px_14px_rgba(241,196,15,0.4)] active:scale-[0.98] transition-all"
+                className="w-full flex items-center justify-center py-4 bg-[#F6B51B] hover:bg-[#FFD33D] text-[#07110B] rounded-2xl font-black text-lg shadow-[0_4px_14px_rgba(246,181,27,0.4)] active:scale-[0.98] transition-all"
               >
                 <span>ADICIONAR AO CARRINHO</span>
-                <span className="mx-3 w-1.5 h-1.5 rounded-full bg-[#121212]/30"></span>
+                <span className="mx-3 w-1.5 h-1.5 rounded-full bg-[#07110B]/30"></span>
                 <span>{formattedPrice}</span>
               </button>
             </div>

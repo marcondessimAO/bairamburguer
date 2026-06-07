@@ -145,6 +145,43 @@ class OrderServiceTest {
                 .hasMessageContaining("Bairro");
     }
 
+    @Test
+    void checkoutRejectsUnavailableProduct() {
+        OrderRepository orders = mock(OrderRepository.class);
+        ProductRepository products = mock(ProductRepository.class);
+        NeighborhoodRepository neighborhoods = mock(NeighborhoodRepository.class);
+        PixPaymentService pix = mock(PixPaymentService.class);
+        StoreSettingsService storeSettings = mock(StoreSettingsService.class);
+
+        Product product = new Product();
+        product.setId(10);
+        product.setName("Produto Inativo");
+        product.setPrice(new BigDecimal("20.00"));
+        product.setIsAvailable(false);
+
+        Neighborhood mangabeira = new Neighborhood();
+        mangabeira.setId(1);
+        mangabeira.setName("Mangabeira");
+        mangabeira.setDeliveryFee(BigDecimal.ZERO);
+
+        when(storeSettings.isStoreOpen()).thenReturn(true);
+        when(neighborhoods.findFirstByNameIgnoreCase("Mangabeira")).thenReturn(Optional.of(mangabeira));
+        when(products.findAllById(List.of(10))).thenReturn(List.of(product));
+
+        OrderService service = new OrderService(
+                orders,
+                products,
+                neighborhoods,
+                pix,
+                storeSettings,
+                mock(SimpMessagingTemplate.class)
+        );
+
+        assertThatThrownBy(() -> service.createOrder(checkoutRequest("Mangabeira")))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("Produto indisponivel");
+    }
+
     private OrderCheckoutRequestDTO checkoutRequest(String neighborhoodName) {
         OrderItemRequestDTO item = new OrderItemRequestDTO();
         item.setProductId(10L);

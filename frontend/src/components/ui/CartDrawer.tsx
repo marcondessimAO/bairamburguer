@@ -210,23 +210,23 @@ export function CartDrawer() {
         role="dialog"
         aria-modal="true"
         aria-label="Carrinho de compras"
-        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full md:w-[420px] h-[100dvh] bg-[#121212] shadow-[-8px_0_40px_rgba(0,0,0,0.8)] border-l border-gray-800"
+        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full md:w-[420px] h-[100dvh] bg-[#07110B] shadow-[-8px_0_40px_rgba(0,0,0,0.8)] border-l border-[#2B4725]"
       >
         {/* ── Header (shrink-0 — nunca encolhe) ── */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800 shrink-0">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#2B4725] shrink-0">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-black text-[#FFFFFF] tracking-tight">
+            <h2 className="text-xl font-black text-[#FFF8E6] tracking-tight">
               {pendingPayment ? "Pedido Concluído" : "Resumo do Pedido"}
             </h2>
             {!pendingPayment && totalItems > 0 && (
-              <span className="bg-[#F1C40F] text-[#121212] text-xs font-black px-2 py-0.5 rounded-full">
+              <span className="bg-[#F6B51B] text-[#07110B] text-xs font-black px-2 py-0.5 rounded-full">
                 {totalItems} {totalItems === 1 ? "item" : "itens"}
               </span>
             )}
           </div>
           <button
             onClick={closeDrawer}
-            className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-gray-800"
+            className="text-[#7E8D75] hover:text-[#FFF8E6] transition-colors p-1 rounded-lg hover:bg-[#172315]"
             aria-label="Fechar carrinho"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -353,7 +353,7 @@ export function CartDrawer() {
                       setIsCartOpen(false);
                       router.push("/");
                     }}
-                    className="bg-[#F1C40F] text-[#121212] font-bold rounded-xl w-full py-3 mt-6"
+                    className="bg-[#F6B51B] text-[#07110B] font-bold rounded-xl w-full py-3 mt-6"
                   >
                     Explorar Cardápio
                   </button>
@@ -363,10 +363,10 @@ export function CartDrawer() {
                   {cartItems.map((item) => (
                     <div
                     key={item.id}
-                    className="flex gap-3 bg-[#1a1a1a] rounded-2xl p-3 border border-gray-800/60"
+                    className="flex gap-3 bg-[#101A12] rounded-2xl p-3 border border-[#2B4725]/70"
                   >
                     {/* Miniatura */}
-                    <div className="w-[72px] h-[72px] bg-[#2A2A2A] rounded-xl overflow-hidden flex-shrink-0 border border-gray-700">
+                    <div className="w-[72px] h-[72px] bg-[#172315] rounded-xl overflow-hidden flex-shrink-0 border border-[#35532A]">
                       {item.product.imageUrl ? (
                         <img
                           src={getImageUrl(item.product.imageUrl)}
@@ -402,7 +402,7 @@ export function CartDrawer() {
                       </div>
 
                       <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
-                        <span className="text-[#F1C40F] font-black text-sm">
+                        <span className="text-[#F6B51B] font-black text-sm">
                           {BRL((item.product.price + item.addonsTotal) * item.quantity)}
                         </span>
                         {item.addonsSummary && (
@@ -412,7 +412,7 @@ export function CartDrawer() {
                         )}
 
                         {/* Controles de Quantidade */}
-                        <div className="flex items-center gap-2 bg-[#242424] rounded-lg p-1 border border-gray-700">
+                        <div className="flex items-center gap-2 bg-[#172315] rounded-lg p-1 border border-[#35532A]">
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-white bg-[#2e2e2e] hover:bg-gray-700 rounded-md transition-colors font-bold"
@@ -425,7 +425,7 @@ export function CartDrawer() {
                           </span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="w-7 h-7 flex items-center justify-center text-[#121212] bg-[#F1C40F] hover:bg-[#D4AC0D] rounded-md transition-colors font-bold"
+                            className="w-7 h-7 flex items-center justify-center text-[#07110B] bg-[#F6B51B] hover:bg-[#FFD33D] rounded-md transition-colors font-bold"
                             aria-label="Aumentar quantidade"
                           >
                             +
@@ -437,7 +437,7 @@ export function CartDrawer() {
                   ))}
                   <button
                     onClick={() => setIsCartOpen(false)}
-                    className="text-[#F1C40F] font-medium py-3 w-full text-center hover:bg-[#F1C40F]/10 rounded-xl transition-colors border border-dashed border-[#F1C40F]/30 mt-2"
+                    className="text-[#F6B51B] font-medium py-3 w-full text-center hover:bg-[#F6B51B]/10 rounded-xl transition-colors border border-dashed border-[#F6B51B]/30 mt-2"
                   >
                     + Adicionar mais itens
                   </button>
@@ -445,12 +445,12 @@ export function CartDrawer() {
               )}
               {/* ── Opção de Entrega (dentro da área scrollável) ── */}
               <div className="flex gap-4 pt-2">
-                <label className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl cursor-pointer border transition-colors ${deliveryMode === "DELIVERY" ? "bg-[#F1C40F]/10 border-[#F1C40F] text-[#F1C40F]" : "bg-[#1e1e1e] border-gray-800 text-gray-400"}`}>
+                <label className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl cursor-pointer border transition-colors ${deliveryMode === "DELIVERY" ? "bg-[#F6B51B]/10 border-[#F6B51B] text-[#F6B51B]" : "bg-[#101A12] border-[#2B4725] text-[#7E8D75]"}`}>
                   <input type="radio" name="deliveryMode" value="DELIVERY" checked={deliveryMode === "DELIVERY"} onChange={() => setDeliveryMode("DELIVERY")} className="hidden" />
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                   <span className="font-bold text-sm">Entregar em Casa</span>
                 </label>
-                <label className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl cursor-pointer border transition-colors ${deliveryMode === "TAKEOUT" ? "bg-[#F1C40F]/10 border-[#F1C40F] text-[#F1C40F]" : "bg-[#1e1e1e] border-gray-800 text-gray-400"}`}>
+                <label className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl cursor-pointer border transition-colors ${deliveryMode === "TAKEOUT" ? "bg-[#F6B51B]/10 border-[#F6B51B] text-[#F6B51B]" : "bg-[#101A12] border-[#2B4725] text-[#7E8D75]"}`}>
                   <input type="radio" name="deliveryMode" value="TAKEOUT" checked={deliveryMode === "TAKEOUT"} onChange={() => setDeliveryMode("TAKEOUT")} className="hidden" />
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                   <span className="font-bold text-sm">Retirar na Loja</span>
@@ -464,14 +464,14 @@ export function CartDrawer() {
                   placeholder="Seu Nome"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                  className="w-full bg-[#101A12] text-[#FFF8E6] border border-[#2B4725] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F6B51B] transition-shadow placeholder:text-[#7E8D75]"
                 />
                 <input
                   type="email"
                   placeholder="Seu E-mail (obrigatório)"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
-                  className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                  className="w-full bg-[#101A12] text-[#FFF8E6] border border-[#2B4725] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F6B51B] transition-shadow placeholder:text-[#7E8D75]"
                 />
                 <input
                   type="text"
@@ -481,14 +481,14 @@ export function CartDrawer() {
                     const val = e.target.value.replace(/\D/g, '').substring(0, 11);
                     setCustomerCpf(val);
                   }}
-                  className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                  className="w-full bg-[#101A12] text-[#FFF8E6] border border-[#2B4725] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F6B51B] transition-shadow placeholder:text-[#7E8D75]"
                 />
                 <input
                   type="text"
                   placeholder="Seu WhatsApp (ex: 83 99999-9999)"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                  className="w-full bg-[#101A12] text-[#FFF8E6] border border-[#2B4725] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F6B51B] transition-shadow placeholder:text-[#7E8D75]"
                 />
                 {deliveryMode === "DELIVERY" && (
                   <>
@@ -497,7 +497,7 @@ export function CartDrawer() {
                       placeholder="Sua Rua"
                       value={street}
                       onChange={(e) => setStreet(e.target.value)}
-                      className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                      className="w-full bg-[#101A12] text-[#FFF8E6] border border-[#2B4725] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F6B51B] transition-shadow placeholder:text-[#7E8D75]"
                     />
                     <div className="flex gap-3">
                       <input
@@ -505,14 +505,14 @@ export function CartDrawer() {
                         placeholder="Número"
                         value={number}
                         onChange={(e) => setNumber(e.target.value)}
-                        className="w-1/3 bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                        className="w-1/3 bg-[#101A12] text-[#FFF8E6] border border-[#2B4725] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F6B51B] transition-shadow placeholder:text-[#7E8D75]"
                       />
                       <input
                         type="text"
                         placeholder="Complemento (Opcional)"
                         value={complement}
                         onChange={(e) => setComplement(e.target.value)}
-                        className="w-2/3 bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow placeholder:text-gray-500"
+                        className="w-2/3 bg-[#101A12] text-[#FFF8E6] border border-[#2B4725] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F6B51B] transition-shadow placeholder:text-[#7E8D75]"
                       />
                     </div>
                   </>
@@ -526,14 +526,14 @@ export function CartDrawer() {
                     id="neighborhood-select"
                     value={deliveryNeighborhood?.name ?? ""}
                     onChange={(e) => setNeighborhood(e.target.value)}
-                    className="w-full bg-[#1e1e1e] text-[#FFFFFF] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#F1C40F] transition-shadow cursor-pointer"
+                    className="w-full bg-[#101A12] text-[#FFF8E6] border border-[#2B4725] rounded-xl px-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#F6B51B] transition-shadow cursor-pointer"
                     style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", backgroundSize: "18px", paddingRight: "42px" }}
                   >
-                    <option value="" disabled className="bg-[#1e1e1e] text-gray-500">
+                    <option value="" disabled className="bg-[#101A12] text-[#7E8D75]">
                       Selecione seu bairro...
                     </option>
                     {NEIGHBORHOODS.map((n) => (
-                      <option key={n.name} value={n.name} className="bg-[#1e1e1e] text-white">
+                      <option key={n.name} value={n.name} className="bg-[#101A12] text-[#FFF8E6]">
                         {n.name} — {BRL(n.fee)}
                       </option>
                     ))}
@@ -543,7 +543,7 @@ export function CartDrawer() {
             </div>
 
             {/* ── Footer fixo: Totais + Botão (shrink-0 — sempre visível) ── */}
-            <div className="px-6 py-5 bg-[#181818] border-t border-gray-800 space-y-4 shrink-0">
+            <div className="px-6 py-5 bg-[#101A12] border-t border-[#2B4725] space-y-4 shrink-0">
               {/* Resumo de Valores */}
               <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between text-gray-400">
@@ -558,7 +558,7 @@ export function CartDrawer() {
                 </div>
                 <div className="flex justify-between pt-3 border-t border-gray-700 items-center">
                   <span className="text-[#FFFFFF] font-bold">Total</span>
-                  <span className="text-2xl font-black text-[#F1C40F] tabular-nums">{BRL(deliveryMode === "TAKEOUT" ? subtotal : totalAmount)}</span>
+                  <span className="text-2xl font-black text-[#F6B51B] tabular-nums">{BRL(deliveryMode === "TAKEOUT" ? subtotal : totalAmount)}</span>
                 </div>
               </div>
 
@@ -566,7 +566,7 @@ export function CartDrawer() {
               <button
                 onClick={handleCheckout}
                 disabled={!isStoreOpen || !isValidToSubmit || isProcessing}
-                className={`w-full flex items-center justify-center gap-2.5 font-black py-4 rounded-xl shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ${!isStoreOpen ? "bg-red-600 text-white shadow-red-600/10" : "bg-[#F1C40F] hover:bg-[#D4AC0D] active:scale-[0.98] text-[#121212] shadow-[#F1C40F]/10"}`}
+                className={`w-full flex items-center justify-center gap-2.5 font-black py-4 rounded-xl shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ${!isStoreOpen ? "bg-red-600 text-white shadow-red-600/10" : "bg-[#F6B51B] hover:bg-[#FFD33D] active:scale-[0.98] text-[#07110B] shadow-[#F6B51B]/10"}`}
               >
                 {!isStoreOpen ? "Loja Fechada no momento" : (isProcessing ? "Processando..." : "Finalizar Pedido via Pix")}
               </button>

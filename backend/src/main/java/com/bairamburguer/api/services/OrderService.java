@@ -83,6 +83,9 @@ public class OrderService {
             if (product == null) {
                 throw new RuntimeException("Produto nao encontrado no banco de dados: ID " + itemDto.getProductId());
             }
+            if (Boolean.FALSE.equals(product.getIsAvailable())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Produto indisponivel: " + product.getName());
+            }
 
             AddonCalculation addons = calculateAddons(product, itemDto);
 
@@ -135,6 +138,9 @@ public class OrderService {
             Product product = productMap.get(item.getProduct().getId());
             if (product == null) {
                 throw new RuntimeException("Produto nao encontrado no banco de dados");
+            }
+            if (Boolean.FALSE.equals(product.getIsAvailable())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Produto indisponivel: " + product.getName());
             }
 
             item.setProduct(product);

@@ -1,15 +1,16 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart, Product } from "@/contexts/CartContext";
 import { ProductDetailModal } from "@/components/ui/ProductDetailModal";
-import { Flame, Star } from "lucide-react";
+import { Flame } from "lucide-react";
 import { getImageUrl } from "@/utils/imageUrl";
 import Link from "next/link";
 
 type Produto = Product;
 
-const CATEGORY_ORDER = ["BAIRAM MALUCA", "BAIRAM INDIVIDUAIS", "COMBOS", "COMPLEMENTOS", "PETISCOS", "MILKSHAKES"];
+const PROMOTION_CATEGORY = "PROMOCOES BAIRAM";
+const CATEGORY_ORDER = [PROMOTION_CATEGORY, "BAIRAM MALUCA", "BAIRAM INDIVIDUAIS", "COMBOS", "COMPLEMENTOS", "PETISCOS", "MILKSHAKES"];
 
 const normalizeName = (value: string) =>
   value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
@@ -35,7 +36,7 @@ export default function Cardapio() {
   const [selectedProduct, setSelectedProduct] = useState<Produto | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState("BAIRAM MALUCA");
+  const [activeCategory, setActiveCategory] = useState(PROMOTION_CATEGORY);
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function Cardapio() {
         return res.json();
       })
       .then((data: Produto[]) => {
-        setProducts(data);
+        setProducts(data.filter(product => product.isAvailable));
         setLoading(false);
       })
       .catch(() => {
@@ -57,6 +58,9 @@ export default function Cardapio() {
 
   const categories = useMemo(() => {
     const availableCategories = new Set(products.map(p => categoryLabel(p.category?.name || "OUTROS")));
+    if (products.some(product => product.isAvailable && product.isPromotion)) {
+      availableCategories.add(PROMOTION_CATEGORY);
+    }
     return CATEGORY_ORDER.filter((category) => availableCategories.has(category));
   }, [products]);
   const selectedCategory = categories.includes(activeCategory) ? activeCategory : categories[0];
@@ -70,10 +74,21 @@ export default function Cardapio() {
   }), [products, searchTerm]);
 
   const productSections = useMemo(() => categories
-    .map(category => ({
-      category,
-      products: filteredProducts.filter(product => categoryLabel(product.category?.name || "OUTROS") === category),
-    }))
+    .map(category => {
+      if (category === PROMOTION_CATEGORY) {
+        return {
+          category,
+          products: filteredProducts.filter(product => product.isAvailable && product.isPromotion),
+        };
+      }
+
+      return {
+        category,
+        products: filteredProducts.filter(product =>
+          categoryLabel(product.category?.name || "OUTROS") === category && !product.isPromotion
+        ),
+      };
+    })
     .filter(section => section.products.length > 0), [categories, filteredProducts]);
 
   useEffect(() => {
@@ -116,10 +131,10 @@ export default function Cardapio() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#121212] flex flex-col items-center justify-center font-sans text-[#FFFFFF]">
-        <div className="w-16 h-16 border-4 border-[#F1C40F] border-t-transparent rounded-full animate-spin mb-6"></div>
+      <main className="min-h-screen bg-[#07110B] flex flex-col items-center justify-center font-sans text-[#FFF8E6]">
+        <div className="w-16 h-16 border-4 border-[#B7D438] border-t-transparent rounded-full animate-spin mb-6"></div>
         <h1 className="text-2xl font-medium tracking-tight">
-          Preparando o cardápio...
+          Preparando o cardÃ¡pio...
         </h1>
       </main>
     );
@@ -127,13 +142,13 @@ export default function Cardapio() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-[#121212] flex flex-col items-center justify-center p-6 font-sans text-[#FFFFFF]">
-        <div className="bg-[#1e1e1e] p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] max-w-md text-center border border-gray-800">
+      <main className="min-h-screen bg-[#07110B] flex flex-col items-center justify-center p-6 font-sans text-[#FFF8E6]">
+        <div className="bg-[#122016] p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] max-w-md text-center border border-[#35532A]">
           <h1 className="text-2xl font-bold mb-2 tracking-tight">
-            Cardápio indisponível
+            CardÃ¡pio indisponÃ­vel
           </h1>
           <p className="text-gray-400">
-            Não conseguimos carregar os nossos lanches no momento. Tente novamente mais tarde.
+            NÃ£o conseguimos carregar os nossos lanches no momento. Tente novamente mais tarde.
           </p>
         </div>
       </main>
@@ -142,10 +157,8 @@ export default function Cardapio() {
 
   const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  const featuredProducts = products.filter(p => p.isAvailable && p.isPromotion);
-
   return (
-    <main className="min-h-screen bg-[#121212] font-sans text-[#FFFFFF] relative flex flex-col uppercase">
+    <main className="min-h-screen bg-[#07110B] [background-image:linear-gradient(135deg,rgba(183,212,56,0.045)_1px,transparent_1px),radial-gradient(circle_at_top,rgba(8,82,43,0.38),transparent_34rem)] [background-size:26px_26px,100%_100%] font-sans text-[#FFF8E6] relative flex flex-col uppercase">
       {/* Product Detail Modal */}
       <ProductDetailModal 
         isOpen={!!selectedProduct} 
@@ -154,15 +167,18 @@ export default function Cardapio() {
       />
 
       {/* Header & Busca Fixos no Topo */}
-      <div className="pt-6 pb-2 px-4 sticky top-0 bg-[#121212] z-30">
+      <div className="pt-6 pb-3 px-4 sticky top-0 bg-[#07110B]/95 backdrop-blur-md z-30 border-b border-[#22391F]/70 w-full max-w-[560px] mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-black text-white tracking-tight">Bairam Burguer e Petiscaria</h1>
-          <img src="/images/bairam-logo.jpg.jpg" alt="Logo" className="w-10 h-10 rounded-full object-cover border border-gray-800" />
+          <div>
+            <h1 className="text-2xl font-black text-[#FFF8E6] tracking-tight leading-none">Bairam Burguer</h1>
+            <p className="mt-1 text-sm font-black tracking-wide text-[#B7D438]">E PETISCARIA</p>
+          </div>
+          <img src="/images/bairam-logo.jpg.jpg" alt="Logo" className="w-12 h-12 rounded-full object-cover border-2 border-[#FFF8E6] shadow-[0_0_0_3px_rgba(183,212,56,0.28)]" />
         </div>
         
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[#B7D438]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
@@ -171,104 +187,33 @@ export default function Cardapio() {
             placeholder="Buscar lanches..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#1e1e1e] text-white rounded-2xl pl-12 pr-4 py-3.5 focus:outline-none focus:ring-1 focus:ring-[#F1C40F] transition-all placeholder:text-gray-500 font-medium"
+            className="w-full bg-[#111A13] text-[#FFF8E6] rounded-2xl pl-12 pr-4 py-3.5 border border-[#2B4725] focus:outline-none focus:ring-2 focus:ring-[#B7D438]/70 transition-all placeholder:text-[#859279] font-medium shadow-inner"
           />
         </div>
       </div>
 
       {/* Banner Loja Fechada */}
       {!isStoreOpen && (
-        <div className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 flex items-center justify-center gap-2 font-bold text-sm sticky top-[108px] z-20 shadow-lg shadow-red-900/20">
+        <div className="bg-[#B42318]/95 backdrop-blur-sm text-white px-4 py-2 flex items-center justify-center gap-2 font-bold text-sm sticky top-[118px] z-20 shadow-lg shadow-red-900/20">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          Estamos fechados no momento. Você pode navegar, mas não realizar pedidos.
+          Estamos fechados no momento. VocÃª pode navegar, mas nÃ£o realizar pedidos.
         </div>
       )}
 
-      {/* Secção de Destaques Premium */}
-      {featuredProducts.length > 0 && (
-        <section className="mb-8 mt-2 px-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Flame className="w-8 h-8 text-[#F1C40F]" fill="#F1C40F" />
-            <h2 className="text-3xl font-black text-white tracking-tight">Destaques da Bairam</h2>
-          </div>
-          
-          <div className="flex overflow-x-auto pb-6 -mx-4 px-4 gap-6 snap-x snap-mandatory scrollbar-hide">
-            {featuredProducts.map((produto) => (
-              <article 
-                key={produto.id} 
-                className="relative min-w-[280px] w-[85vw] max-w-[320px] snap-center shrink-0 bg-[#1e1e1e] rounded-3xl overflow-hidden cursor-pointer flex flex-col hover:bg-[#242424] transition-all duration-300 border-2 border-[#F1C40F] shadow-[0_0_20px_rgba(241,196,15,0.2)]"
-                onClick={() => setSelectedProduct(produto)}
-              >
-                {/* O efeito de pulso na borda */}
-                <div className="absolute inset-0 rounded-3xl border-2 border-[#F1C40F] opacity-50 animate-pulse pointer-events-none"></div>
-
-                {/* Imagem de Destaque */}
-                <div className="relative w-full h-48 bg-[#2a2a2a]">
-                  {produto.imageUrl ? (
-                    <img 
-                      src={getImageUrl(produto.imageUrl)} 
-                      alt={produto.name} 
-                      className="object-cover w-full h-full"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-600">
-                      <Flame className="w-12 h-12 opacity-50" />
-                    </div>
-                  )}
-                  {/* Ícone Star Dourado no Canto Superior Direito */}
-                  <div className="absolute top-3 right-3 bg-[#121212]/80 backdrop-blur-md p-2 rounded-full border border-[#F1C40F] shadow-lg">
-                    <Star className="w-5 h-5 text-[#F1C40F]" fill="#F1C40F" />
-                  </div>
-                </div>
-                
-                {/* Textos e Botão */}
-                <div className="flex flex-col flex-1 p-5 relative z-10 bg-gradient-to-t from-[#121212] via-[#1e1e1e] to-[#1e1e1e]">
-                  <h3 className="text-white font-black text-xl mb-2 line-clamp-1">
-                    {produto.name}
-                  </h3>
-                  <p className="text-gray-400 text-sm line-clamp-2 mb-4 flex-grow">
-                    {produto.description || "O melhor sabor da Bairam em destaque para você."}
-                  </p>
-                  
-                  <div className="flex justify-between items-end mt-auto">
-                    <span className="text-[#F1C40F] font-black text-2xl">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.price)}
-                    </span>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                         if (isIndividualProduct(produto)) {
-                           setSelectedProduct(produto);
-                         } else {
-                           addToCart(produto, 1);
-                         }
-                      }}
-                      className="flex items-center justify-center w-10 h-10 bg-[#F1C40F] rounded-xl shadow-[0_4px_15px_rgba(241,196,15,0.4)] hover:bg-[#F39C12] hover:scale-110 transition-all z-20"
-                      aria-label="Adicionar destaque"
-                    >
-                      <span className="text-[#121212] font-black text-2xl mt-[-2px]">+</span>
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Carrossel de Categorias */}
-      <div className="px-4 mt-4 mb-6">
-        <div className="overflow-x-auto scrollbar-hide flex gap-5 pb-2">
+      <div className="px-4 mt-5 mb-6 w-full max-w-[560px] mx-auto sticky top-[118px] z-20 bg-[#07110B]/95 backdrop-blur-md border-b border-[#22391F]/70">
+        <div className="overflow-x-auto scrollbar-hide flex gap-5 pb-2 pt-3">
           {categories.map(cat => (
             <button
               key={cat}
               onClick={() => scrollToCategory(cat)}
               className={`whitespace-nowrap font-bold text-sm pb-2 border-b-2 transition-all ${
                 selectedCategory === cat
-                  ? "text-[#F1C40F] border-[#F1C40F]" 
-                  : "text-gray-500 border-transparent hover:text-gray-300"
+                  ? "text-[#F6B51B] border-[#F6B51B]"
+                  : "text-[#7E8D75] border-transparent hover:text-[#C7D3B6]"
               }`}
             >
               {cat}
@@ -278,34 +223,50 @@ export default function Cardapio() {
       </div>
 
       {/* Listagem de Produtos */}
-      <div className="flex-1 px-4 space-y-4 pb-28">
+      <div className="flex-1 px-4 space-y-4 pb-28 w-full max-w-[560px] mx-auto">
         {productSections.length === 0 ? (
-           <div className="text-center py-16 bg-[#1e1e1e] rounded-3xl border border-gray-800/60 mx-auto max-w-sm mt-8">
-             <svg className="w-12 h-12 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+           <div className="text-center py-16 bg-[#101A12] rounded-3xl border border-[#2B4725]/70 mx-auto max-w-sm mt-8">
+             <svg className="w-12 h-12 text-[#6F8064] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
              </svg>
-             <p className="text-gray-400 font-medium">Nenhum lanche encontrado.</p>
+             <p className="text-[#C7D3B6] font-medium">Nenhum lanche encontrado.</p>
            </div>
         ) : (
-          productSections.flatMap(({ category, products: sectionProducts }) => [
-            <h2
+          productSections.flatMap(({ category, products: sectionProducts }) => {
+            const isPromotionSection = category === PROMOTION_CATEGORY;
+
+            return [
+            <div
               key={`${category}-heading`}
               ref={(element) => {
                 categoryRefs.current[category] = element;
               }}
               data-category={category}
-              className="scroll-mt-48 pt-2 text-lg font-black tracking-wide text-white"
+              className={`scroll-mt-48 ${isPromotionSection ? "rounded-2xl border border-[#B7D438]/50 bg-[#101A12] p-4 shadow-[0_12px_28px_rgba(0,0,0,0.28)]" : "pt-2"}`}
             >
-              {category}
-            </h2>,
+              <div className="flex items-center gap-2">
+                {isPromotionSection && <Flame className="h-5 w-5 text-[#F6B51B]" fill="#F6B51B" />}
+                <h2 className="text-lg font-black tracking-wide text-[#FFF8E6]">{category}</h2>
+              </div>
+              {isPromotionSection && (
+                <p className="mt-1 text-xs font-semibold text-[#C7D3B6]">
+                  Ofertas selecionadas para pedir agora.
+                </p>
+              )}
+            </div>,
             ...sectionProducts.map((produto) => (
             <article 
               key={produto.id} 
-              className="relative flex flex-row items-center gap-4 p-3 bg-[#1e1e1e] rounded-2xl overflow-hidden cursor-pointer w-full hover:bg-[#242424] transition-colors border border-gray-800/60"
+              className={`relative flex flex-row items-center gap-4 p-3 bg-[#101A12] rounded-2xl overflow-hidden cursor-pointer w-full hover:bg-[#162315] transition-colors shadow-[0_10px_22px_rgba(0,0,0,0.24)] ${isPromotionSection ? "border border-[#B7D438]/80" : "border border-[#2B4725]/70"}`}
               onClick={() => setSelectedProduct(produto)}
             >
+              {isPromotionSection && (
+                <span className="absolute right-3 top-3 z-10 rounded-full bg-[#B7D438] px-2 py-0.5 text-[10px] font-black text-[#07110B] shadow-[0_4px_12px_rgba(183,212,56,0.24)]">
+                  PROMO
+                </span>
+              )}
               {/* A Imagem do Produto (Lado Esquerdo) */}
-              <div className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden bg-[#2a2a2a]">
+              <div className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden bg-[#172315] border border-[#35532A]/70">
                 {produto.imageUrl ? (
                   <img 
                     src={getImageUrl(produto.imageUrl)} 
@@ -313,7 +274,7 @@ export default function Cardapio() {
                     className="object-cover w-full h-full"
                   />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-600">
+                  <div className="w-full h-full flex flex-col items-center justify-center text-[#6F8064]">
                     <svg className="w-8 h-8 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -323,19 +284,19 @@ export default function Cardapio() {
               
               {/* Textos (Lado Direito) */}
               <div className="flex flex-col flex-1 py-1 pr-6">
-                <h3 className="text-white font-bold text-base leading-tight line-clamp-1">
+                <h3 className="text-[#FFF8E6] font-bold text-base leading-tight line-clamp-1">
                   {produto.name}
                 </h3>
-                <p className="text-gray-400 text-xs line-clamp-2 mt-1">
+                <p className="text-[#C7D3B6] text-xs line-clamp-2 mt-1">
                   {produto.description || "Delicioso produto com ingredientes selecionados."}
                 </p>
                 
-                <span className="text-white font-semibold text-sm mt-2">
+                <span className="text-[#FFF8E6] font-semibold text-sm mt-2">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.price)}
                 </span>
               </div>
 
-              {/* O Botão de Adicionar (+) */}
+              {/* O BotÃ£o de Adicionar (+) */}
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
@@ -345,13 +306,14 @@ export default function Cardapio() {
                     addToCart(produto, 1);
                   }
                 }}
-                className="absolute bottom-3 right-3 flex items-center justify-center w-8 h-8 bg-[#F1C40F] rounded-full hover:scale-105 transition-transform z-10"
+                className="absolute bottom-3 right-3 flex items-center justify-center w-8 h-8 bg-[#F6B51B] rounded-full hover:scale-105 transition-transform z-10 shadow-[0_4px_12px_rgba(246,181,27,0.35)]"
                 aria-label="Adicionar 1 unidade"
               >
-                <span className="text-[#121212] font-black text-lg leading-none mt-[1px]">+</span>
+                <span className="text-[#07110B] font-black text-lg leading-none mt-[1px]">+</span>
               </button>
             </article>
-          ))])
+          ))];
+          })
         )}
       </div>
 
@@ -359,22 +321,22 @@ export default function Cardapio() {
       {pendingPayment && (
         <div 
           onClick={() => setIsCartOpen(true)}
-          className="fixed bottom-16 w-full bg-[#F1C40F] text-[#121212] py-3 px-4 text-center font-bold text-sm shadow-[0_-4px_10px_rgba(0,0,0,0.2)] cursor-pointer z-30 transition-colors hover:bg-[#D4AC0D] flex items-center justify-center gap-2"
+          className="fixed bottom-16 w-full bg-[#F6B51B] text-[#07110B] py-3 px-4 text-center font-bold text-sm shadow-[0_-4px_10px_rgba(0,0,0,0.2)] cursor-pointer z-30 transition-colors hover:bg-[#FFD33D] flex items-center justify-center gap-2"
         >
-          <span>⚠️</span>
+          <span>âš ï¸</span>
           Pedido Iniciado - Aguardando Pagamento (Clique para ver o Pix)
         </div>
       )}
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 w-full bg-[#121212] border-t border-[#1e1e1e] flex justify-around items-center h-16 pb-safe z-40">
-        <Link href="/" className="flex flex-col items-center justify-center w-full h-full text-[#F1C40F]">
+      <nav className="fixed bottom-0 w-full bg-[#07110B]/95 backdrop-blur-md border-t border-[#22391F] flex justify-around items-center h-16 pb-safe z-40">
+        <Link href="/" className="flex flex-col items-center justify-center w-full h-full text-[#F6B51B]">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
         </Link>
         
-        <Link href="/pedidos" className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-gray-400">
+        <Link href="/pedidos" className="flex flex-col items-center justify-center w-full h-full text-[#7E8D75] hover:text-[#C7D3B6]">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
@@ -382,21 +344,21 @@ export default function Cardapio() {
 
         <button 
           onClick={() => setIsCartOpen(true)}
-          className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-gray-400 relative"
+          className="flex flex-col items-center justify-center w-full h-full text-[#7E8D75] hover:text-[#C7D3B6] relative"
         >
           <div className="relative">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
             {totalItems > 0 && (
-              <span className="absolute -top-1.5 -right-2 bg-[#F1C40F] text-[#121212] text-[10px] font-black w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-[#121212]">
+              <span className="absolute -top-1.5 -right-2 bg-[#F6B51B] text-[#07110B] text-[10px] font-black w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-[#07110B]">
                 {totalItems}
               </span>
             )}
           </div>
         </button>
 
-        <button className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-gray-400">
+        <button className="flex flex-col items-center justify-center w-full h-full text-[#7E8D75] hover:text-[#C7D3B6]">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
