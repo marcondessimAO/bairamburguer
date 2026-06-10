@@ -18,7 +18,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.text.Normalizer;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +39,8 @@ public class OrderService {
     );
     private static final AddonOption FRIES_ADDON = new AddonOption("Batata frita", new BigDecimal("10.00"));
     private static final List<String> BLOCKED_NEIGHBORHOODS = List.of("manaira", "bessa", "colinas do sul");
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Sao_Paulo");
+    private static final LocalDate FREE_DELIVERY_PROMO_DATE = LocalDate.of(2026, 6, 10);
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
@@ -43,6 +48,7 @@ public class OrderService {
     private final PixPaymentService pixPaymentService;
     private final StoreSettingsService storeSettingsService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final Clock clock;
 
     public OrderCheckoutResponseDTO createOrder(OrderCheckoutRequestDTO request) {
         if (!storeSettingsService.isStoreOpen()) {
@@ -108,7 +114,7 @@ public class OrderService {
         order.setItems(orderItems);
 
         if (neighborhood != null) {
-            totalAmount = totalAmount.add(neighborhood.getDeliveryFee());
+            totalAmount = totalAmount.add(resolveDeliveryFee(neighborhood));
         }
         order.setTotalAmount(totalAmount);
 
@@ -152,7 +158,7 @@ public class OrderService {
             item.setOrder(pedido);
         }
 
-        totalAmount = totalAmount.add(neighborhood.getDeliveryFee());
+        totalAmount = totalAmount.add(resolveDeliveryFee(neighborhood));
 
         pedido.setTotalAmount(totalAmount);
         pedido.setNeighborhood(neighborhood);
@@ -261,6 +267,14 @@ public class OrderService {
 
     private boolean isBlockedNeighborhood(String value) {
         return BLOCKED_NEIGHBORHOODS.contains(normalizeName(value));
+    }
+
+    private BigDecimal resolveDeliveryFee(Neighborhood neighborhood) {
+        return isFreeDeliveryPromoActive() ? BigDecimal.ZERO : neighborhood.getDeliveryFee();
+    }
+
+    private boolean isFreeDeliveryPromoActive() {
+        return LocalDate.now(clock.withZone(STORE_ZONE)).isEqual(FREE_DELIVERY_PROMO_DATE);
     }
 
     private String normalizeAddonCode(String value) {

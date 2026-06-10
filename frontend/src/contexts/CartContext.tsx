@@ -39,7 +39,7 @@ export type PendingPayment = {
   pixCopiaECola?: string;
 };
 
-export const NEIGHBORHOODS: Neighborhood[] = [
+const BASE_NEIGHBORHOODS: Neighborhood[] = [
   { name: "Mangabeira", fee: 0.0 },
   { name: "Valentina", fee: 5.99 },
   { name: "Mucumagro", fee: 5.99 },
@@ -57,6 +57,30 @@ export const NEIGHBORHOODS: Neighborhood[] = [
   { name: "Cabo Branco", fee: 12.0 },
   { name: "Centro", fee: 15.0 },
 ];
+
+const STORE_TIME_ZONE = "America/Sao_Paulo";
+const FREE_DELIVERY_PROMO_DATE = "2026-06-10";
+
+export const isFreeDeliveryPromoActive = () => {
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: STORE_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
+  return today === FREE_DELIVERY_PROMO_DATE;
+};
+
+export const getDeliveryFeePreview = (neighborhood: Neighborhood | null) => {
+  if (!neighborhood || isFreeDeliveryPromoActive()) return 0;
+  return neighborhood.fee;
+};
+
+export const NEIGHBORHOODS: Neighborhood[] = BASE_NEIGHBORHOODS.map((neighborhood) => ({
+  ...neighborhood,
+  fee: getDeliveryFeePreview(neighborhood),
+}));
 
 const ADDON_PRICES: Record<NonNullable<CartAddonSelection["beverageAddon"]>, number> = {
   FANTA: 0,
@@ -129,7 +153,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [cartItems]
   );
 
-  const deliveryFee = deliveryNeighborhood?.fee ?? 0;
+  const deliveryFee = getDeliveryFeePreview(deliveryNeighborhood);
   const totalAmount = subtotal + deliveryFee;
 
   const addToCart = (product: Product, quantity: number = 1, addons: CartAddonSelection = {}) => {

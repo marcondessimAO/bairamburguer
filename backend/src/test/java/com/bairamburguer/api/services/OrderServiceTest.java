@@ -14,6 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +28,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class OrderServiceTest {
+
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Sao_Paulo");
+    private static final Clock PROMO_CLOCK = Clock.fixed(Instant.parse("2026-06-10T15:00:00Z"), STORE_ZONE);
+    private static final Clock NORMAL_CLOCK = Clock.fixed(Instant.parse("2026-06-11T15:00:00Z"), STORE_ZONE);
 
     @Test
     void checkoutNormalizesNeighborhoodNameBeforeApplyingDeliveryFee() {
@@ -62,12 +69,57 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class)
+                mock(SimpMessagingTemplate.class),
+                NORMAL_CLOCK
         );
 
         OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("  JOSE   AMERICO  "));
 
         assertThat(response.getTotalAmount()).isEqualByComparingTo("24.99");
+    }
+
+    @Test
+    void checkoutAppliesFreeDeliveryPromoToday() {
+        OrderRepository orders = mock(OrderRepository.class);
+        ProductRepository products = mock(ProductRepository.class);
+        NeighborhoodRepository neighborhoods = mock(NeighborhoodRepository.class);
+        PixPaymentService pix = mock(PixPaymentService.class);
+        StoreSettingsService storeSettings = mock(StoreSettingsService.class);
+
+        Product product = new Product();
+        product.setId(10);
+        product.setName("Bairam Teste");
+        product.setPrice(new BigDecimal("20.00"));
+
+        Neighborhood caboBranco = new Neighborhood();
+        caboBranco.setId(1);
+        caboBranco.setName("Cabo Branco");
+        caboBranco.setDeliveryFee(new BigDecimal("12.00"));
+
+        when(storeSettings.isStoreOpen()).thenReturn(true);
+        when(neighborhoods.findFirstByNameIgnoreCase("Cabo Branco")).thenReturn(Optional.of(caboBranco));
+        when(products.findAllById(List.of(10))).thenReturn(List.of(product));
+        when(orders.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(pix.generatePixCharge(any(Order.class), anyString(), anyString())).thenAnswer(invocation -> {
+            Order savedOrder = invocation.getArgument(0);
+            OrderCheckoutResponseDTO response = new OrderCheckoutResponseDTO();
+            response.setTotalAmount(savedOrder.getTotalAmount());
+            return response;
+        });
+
+        OrderService service = new OrderService(
+                orders,
+                products,
+                neighborhoods,
+                pix,
+                storeSettings,
+                mock(SimpMessagingTemplate.class),
+                PROMO_CLOCK
+        );
+
+        OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("Cabo Branco"));
+
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("20.00");
     }
 
     @Test
@@ -109,7 +161,8 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class)
+                mock(SimpMessagingTemplate.class),
+                NORMAL_CLOCK
         );
 
         OrderCheckoutRequestDTO request = checkoutRequest("Mangabeira");
@@ -137,7 +190,8 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class)
+                mock(SimpMessagingTemplate.class),
+                NORMAL_CLOCK
         );
 
         assertThatThrownBy(() -> service.createOrder(checkoutRequest("  MANAIRA ")))
@@ -174,7 +228,8 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class)
+                mock(SimpMessagingTemplate.class),
+                NORMAL_CLOCK
         );
 
         assertThatThrownBy(() -> service.createOrder(checkoutRequest("Mangabeira")))

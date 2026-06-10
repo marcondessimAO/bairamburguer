@@ -534,7 +534,7 @@ export function CartDrawer() {
                     </option>
                     {NEIGHBORHOODS.map((n) => (
                       <option key={n.name} value={n.name} className="bg-[#101A12] text-[#FFF8E6]">
-                        {n.name} — {BRL(n.fee)}
+                        {n.name} — {n.fee === 0 ? "Grátis" : BRL(n.fee)}
                       </option>
                     ))}
                   </select>
@@ -553,7 +553,7 @@ export function CartDrawer() {
                 <div className="flex justify-between text-gray-400">
                   <span className="font-medium">Taxa de entrega</span>
                   <span className={deliveryMode === "TAKEOUT" || deliveryNeighborhood ? "text-[#FFFFFF] font-semibold" : "text-gray-500 italic"}>
-                    {deliveryMode === "TAKEOUT" ? "Grátis (Retirada)" : (deliveryNeighborhood ? BRL(deliveryFee) : "Selecione um bairro")}
+                    {deliveryMode === "TAKEOUT" ? "Grátis (Retirada)" : (deliveryNeighborhood ? (deliveryFee === 0 ? "Grátis" : BRL(deliveryFee)) : "Selecione um bairro")}
                   </span>
                 </div>
                 <div className="flex justify-between pt-3 border-t border-gray-700 items-center">
