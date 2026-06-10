@@ -14,9 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.math.BigDecimal;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,12 +26,8 @@ import static org.mockito.Mockito.when;
 
 class OrderServiceTest {
 
-    private static final ZoneId STORE_ZONE = ZoneId.of("America/Sao_Paulo");
-    private static final Clock PROMO_CLOCK = Clock.fixed(Instant.parse("2026-06-10T15:00:00Z"), STORE_ZONE);
-    private static final Clock NORMAL_CLOCK = Clock.fixed(Instant.parse("2026-06-11T15:00:00Z"), STORE_ZONE);
-
     @Test
-    void checkoutNormalizesNeighborhoodNameBeforeApplyingDeliveryFee() {
+    void checkoutNormalizesNeighborhoodNameAndKeepsDeliveryFree() {
         OrderRepository orders = mock(OrderRepository.class);
         ProductRepository products = mock(ProductRepository.class);
         NeighborhoodRepository neighborhoods = mock(NeighborhoodRepository.class);
@@ -69,17 +62,16 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class),
-                NORMAL_CLOCK
+                mock(SimpMessagingTemplate.class)
         );
 
         OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("  JOSE   AMERICO  "));
 
-        assertThat(response.getTotalAmount()).isEqualByComparingTo("24.99");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("20.00");
     }
 
     @Test
-    void checkoutAppliesFreeDeliveryPromoToday() {
+    void checkoutAppliesFreeDeliveryForAllNeighborhoods() {
         OrderRepository orders = mock(OrderRepository.class);
         ProductRepository products = mock(ProductRepository.class);
         NeighborhoodRepository neighborhoods = mock(NeighborhoodRepository.class);
@@ -113,8 +105,7 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class),
-                PROMO_CLOCK
+                mock(SimpMessagingTemplate.class)
         );
 
         OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("Cabo Branco"));
@@ -161,8 +152,7 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class),
-                NORMAL_CLOCK
+                mock(SimpMessagingTemplate.class)
         );
 
         OrderCheckoutRequestDTO request = checkoutRequest("Mangabeira");
@@ -190,8 +180,7 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class),
-                NORMAL_CLOCK
+                mock(SimpMessagingTemplate.class)
         );
 
         assertThatThrownBy(() -> service.createOrder(checkoutRequest("  MANAIRA ")))
@@ -228,8 +217,7 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class),
-                NORMAL_CLOCK
+                mock(SimpMessagingTemplate.class)
         );
 
         assertThatThrownBy(() -> service.createOrder(checkoutRequest("Mangabeira")))

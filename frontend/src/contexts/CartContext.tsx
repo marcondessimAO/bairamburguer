@@ -39,48 +39,24 @@ export type PendingPayment = {
   pixCopiaECola?: string;
 };
 
-const BASE_NEIGHBORHOODS: Neighborhood[] = [
+export const NEIGHBORHOODS: Neighborhood[] = [
   { name: "Mangabeira", fee: 0.0 },
-  { name: "Valentina", fee: 5.99 },
-  { name: "Mucumagro", fee: 5.99 },
-  { name: "Gramame", fee: 5.99 },
-  { name: "Paratibe", fee: 5.99 },
-  { name: "Nova Mangabeira", fee: 5.99 },
-  { name: "Parque do Sol", fee: 5.99 },
-  { name: "Portal do Sol", fee: 5.99 },
-  { name: "Jose Americo", fee: 4.99 },
-  { name: "Colibris", fee: 4.99 },
-  { name: "Cidade Verde", fee: 4.99 },
-  { name: "Bancarios", fee: 4.99 },
-  { name: "Geisel", fee: 7.0 },
-  { name: "Cuia", fee: 8.0 },
-  { name: "Cabo Branco", fee: 12.0 },
-  { name: "Centro", fee: 15.0 },
+  { name: "Valentina", fee: 0.0 },
+  { name: "Mucumagro", fee: 0.0 },
+  { name: "Gramame", fee: 0.0 },
+  { name: "Paratibe", fee: 0.0 },
+  { name: "Nova Mangabeira", fee: 0.0 },
+  { name: "Parque do Sol", fee: 0.0 },
+  { name: "Portal do Sol", fee: 0.0 },
+  { name: "Jose Americo", fee: 0.0 },
+  { name: "Colibris", fee: 0.0 },
+  { name: "Cidade Verde", fee: 0.0 },
+  { name: "Bancarios", fee: 0.0 },
+  { name: "Geisel", fee: 0.0 },
+  { name: "Cuia", fee: 0.0 },
+  { name: "Cabo Branco", fee: 0.0 },
+  { name: "Centro", fee: 0.0 },
 ];
-
-const STORE_TIME_ZONE = "America/Sao_Paulo";
-const FREE_DELIVERY_PROMO_DATE = "2026-06-10";
-
-export const isFreeDeliveryPromoActive = () => {
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: STORE_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-
-  return today === FREE_DELIVERY_PROMO_DATE;
-};
-
-export const getDeliveryFeePreview = (neighborhood: Neighborhood | null) => {
-  if (!neighborhood || isFreeDeliveryPromoActive()) return 0;
-  return neighborhood.fee;
-};
-
-export const NEIGHBORHOODS: Neighborhood[] = BASE_NEIGHBORHOODS.map((neighborhood) => ({
-  ...neighborhood,
-  fee: getDeliveryFeePreview(neighborhood),
-}));
 
 const ADDON_PRICES: Record<NonNullable<CartAddonSelection["beverageAddon"]>, number> = {
   FANTA: 0,
@@ -153,7 +129,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [cartItems]
   );
 
-  const deliveryFee = getDeliveryFeePreview(deliveryNeighborhood);
+  const deliveryFee = 0;
   const totalAmount = subtotal + deliveryFee;
 
   const addToCart = (product: Product, quantity: number = 1, addons: CartAddonSelection = {}) => {

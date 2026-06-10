@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart, Product } from "@/contexts/CartContext";
 import { ProductDetailModal } from "@/components/ui/ProductDetailModal";
-import { Flame } from "lucide-react";
+import { Flame, Truck } from "lucide-react";
 import { getImageUrl } from "@/utils/imageUrl";
 import Link from "next/link";
 
@@ -202,6 +202,17 @@ export default function Cardapio() {
         </div>
       )}
 
+      <div className="w-full max-w-[560px] mx-auto px-4 mt-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-[#B7D438]/60 bg-[#B7D438]/10 px-4 py-3 shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#B7D438] text-[#07110B]">
+            <Truck className="h-5 w-5" strokeWidth={2.6} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-black tracking-wide text-[#FFF8E6]">ENTREGA GRATIS EM TODOS OS BAIRROS</p>
+            <p className="mt-0.5 text-xs font-semibold text-[#C7D3B6]">O frete fica por nossa conta para voce aproveitar mais no pedido.</p>
+          </div>
+        </div>
+      </div>
 
       {/* Carrossel de Categorias */}
       <div className="px-4 mt-5 mb-6 w-full max-w-[560px] mx-auto sticky top-[118px] z-20 bg-[#07110B]/95 backdrop-blur-md border-b border-[#22391F]/70">

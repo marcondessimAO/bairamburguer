@@ -457,6 +457,13 @@ export function CartDrawer() {
                 </label>
               </div>
 
+              {deliveryMode === "DELIVERY" && (
+                <div className="rounded-2xl border border-[#B7D438]/50 bg-[#B7D438]/10 px-4 py-3">
+                  <p className="text-sm font-black text-[#FFF8E6]">Entrega gratis para todos os bairros</p>
+                  <p className="mt-1 text-xs font-semibold text-[#C7D3B6]">Seu pedido chega sem taxa extra. Aproveite para pedir mais um acompanhamento.</p>
+                </div>
+              )}
+
               {/* Inputs do Visitante */}
               <div className="space-y-3">
                 <input
