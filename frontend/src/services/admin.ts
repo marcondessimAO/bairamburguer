@@ -33,6 +33,10 @@ export interface OrderDTO {
   orderStatus: string;
   paymentStatus: string;
   createdAt: string;
+  observation?: string;
+  notes?: string;
+  customerNote?: string;
+  orderNote?: string;
 }
 
 export interface ProductDTO {

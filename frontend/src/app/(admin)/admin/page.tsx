@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { removeAuthToken } from "@/services/auth";
 import { adminService, OrderDTO } from "@/services/admin";
+import { PrintOrderButton } from "@/components/ui/PrintOrderButton";
 
 const BELL_SOUND_URL = "/sounds/campainha.mp3.mp3";
 
@@ -163,13 +164,16 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <button
-          onClick={() => handleAdvanceStatus(order.id, order.orderStatus)}
-          disabled={isUpdating}
-          className={`w-full py-2.5 rounded-lg font-bold transition-all ${colors.btnBg} ${colors.text} ${colors.btnHover} border ${colors.border} disabled:opacity-50 disabled:cursor-wait`}
-        >
-          {isUpdating ? "Atualizando..." : buttonText}
-        </button>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <PrintOrderButton order={order} />
+          <button
+            onClick={() => handleAdvanceStatus(order.id, order.orderStatus)}
+            disabled={isUpdating}
+            className={`w-full py-2.5 rounded-lg font-bold transition-all ${colors.btnBg} ${colors.text} ${colors.btnHover} border ${colors.border} disabled:opacity-50 disabled:cursor-wait`}
+          >
+            {isUpdating ? "Atualizando..." : buttonText}
+          </button>
+        </div>
       </div>
     );
   };
