@@ -65,6 +65,54 @@ export function CartDrawer() {
 
     setIsProcessing(true);
 
+    const checkoutMode = process.env.NEXT_PUBLIC_CHECKOUT_MODE || "pix";
+
+    if (checkoutMode === "whatsapp") {
+      try {
+        const LOJA_WHATSAPP = "558399327186";
+        let mensagem = `*Novo pedido - Bairam Burguer*\n\n`;
+        mensagem += `Cliente: ${customerName}\n`;
+        mensagem += `Telefone: ${customerPhone}\n\n`;
+
+        if (deliveryMode === "DELIVERY") {
+          mensagem += `Entrega: Entrega\n`;
+          const addr = [street, number, complement].filter(Boolean).join(", ");
+          mensagem += `Endereço: ${addr} - ${deliveryNeighborhood?.name || ""}\n\n`;
+        } else {
+          mensagem += `Entrega: Retirada\n`;
+          mensagem += `Endereço: Retirada no local\n\n`;
+        }
+
+        mensagem += `*Itens:*\n`;
+        cartItems.forEach((item) => {
+          mensagem += `${item.quantity}x ${item.product.name}\n`;
+          if (item.addonsSummary) {
+            mensagem += `  Complementos:\n  * ${item.addonsSummary}\n`;
+          }
+        });
+
+        mensagem += `\nSubtotal: ${BRL(subtotal)}\n`;
+        if (deliveryMode === "DELIVERY") {
+          mensagem += `Taxa de entrega: ${BRL(deliveryFee)}\n`;
+        }
+        const finalTotal = deliveryMode === "TAKEOUT" ? subtotal : totalAmount;
+        mensagem += `Total: ${BRL(finalTotal)}\n\n`;
+
+        mensagem += `Pagamento: combinar pelo WhatsApp.\n`;
+
+        window.open(`https://wa.me/${LOJA_WHATSAPP}?text=${encodeURIComponent(mensagem)}`, '_blank');
+        
+        clearCart();
+        setIsCartOpen(false);
+      } catch (error) {
+        console.error(error);
+        alert("Erro ao montar o pedido para o WhatsApp.");
+      } finally {
+        setIsProcessing(false);
+      }
+      return;
+    }
+
     try {
       const payload = {
         customerName,
@@ -575,7 +623,7 @@ export function CartDrawer() {
                 disabled={!isStoreOpen || !isValidToSubmit || isProcessing}
                 className={`w-full flex items-center justify-center gap-2.5 font-black py-4 rounded-xl shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ${!isStoreOpen ? "bg-red-600 text-white shadow-red-600/10" : "bg-[#F6B51B] hover:bg-[#FFD33D] active:scale-[0.98] text-[#07110B] shadow-[#F6B51B]/10"}`}
               >
-                {!isStoreOpen ? "Loja Fechada no momento" : (isProcessing ? "Processando..." : "Finalizar Pedido via Pix")}
+                {!isStoreOpen ? "Loja Fechada no momento" : (isProcessing ? (process.env.NEXT_PUBLIC_CHECKOUT_MODE === "whatsapp" ? "Abrindo WhatsApp..." : "Processando...") : (process.env.NEXT_PUBLIC_CHECKOUT_MODE === "whatsapp" ? "Finalizar Pedido via WhatsApp" : "Finalizar Pedido via Pix"))}
               </button>
             </div>
           </>
