@@ -34,7 +34,10 @@ public class OrderService {
             "GUARANA", new AddonOption("Guarana", new BigDecimal("4.00"))
     );
     private static final AddonOption FRIES_ADDON = new AddonOption("Batata frita", new BigDecimal("10.00"));
-    private static final List<String> BLOCKED_NEIGHBORHOODS = List.of("manaira", "bessa", "colinas do sul");
+    private static final List<String> BLOCKED_NEIGHBORHOODS = List.of(
+            "manaira", "bessa", "colinas do sul",
+            "gramame", "cuia", "geisel", "ernesto geisel", "valentina", "mucumagro", "mussumagro", "parque do sol", "paratibe"
+    );
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
