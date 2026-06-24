@@ -10,11 +10,12 @@ export type Product = {
   imageUrl?: string;
   isAvailable: boolean;
   isPromotion: boolean;
+  originalPrice?: number;
   category: { name: string };
 };
 
 export type CartAddonSelection = {
-  beverageAddon?: "FANTA" | "PEPSI" | "COCA_COLA" | "GUARANA";
+  beverageAddon?: "FANTA" | "COCA_COLA" | "GUARANA";
   friesAddon?: boolean;
 };
 
@@ -60,14 +61,12 @@ export const NEIGHBORHOODS: Neighborhood[] = [
 
 const ADDON_PRICES: Record<NonNullable<CartAddonSelection["beverageAddon"]>, number> = {
   FANTA: 0,
-  PEPSI: 0,
   COCA_COLA: 4,
   GUARANA: 4,
 };
 
 const ADDON_LABELS: Record<NonNullable<CartAddonSelection["beverageAddon"]>, string> = {
   FANTA: "Fanta",
-  PEPSI: "Pepsi",
   COCA_COLA: "Coca-Cola",
   GUARANA: "Guarana",
 };

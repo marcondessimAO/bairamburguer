@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart, Product } from "@/contexts/CartContext";
@@ -271,11 +271,15 @@ export default function Cardapio() {
               className={`relative flex flex-row items-center gap-4 p-3 bg-[#101A12] rounded-2xl overflow-hidden cursor-pointer w-full hover:bg-[#162315] transition-colors shadow-[0_10px_22px_rgba(0,0,0,0.24)] ${isPromotionSection ? "border border-[#B7D438]/80" : "border border-[#2B4725]/70"}`}
               onClick={() => setSelectedProduct(produto)}
             >
-              {isPromotionSection && (
+              {isPromotionSection ? (
                 <span className="absolute right-3 top-3 z-10 rounded-full bg-[#B7D438] px-2 py-0.5 text-[10px] font-black text-[#07110B] shadow-[0_4px_12px_rgba(183,212,56,0.24)]">
                   PROMO
                 </span>
-              )}
+              ) : (produto.originalPrice && produto.originalPrice > produto.price) ? (
+                <span className="absolute right-3 top-3 z-10 rounded-full bg-[#F6B51B] px-2 py-0.5 text-[10px] font-black text-[#07110B] shadow-[0_4px_12px_rgba(246,181,27,0.24)]">
+                  OFERTA
+                </span>
+              ) : null}
               {/* A Imagem do Produto (Lado Esquerdo) */}
               <div className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden bg-[#172315] border border-[#35532A]/70">
                 {produto.imageUrl ? (
@@ -302,7 +306,12 @@ export default function Cardapio() {
                   {produto.description || "Delicioso produto com ingredientes selecionados."}
                 </p>
                 
-                <span className="text-[#FFF8E6] font-semibold text-sm mt-2">
+                <span className="text-[#FFF8E6] font-semibold text-sm mt-2 flex items-center">
+                  {produto.originalPrice && produto.originalPrice > produto.price && (
+                    <span className="text-[#6F8064] line-through text-xs mr-2 font-medium">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.originalPrice)}
+                    </span>
+                  )}
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.price)}
                 </span>
               </div>

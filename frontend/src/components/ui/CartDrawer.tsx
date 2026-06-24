@@ -158,11 +158,13 @@ export function CartDrawer() {
         clearCart();
       } else {
         const errorText = await response.text();
-        alert(`Erro do Servidor (${response.status}):\n\n${errorText}`);
+        console.error("Erro na API de Pagamento Pix (Status", response.status, "):", errorText);
+        alert("Não foi possível gerar o Pix no momento. Tente novamente ou fale com a loja pelo WhatsApp.");
+        return;
       }
     } catch (error) {
-      console.error(error);
-      alert("Erro de conexão com o servidor. Verifique se a API está rodando.");
+      console.error("Erro geral no checkout Pix:", error);
+      alert("Não foi possível gerar o Pix no momento. Tente novamente ou fale com a loja pelo WhatsApp.");
     } finally {
       setIsProcessing(false);
     }

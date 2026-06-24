@@ -47,6 +47,7 @@ export interface ProductDTO {
   imageUrl: string;
   isAvailable: boolean;
   isPromotion?: boolean;
+  originalPrice?: number;
   category: {
     id: number;
     name: string;

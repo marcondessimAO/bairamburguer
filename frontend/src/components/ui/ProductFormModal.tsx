@@ -25,6 +25,7 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAvailable, setIsAvailable] = useState(true);
   const [isPromotion, setIsPromotion] = useState(false);
+  const [originalPrice, setOriginalPrice] = useState('');
 
   useEffect(() => {
     if (isOpen && categories.length === 0) {
@@ -43,6 +44,7 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
       setCategoryId(product.category?.id?.toString() || '');
       setIsAvailable(product.isAvailable);
       setIsPromotion(product.isPromotion || false);
+      setOriginalPrice(product.originalPrice?.toString() || '');
       setImagePreview(product.imageUrl || null);
       setImageFile(null);
     } else {
@@ -52,6 +54,7 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
       setCategoryId('');
       setIsAvailable(true);
       setIsPromotion(false);
+      setOriginalPrice('');
       setImagePreview(null);
       setImageFile(null);
     }
@@ -98,7 +101,8 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
         price,
         categoryId: parseInt(categoryId, 10),
         isAvailable,
-        isPromotion
+        isPromotion,
+        originalPrice: originalPrice ? parseFloat(originalPrice.replace(',', '.')) : null
       };
       
       formData.append('product', JSON.stringify(productPayload));
@@ -163,6 +167,22 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
                 className="w-full bg-[#121212] border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 focus:outline-none focus:border-[#F1C40F] transition-colors"
                 placeholder="Ex: 25.90"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-zinc-400">Preço Original (Opcional)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3 text-zinc-500">R$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={originalPrice}
+                  onChange={e => setOriginalPrice(e.target.value)}
+                  className="w-full bg-[#121212] border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-zinc-100 focus:outline-none focus:border-[#F1C40F] transition-colors"
+                  placeholder="0.00"
+                />
+              </div>
             </div>
 
             <div className="space-y-2 md:col-span-2">

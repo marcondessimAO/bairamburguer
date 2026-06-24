@@ -30,7 +30,6 @@ public class OrderService {
 
     private static final Map<String, AddonOption> BEVERAGE_ADDONS = Map.of(
             "FANTA", new AddonOption("Fanta", BigDecimal.ZERO),
-            "PEPSI", new AddonOption("Pepsi", BigDecimal.ZERO),
             "COCA_COLA", new AddonOption("Coca-Cola", new BigDecimal("4.00")),
             "GUARANA", new AddonOption("Guarana", new BigDecimal("4.00"))
     );

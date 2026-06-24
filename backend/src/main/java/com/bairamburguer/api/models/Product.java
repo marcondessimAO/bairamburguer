@@ -35,6 +35,9 @@ public class Product {
     @Column(name = "is_promotion", columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean isPromotion = false;
 
+    @Column(name = "original_price", precision = 10, scale = 2)
+    private BigDecimal originalPrice;
+
     // Getters and Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -52,4 +55,6 @@ public class Product {
     public void setIsAvailable(Boolean isAvailable) { this.isAvailable = isAvailable; }
     public Boolean getIsPromotion() { return isPromotion; }
     public void setIsPromotion(Boolean isPromotion) { this.isPromotion = isPromotion; }
+    public BigDecimal getOriginalPrice() { return originalPrice; }
+    public void setOriginalPrice(BigDecimal originalPrice) { this.originalPrice = originalPrice; }
 }

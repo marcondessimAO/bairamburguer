@@ -58,6 +58,7 @@ public class AdminProductController {
             product.setCategory(categoryOpt.get());
             product.setIsAvailable(request.isAvailable == null || request.isAvailable);
             product.setIsPromotion(request.isPromotion != null && request.isPromotion);
+            product.setOriginalPrice(request.originalPrice);
 
             if (image != null && !image.isEmpty()) {
                 String imageUrl = saveImage(image);
@@ -103,6 +104,7 @@ public class AdminProductController {
             if (request.price != null) product.setPrice(request.price);
             if (request.isAvailable != null) product.setIsAvailable(request.isAvailable);
             if (request.isPromotion != null) product.setIsPromotion(request.isPromotion);
+            if (request.originalPrice != null) product.setOriginalPrice(request.originalPrice);
 
             if (image != null && !image.isEmpty()) {
                 String imageUrl = saveImage(image);
@@ -155,5 +157,6 @@ public class AdminProductController {
         public Integer categoryId;
         public Boolean isAvailable;
         public Boolean isPromotion;
+        public BigDecimal originalPrice;
     }
 }

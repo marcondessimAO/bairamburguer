@@ -112,7 +112,6 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                     <div className="grid grid-cols-2 gap-2">
                       {[
                         ["FANTA", "Fanta", 0],
-                        ["PEPSI", "Pepsi", 0],
                         ["COCA_COLA", "Coca-Cola", 4],
                         ["GUARANA", "Guarana", 4],
                       ].map(([value, label, price]) => (
