@@ -42,7 +42,12 @@ export type PendingPayment = {
 
 export const NEIGHBORHOODS: Neighborhood[] = [
   { name: "Mangabeira", fee: 0.0 },
+  { name: "Valentina", fee: 0.0 },
+  { name: "Mucumagro", fee: 0.0 },
+  { name: "Gramame", fee: 0.0 },
+  { name: "Paratibe", fee: 0.0 },
   { name: "Nova Mangabeira", fee: 0.0 },
+  { name: "Parque do Sol", fee: 0.0 },
   { name: "Portal do Sol", fee: 0.0 },
   { name: "Jose Americo", fee: 0.0 },
   { name: "Colibris", fee: 0.0 },
