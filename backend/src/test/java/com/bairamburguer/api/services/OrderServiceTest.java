@@ -83,13 +83,13 @@ class OrderServiceTest {
         product.setName("Bairam Teste");
         product.setPrice(new BigDecimal("20.00"));
 
-        Neighborhood caboBranco = new Neighborhood();
-        caboBranco.setId(1);
-        caboBranco.setName("Cabo Branco");
-        caboBranco.setDeliveryFee(new BigDecimal("12.00"));
+        Neighborhood mangabeira = new Neighborhood();
+        mangabeira.setId(1);
+        mangabeira.setName("Mangabeira");
+        mangabeira.setDeliveryFee(new BigDecimal("12.00"));
 
         when(storeSettings.isStoreOpen()).thenReturn(true);
-        when(neighborhoods.findFirstByNameIgnoreCase("Cabo Branco")).thenReturn(Optional.of(caboBranco));
+        when(neighborhoods.findFirstByNameIgnoreCase("Mangabeira")).thenReturn(Optional.of(mangabeira));
         when(products.findAllById(List.of(10))).thenReturn(List.of(product));
         when(orders.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(pix.generatePixCharge(any(Order.class), anyString(), anyString())).thenAnswer(invocation -> {
@@ -108,7 +108,7 @@ class OrderServiceTest {
                 mock(SimpMessagingTemplate.class)
         );
 
-        OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("Cabo Branco"));
+        OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("Mangabeira"));
 
         assertThat(response.getTotalAmount()).isEqualByComparingTo("20.00");
     }

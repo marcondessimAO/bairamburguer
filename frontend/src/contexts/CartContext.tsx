@@ -53,8 +53,6 @@ export const NEIGHBORHOODS: Neighborhood[] = [
   { name: "Colibris", fee: 0.0 },
   { name: "Cidade Verde", fee: 0.0 },
   { name: "Bancarios", fee: 0.0 },
-  { name: "Cabo Branco", fee: 0.0 },
-  { name: "Centro", fee: 0.0 },
 ];
 
 const ADDON_PRICES: Record<NonNullable<CartAddonSelection["beverageAddon"]>, number> = {
