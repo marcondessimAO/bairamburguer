@@ -140,6 +140,15 @@ export const adminService = {
     if (!response.ok) throw new Error('Falha ao inativar produto');
   },
 
+  toggleProductActive: async (id: number, active: boolean): Promise<ProductDTO> => {
+    const response = await fetchWithAuth(`/v1/admin/products/${id}/active`, {
+      method: 'PATCH',
+      body: JSON.stringify({ active })
+    });
+    if (!response.ok) throw new Error('Falha ao alterar status do produto');
+    return response.json();
+  },
+
   getStoreStatus: async () => {
     const baseUrl = '/api';
     const res = await fetch(`${baseUrl}/v1/settings/store/status`);

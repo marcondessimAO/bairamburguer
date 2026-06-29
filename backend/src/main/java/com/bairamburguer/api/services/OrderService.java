@@ -18,6 +18,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.bairamburguer.api.dto.OrderTrackResponseDTO;
+import com.bairamburguer.api.dto.TrackItemDTO;
+import java.time.format.DateTimeFormatter;
 import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.LocalDateTime;
@@ -321,5 +324,111 @@ public class OrderService {
     }
 
     private record AddonCalculation(BigDecimal total, String summary) {
+    }
+
+    public OrderTrackResponseDTO trackOrder(Long orderId, String inputPhone) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido não encontrado. Confira o número do pedido e telefone."));
+
+        String normInput = normalizePhone(inputPhone);
+        String normSaved = normalizePhone(order.getCustomerPhone());
+
+        boolean match = normInput.equals(normSaved);
+        if (!match) {
+            if (normInput.startsWith("55") && normInput.substring(2).equals(normSaved)) {
+                match = true;
+            } else if (normSaved.startsWith("55") && normSaved.substring(2).equals(normInput)) {
+                match = true;
+            }
+        }
+
+        if (!match) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido não encontrado. Confira o número do pedido e telefone.");
+        }
+
+        OrderTrackResponseDTO dto = new OrderTrackResponseDTO();
+        dto.setId(order.getId());
+        dto.setOrderStatus(order.getOrderStatus());
+        dto.setPaymentStatus(order.getPaymentStatus());
+        dto.setStatusLabel(resolveStatusLabel(order));
+        dto.setCustomerName(order.getCustomerName());
+        dto.setCustomerPhoneMasked(maskPhone(order.getCustomerPhone()));
+        dto.setDeliveryMode(order.getNeighborhood() != null ? "ENTREGA" : "RETIRADA");
+        
+        if (order.getNeighborhood() != null) {
+            String addr = "Rua " + order.getStreet() + ", Nº " + order.getNumber();
+            if (order.getComplement() != null && !order.getComplement().isBlank()) {
+                addr += " (" + order.getComplement() + ")";
+            }
+            addr += " - " + order.getNeighborhood().getName();
+            dto.setAddressSummary(addr);
+        } else {
+            dto.setAddressSummary("Retirada na Loja");
+        }
+
+        List<TrackItemDTO> itemDTOs = new ArrayList<>();
+        BigDecimal subtotal = BigDecimal.ZERO;
+        for (OrderItem item : order.getItems()) {
+            TrackItemDTO idto = new TrackItemDTO();
+            idto.setProductName(item.getProduct().getName());
+            idto.setQuantity(item.getQuantity());
+            idto.setPrice(item.getProduct().getPrice());
+            idto.setAddonsSummary(item.getAddonsSummary());
+            idto.setAddonsTotal(item.getAddonsTotal() != null ? item.getAddonsTotal() : BigDecimal.ZERO);
+            idto.setSubtotal(item.getSubtotal());
+            
+            subtotal = subtotal.add(item.getSubtotal());
+            itemDTOs.add(idto);
+        }
+        dto.setItems(itemDTOs);
+        dto.setSubtotal(subtotal);
+        dto.setDeliveryFee(BigDecimal.ZERO);
+        dto.setTotalAmount(order.getTotalAmount());
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        dto.setCreatedAt(order.getCreatedAt().format(formatter));
+
+        return dto;
+    }
+
+    private String normalizePhone(String phone) {
+        if (phone == null) return "";
+        return phone.replaceAll("\\D", "");
+    }
+
+    private String maskPhone(String phone) {
+        if (phone == null) return "";
+        String digits = phone.replaceAll("\\D", "");
+        if (digits.length() == 11) {
+            return "(" + digits.substring(0, 2) + ") " + digits.substring(2, 3) + "****-" + digits.substring(7);
+        } else if (digits.length() == 10) {
+            return "(" + digits.substring(0, 2) + ") ****-" + digits.substring(6);
+        }
+        if (phone.length() > 4) {
+            return phone.substring(0, 4) + "****";
+        }
+        return phone;
+    }
+
+    private String resolveStatusLabel(Order order) {
+        if ("CANCELED".equalsIgnoreCase(order.getOrderStatus()) || "CANCELLED".equalsIgnoreCase(order.getOrderStatus())) {
+            return "Cancelado";
+        }
+        if ("DELIVERED".equalsIgnoreCase(order.getOrderStatus())) {
+            return "Entregue";
+        }
+        if ("DISPATCHED".equalsIgnoreCase(order.getOrderStatus())) {
+            return "Saiu para entrega";
+        }
+        if ("PREPARING".equalsIgnoreCase(order.getOrderStatus()) || "IN_PRODUCTION".equalsIgnoreCase(order.getOrderStatus())) {
+            return "Pedido em preparo";
+        }
+        if ("PENDING".equalsIgnoreCase(order.getOrderStatus()) || "RCVD".equalsIgnoreCase(order.getOrderStatus())) {
+            if ("PAID".equalsIgnoreCase(order.getPaymentStatus())) {
+                return "Pagamento confirmado";
+            }
+            return "Aguardando pagamento";
+        }
+        return order.getOrderStatus();
     }
 }

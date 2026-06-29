@@ -147,6 +147,24 @@ public class AdminProductController {
         return ResponseEntity.ok(productRepository.save(product));
     }
 
+    @PatchMapping("/{id}/active")
+    public ResponseEntity<?> toggleProductActive(
+            @PathVariable Integer id,
+            @RequestBody ActiveRequest request) {
+        Optional<Product> productOpt = productRepository.findById(id);
+        if (productOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Product product = productOpt.get();
+        product.setIsAvailable(request.active);
+        return ResponseEntity.ok(productRepository.save(product));
+    }
+
+    public static class ActiveRequest {
+        public Boolean active;
+    }
+
     private String saveImage(MultipartFile image) {
         try {
             Path uploadPath = Paths.get(UPLOAD_DIR);

@@ -43,6 +43,11 @@ public class OrderController {
         return orderService.buscarPorId(id);
     }
 
+    @PostMapping("/track")
+    public com.bairamburguer.api.dto.OrderTrackResponseDTO trackOrder(@RequestBody com.bairamburguer.api.dto.OrderTrackRequestDTO request) {
+        return orderService.trackOrder(request.getOrderId(), request.getPhone());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public java.util.Map<String, String> handleExceptions(Exception e) {

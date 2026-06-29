@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { adminService, ProductDTO } from '@/services/admin';
 import { ProductFormModal } from '@/components/ui/ProductFormModal';
-import { Plus, Edit2, Trash, Flame, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit2, Trash, Flame, Image as ImageIcon, Check } from 'lucide-react';
 import { getImageUrl } from "@/utils/imageUrl";
 
 export default function AdminMenuPage() {
@@ -11,6 +11,7 @@ export default function AdminMenuPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductDTO | null>(null);
+  const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
 
   const fetchProducts = async () => {
     try {
@@ -47,20 +48,28 @@ export default function AdminMenuPage() {
     setIsModalOpen(true);
   };
 
+  const handleToggleActive = async (id: number, active: boolean) => {
+    const actionText = active ? 'reativar' : 'desativar';
+    if (!confirm(`Tem a certeza que deseja ${actionText} este produto?`)) return;
+    try {
+      await adminService.toggleProductActive(id, active);
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      alert(`Erro ao ${actionText} produto.`);
+    }
+  };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedProduct(null);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Tem a certeza que deseja inativar este produto?')) return;
-    try {
-      await adminService.deleteProduct(id);
-      fetchProducts();
-    } catch (err) {
-      alert('Erro ao inativar produto.');
-    }
-  };
+  const filteredProducts = products.filter(p => {
+    if (filter === 'ACTIVE') return p.isAvailable;
+    if (filter === 'INACTIVE') return !p.isAvailable;
+    return true;
+  });
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -77,11 +86,44 @@ export default function AdminMenuPage() {
         </button>
       </div>
 
+      <div className="flex gap-2 bg-[#1E1E1E] p-2 rounded-2xl border border-zinc-800 shadow-lg w-fit">
+        <button
+          onClick={() => setFilter('ALL')}
+          className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${
+            filter === 'ALL'
+              ? 'bg-[#F1C40F] text-black'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          Todos
+        </button>
+        <button
+          onClick={() => setFilter('ACTIVE')}
+          className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${
+            filter === 'ACTIVE'
+              ? 'bg-[#F1C40F] text-black'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          Ativos
+        </button>
+        <button
+          onClick={() => setFilter('INACTIVE')}
+          className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${
+            filter === 'INACTIVE'
+              ? 'bg-[#F1C40F] text-black'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          Inativos
+        </button>
+      </div>
+
       <div className="bg-[#1E1E1E] rounded-2xl border border-zinc-800 shadow-lg overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-zinc-400">A carregar produtos...</div>
-        ) : products.length === 0 ? (
-          <div className="p-8 text-center text-zinc-400">Nenhum produto cadastrado.</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="p-8 text-center text-zinc-400">Nenhum produto cadastrado nesta categoria.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-zinc-300">
@@ -95,8 +137,8 @@ export default function AdminMenuPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800">
-                {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-[#252525] transition-colors">
+                {filteredProducts.map((product) => (
+                  <tr key={product.id} className={`hover:bg-[#252525] transition-colors ${!product.isAvailable ? 'opacity-60 bg-zinc-900/30' : ''}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-4">
                         {product.imageUrl ? (
@@ -147,14 +189,23 @@ export default function AdminMenuPage() {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={() => handleDelete(product.id)}
-                          disabled={!product.isAvailable}
-                          className="text-zinc-400 hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed p-2 rounded-lg hover:bg-[#2A2A2A]"
-                          title="Inativar Produto"
-                        >
-                          <Trash className="w-4 h-4" />
-                        </button>
+                        {product.isAvailable ? (
+                          <button 
+                            onClick={() => handleToggleActive(product.id, false)}
+                            className="text-zinc-400 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-[#2A2A2A]"
+                            title="Desativar Produto"
+                          >
+                            <Trash className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleToggleActive(product.id, true)}
+                            className="text-zinc-400 hover:text-green-400 transition-colors p-2 rounded-lg hover:bg-[#2A2A2A]"
+                            title="Reativar Produto"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

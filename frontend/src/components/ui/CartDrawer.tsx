@@ -95,6 +95,15 @@ export function CartDrawer() {
 
       if (response.status === 201) {
         const data = await response.json();
+        
+        // Save order ID to localStorage and phone to sessionStorage safely
+        if (data && data.orderId) {
+          localStorage.setItem("lastOrderId", data.orderId.toString());
+        }
+        if (customerPhone) {
+          sessionStorage.setItem("lastOrderPhone", customerPhone);
+        }
+
         // Guardar snapshot antes de limpar o carrinho
         orderSnapshotRef.current = {
           customerName,
@@ -258,7 +267,7 @@ export function CartDrawer() {
                 setPaymentSuccess(false);
                 setPendingPayment(null);
                 setIsCartOpen(false);
-                router.push("/pedidos");
+                router.push("/acompanhar-pedido");
               }}
               className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe59] active:scale-[0.98] text-white font-black py-4 w-full rounded-xl shadow-lg shadow-[#25D366]/20 transition-all mt-3"
             >
@@ -273,7 +282,7 @@ export function CartDrawer() {
                 setPaymentSuccess(false);
                 setPendingPayment(null);
                 setIsCartOpen(false);
-                router.push("/pedidos");
+                router.push("/acompanhar-pedido");
               }}
               className="w-full mt-2 text-gray-400 hover:text-white bg-[#1A1A1A] py-4 rounded-xl font-bold transition-colors"
             >
