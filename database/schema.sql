@@ -59,3 +59,33 @@ CREATE TABLE IF NOT EXISTS payments (
         REFERENCES orders(id)
         ON DELETE CASCADE
 );
+
+ALTER TABLE products ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url VARCHAR(255);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS is_promotion BOOLEAN DEFAULT FALSE;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS original_price NUMERIC(10,2);
+
+CREATE TABLE IF NOT EXISTS addons (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    group_name VARCHAR(100) NOT NULL,
+    selection_type VARCHAR(50) DEFAULT 'MULTIPLE',
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS product_addons (
+    product_id INT NOT NULL,
+    addon_id BIGINT NOT NULL,
+    PRIMARY KEY (product_id, addon_id),
+    CONSTRAINT fk_product_addons_product
+        FOREIGN KEY(product_id) 
+        REFERENCES products(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_product_addons_addon
+        FOREIGN KEY(addon_id) 
+        REFERENCES addons(id)
+        ON DELETE CASCADE
+);

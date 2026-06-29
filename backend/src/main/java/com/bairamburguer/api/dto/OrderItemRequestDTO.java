@@ -1,6 +1,7 @@
 package com.bairamburguer.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
 public class OrderItemRequestDTO {
     @JsonProperty("product")
@@ -8,6 +9,7 @@ public class OrderItemRequestDTO {
     private int quantity;
     private String beverageAddon;
     private boolean friesAddon;
+    private List<Long> addonIds;
 
     public Long getProductId() { return productId; }
     public void setProductId(Long productId) { this.productId = productId; }
@@ -20,4 +22,7 @@ public class OrderItemRequestDTO {
 
     public boolean isFriesAddon() { return friesAddon; }
     public void setFriesAddon(boolean friesAddon) { this.friesAddon = friesAddon; }
+
+    public List<Long> getAddonIds() { return addonIds; }
+    public void setAddonIds(List<Long> addonIds) { this.addonIds = addonIds; }
 }

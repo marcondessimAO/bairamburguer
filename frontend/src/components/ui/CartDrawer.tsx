@@ -80,6 +80,7 @@ export function CartDrawer() {
           quantity: item.quantity,
           beverageAddon: item.addons?.beverageAddon,
           friesAddon: item.addons?.friesAddon === true,
+          addonIds: item.addons?.addonIds || []
         }))
       };
 

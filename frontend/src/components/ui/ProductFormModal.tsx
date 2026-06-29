@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { adminService, ProductDTO, CategoryDTO } from '@/services/admin';
+import { adminService, ProductDTO, CategoryDTO, AddonDTO } from '@/services/admin';
 import { X, UploadCloud, Save } from 'lucide-react';
 
 interface ProductFormModalProps {
@@ -26,12 +26,19 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
   const [isAvailable, setIsAvailable] = useState(true);
   const [isPromotion, setIsPromotion] = useState(false);
   const [originalPrice, setOriginalPrice] = useState('');
+  const [addonsList, setAddonsList] = useState<AddonDTO[]>([]);
+  const [selectedAddons, setSelectedAddons] = useState<number[]>([]);
 
   useEffect(() => {
-    if (isOpen && categories.length === 0) {
-      adminService.getCategories()
-        .then(setCategories)
-        .catch(err => console.error('Erro ao carregar categorias', err));
+    if (isOpen) {
+      if (categories.length === 0) {
+        adminService.getCategories()
+          .then(setCategories)
+          .catch(err => console.error('Erro ao carregar categorias', err));
+      }
+      adminService.getAddons()
+        .then(setAddonsList)
+        .catch(err => console.error('Erro ao carregar adicionais', err));
     }
   }, [isOpen, categories.length]);
 
@@ -47,6 +54,7 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
       setOriginalPrice(product.originalPrice?.toString() || '');
       setImagePreview(product.imageUrl || null);
       setImageFile(null);
+      setSelectedAddons(product.addons?.map(a => a.id) || []);
     } else {
       setName('');
       setDescription('');
@@ -57,6 +65,7 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
       setOriginalPrice('');
       setImagePreview(null);
       setImageFile(null);
+      setSelectedAddons([]);
     }
     };
 
@@ -102,7 +111,8 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
         categoryId: parseInt(categoryId, 10),
         isAvailable,
         isPromotion,
-        originalPrice: originalPrice ? parseFloat(originalPrice.replace(',', '.')) : null
+        originalPrice: originalPrice ? parseFloat(originalPrice.replace(',', '.')) : null,
+        addonIds: selectedAddons
       };
       
       formData.append('product', JSON.stringify(productPayload));
@@ -237,6 +247,36 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-3 md:col-span-2 bg-[#121212] p-4 rounded-xl border border-zinc-800">
+              <label className="block text-sm font-semibold text-zinc-300">Vincular Adicionais/Complementos</label>
+              {addonsList.length === 0 ? (
+                <p className="text-zinc-500 text-xs">Nenhum adicional cadastrado.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-40 overflow-y-auto pr-2 mt-2">
+                  {addonsList.map(addon => (
+                    <label key={addon.id} className="flex items-center space-x-3 cursor-pointer p-2 rounded hover:bg-zinc-800/50 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={selectedAddons.includes(addon.id)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setSelectedAddons([...selectedAddons, addon.id]);
+                          } else {
+                            setSelectedAddons(selectedAddons.filter(id => id !== addon.id));
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-zinc-700 text-[#F1C40F] focus:ring-[#F1C40F] focus:ring-offset-[#1E1E1E] bg-[#1E1E1E]"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-zinc-300">{addon.name}</span>
+                        <span className="text-xs text-zinc-500">{addon.groupName} • R$ {addon.price.toFixed(2)}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
             
             <div className="space-y-4 md:col-span-2 mt-2 bg-[#121212] p-4 rounded-xl border border-zinc-800">

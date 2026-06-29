@@ -52,6 +52,17 @@ export interface ProductDTO {
     id: number;
     name: string;
   };
+  addons?: AddonDTO[];
+}
+
+export interface AddonDTO {
+  id: number;
+  name: string;
+  price: number;
+  groupName: string;
+  selectionType: 'SINGLE' | 'MULTIPLE';
+  active: boolean;
+  products?: { id: number; name: string }[];
 }
 
 export interface CategoryDTO {
@@ -139,5 +150,39 @@ export const adminService = {
     const res = await fetchWithAuth('/v1/admin/settings/store/toggle', { method: 'POST' });
     if (!res.ok) throw new Error('Falha ao alternar status da loja');
     return res.json();
+  },
+
+  // Addons CRUD
+  getAddons: async (): Promise<AddonDTO[]> => {
+    const response = await fetchWithAuth('/v1/admin/addons');
+    if (!response.ok) throw new Error('Falha ao buscar adicionais');
+    return response.json();
+  },
+
+  createAddon: async (addonData: { name: string; price: number; groupName: string; selectionType: string; active?: boolean; productIds: number[] }): Promise<AddonDTO> => {
+    const response = await fetchWithAuth('/v1/admin/addons', {
+      method: 'POST',
+      body: JSON.stringify(addonData)
+    });
+    if (!response.ok) throw new Error('Falha ao criar adicional');
+    return response.json();
+  },
+
+  updateAddon: async (id: number, addonData: { name: string; price: number; groupName: string; selectionType: string; active?: boolean; productIds: number[] }): Promise<AddonDTO> => {
+    const response = await fetchWithAuth(`/v1/admin/addons/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(addonData)
+    });
+    if (!response.ok) throw new Error('Falha ao atualizar adicional');
+    return response.json();
+  },
+
+  toggleAddonActive: async (id: number, active: boolean): Promise<AddonDTO> => {
+    const response = await fetchWithAuth(`/v1/admin/addons/${id}/active`, {
+      method: 'PATCH',
+      body: JSON.stringify({ active })
+    });
+    if (!response.ok) throw new Error('Falha ao alterar status do adicional');
+    return response.json();
   }
 };

@@ -5,6 +5,7 @@ import com.bairamburguer.api.repositories.CategoryRepository;
 import com.bairamburguer.api.repositories.NeighborhoodRepository;
 import com.bairamburguer.api.repositories.ProductRepository;
 import com.bairamburguer.api.repositories.UserRepository;
+import com.bairamburguer.api.repositories.AddonRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -46,7 +47,8 @@ class DatabaseSeederTest {
                 products,
                 neighborhoods,
                 users,
-                passwordEncoder
+                passwordEncoder,
+                mock(AddonRepository.class)
         );
 
         seeder.run();

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { LayoutDashboard, MenuSquare, LogOut, BarChart3, Store } from 'lucide-react';
+import { LayoutDashboard, MenuSquare, LogOut, BarChart3, Store, Layers } from 'lucide-react';
 import { StoreToggle } from '@/components/ui/StoreToggle';
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -81,6 +81,13 @@ export default function AdminLayout({
             <MenuSquare className="w-5 h-5 group-hover:text-[#F1C40F] transition-colors" />
             <span className="font-medium group-hover:translate-x-1 transition-transform">Gerir Cardápio</span>
           </Link>
+          <Link 
+            href="/admin/addons"
+            className="flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors group"
+          >
+            <Layers className="w-5 h-5 group-hover:text-[#F1C40F] transition-colors" />
+            <span className="font-medium group-hover:translate-x-1 transition-transform">Gerir Adicionais</span>
+          </Link>
         </nav>
 
         <div className="p-4 border-t border-zinc-800">
@@ -107,6 +114,7 @@ export default function AdminLayout({
             <Link href="/admin/dashboard" className="text-zinc-400 hover:text-zinc-100 transition-colors">Dash</Link>
             <Link href="/admin" className="text-zinc-400 hover:text-zinc-100 transition-colors">Kanban</Link>
             <Link href="/admin/menu" className="text-zinc-400 hover:text-zinc-100 transition-colors">Menu</Link>
+            <Link href="/admin/addons" className="text-zinc-400 hover:text-zinc-100 transition-colors">Adicionais</Link>
           </div>
         </header>
 

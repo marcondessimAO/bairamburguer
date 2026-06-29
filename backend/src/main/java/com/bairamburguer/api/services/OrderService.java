@@ -3,10 +3,12 @@ package com.bairamburguer.api.services;
 import com.bairamburguer.api.dto.OrderCheckoutRequestDTO;
 import com.bairamburguer.api.dto.OrderCheckoutResponseDTO;
 import com.bairamburguer.api.dto.OrderItemRequestDTO;
+import com.bairamburguer.api.models.Addon;
 import com.bairamburguer.api.models.Neighborhood;
 import com.bairamburguer.api.models.Order;
 import com.bairamburguer.api.models.OrderItem;
 import com.bairamburguer.api.models.Product;
+import com.bairamburguer.api.repositories.AddonRepository;
 import com.bairamburguer.api.repositories.NeighborhoodRepository;
 import com.bairamburguer.api.repositories.OrderRepository;
 import com.bairamburguer.api.repositories.ProductRepository;
@@ -45,6 +47,7 @@ public class OrderService {
     private final PixPaymentService pixPaymentService;
     private final StoreSettingsService storeSettingsService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final AddonRepository addonRepository;
 
     public OrderCheckoutResponseDTO createOrder(OrderCheckoutRequestDTO request) {
         if (!storeSettingsService.isStoreOpen()) {
@@ -223,34 +226,62 @@ public class OrderService {
     }
 
     private AddonCalculation calculateAddons(Product product, OrderItemRequestDTO itemDto) {
-        String beverageCode = itemDto.getBeverageAddon();
-        boolean hasAddons = (beverageCode != null && !beverageCode.isBlank()) || itemDto.isFriesAddon();
-        if (!hasAddons) {
-            return new AddonCalculation(BigDecimal.ZERO, null);
-        }
-
-        if (!isIndividualProduct(product)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Complementos permitidos apenas para Bairam Individuais.");
-        }
-
         BigDecimal total = BigDecimal.ZERO;
         List<String> summary = new ArrayList<>();
 
-        if (beverageCode != null && !beverageCode.isBlank()) {
-            AddonOption beverage = BEVERAGE_ADDONS.get(normalizeAddonCode(beverageCode));
-            if (beverage == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Refrigerante invalido: " + beverageCode);
+        if (itemDto.getAddonIds() != null && !itemDto.getAddonIds().isEmpty()) {
+            List<Addon> productAddons = product.getAddons();
+            List<Long> productAddonIds = productAddons.stream()
+                    .filter(Addon::getActive)
+                    .map(Addon::getId)
+                    .collect(Collectors.toList());
+
+            for (Long addonId : itemDto.getAddonIds()) {
+                Addon addon = addonRepository.findById(addonId)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Adicional nao encontrado: ID " + addonId));
+
+                if (Boolean.FALSE.equals(addon.getActive())) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Adicional inativo: " + addon.getName());
+                }
+
+                if (!productAddonIds.contains(addonId)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Adicional " + addon.getName() + " nao esta vinculado ao produto " + product.getName());
+                }
+
+                total = total.add(addon.getPrice());
+                if (addon.getPrice().compareTo(BigDecimal.ZERO) > 0) {
+                    summary.add(addon.getName() + " (+ R$ " + addon.getPrice().toString().replace(".", ",") + ")");
+                } else {
+                    summary.add(addon.getName());
+                }
             }
-            total = total.add(beverage.price());
-            summary.add("Refrigerante: " + beverage.label());
+        } else {
+            String beverageCode = itemDto.getBeverageAddon();
+            boolean hasAddons = (beverageCode != null && !beverageCode.isBlank()) || itemDto.isFriesAddon();
+            if (!hasAddons) {
+                return new AddonCalculation(BigDecimal.ZERO, null);
+            }
+
+            if (!isIndividualProduct(product)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Complementos permitidos apenas para Bairam Individuais.");
+            }
+
+            if (beverageCode != null && !beverageCode.isBlank()) {
+                AddonOption beverage = BEVERAGE_ADDONS.get(normalizeAddonCode(beverageCode));
+                if (beverage == null) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Refrigerante invalido: " + beverageCode);
+                }
+                total = total.add(beverage.price());
+                summary.add("Refrigerante: " + beverage.label());
+            }
+
+            if (itemDto.isFriesAddon()) {
+                total = total.add(FRIES_ADDON.price());
+                summary.add(FRIES_ADDON.label());
+            }
         }
 
-        if (itemDto.isFriesAddon()) {
-            total = total.add(FRIES_ADDON.price());
-            summary.add(FRIES_ADDON.label());
-        }
-
-        return new AddonCalculation(total, String.join("; ", summary));
+        return new AddonCalculation(total, summary.isEmpty() ? null : String.join("; ", summary));
     }
 
     private boolean isIndividualProduct(Product product) {

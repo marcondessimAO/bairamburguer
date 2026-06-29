@@ -7,6 +7,7 @@ import com.bairamburguer.api.models.Category;
 import com.bairamburguer.api.models.Neighborhood;
 import com.bairamburguer.api.models.Order;
 import com.bairamburguer.api.models.Product;
+import com.bairamburguer.api.repositories.AddonRepository;
 import com.bairamburguer.api.repositories.NeighborhoodRepository;
 import com.bairamburguer.api.repositories.OrderRepository;
 import com.bairamburguer.api.repositories.ProductRepository;
@@ -62,7 +63,8 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class)
+                mock(SimpMessagingTemplate.class),
+                mock(AddonRepository.class)
         );
 
         OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("  JOSE   AMERICO  "));
@@ -105,7 +107,8 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class)
+                mock(SimpMessagingTemplate.class),
+                mock(AddonRepository.class)
         );
 
         OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("Mangabeira"));
@@ -152,7 +155,8 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class)
+                mock(SimpMessagingTemplate.class),
+                mock(AddonRepository.class)
         );
 
         OrderCheckoutRequestDTO request = checkoutRequest("Mangabeira");
@@ -180,7 +184,8 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class)
+                mock(SimpMessagingTemplate.class),
+                mock(AddonRepository.class)
         );
 
         assertThatThrownBy(() -> service.createOrder(checkoutRequest("  MANAIRA ")))
@@ -217,7 +222,8 @@ class OrderServiceTest {
                 neighborhoods,
                 pix,
                 storeSettings,
-                mock(SimpMessagingTemplate.class)
+                mock(SimpMessagingTemplate.class),
+                mock(AddonRepository.class)
         );
 
         assertThatThrownBy(() -> service.createOrder(checkoutRequest("Mangabeira")))

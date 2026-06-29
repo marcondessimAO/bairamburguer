@@ -6,6 +6,8 @@ import com.bairamburguer.api.models.User;
 import com.bairamburguer.api.repositories.CategoryRepository;
 import com.bairamburguer.api.repositories.ProductRepository;
 import com.bairamburguer.api.repositories.UserRepository;
+import com.bairamburguer.api.models.Addon;
+import com.bairamburguer.api.repositories.AddonRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -26,6 +28,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final NeighborhoodRepository neighborhoodRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AddonRepository addonRepository;
 
     @Override
     @Transactional
@@ -168,6 +171,24 @@ public class DatabaseSeeder implements CommandLineRunner {
         upsertCategory("PETISCOS");
         upsertCategory("MILKSHAKES");
         System.out.println("DatabaseSeeder: Categorias verificadas/atualizadas com sucesso!");
+
+        // Seed Addons
+        Addon coca = upsertAddon("Coca-Cola (Lata)", new BigDecimal("4.00"), "Bebida", "SINGLE");
+        Addon guarana = upsertAddon("Guaraná Antarctica (Lata)", new BigDecimal("4.00"), "Bebida", "SINGLE");
+        Addon fanta = upsertAddon("Fanta Laranja (Lata)", new BigDecimal("0.00"), "Bebida", "SINGLE");
+        Addon batata = upsertAddon("Batata Frita", new BigDecimal("10.00"), "Acompanhamento", "MULTIPLE");
+
+        // Vincular adicionais aos produtos (idempotente)
+        for (Product p : productRepository.findAll()) {
+            if (p.getAddons() == null || p.getAddons().isEmpty()) {
+                p.getAddons().add(coca);
+                p.getAddons().add(guarana);
+                p.getAddons().add(fanta);
+                p.getAddons().add(batata);
+                productRepository.save(p);
+            }
+        }
+        System.out.println("DatabaseSeeder: Adicionais padrão cadastrados e vinculados com sucesso!");
     }
 
     /** Cria a categoria se não existir; devolve a entidade persistida. */
@@ -177,5 +198,20 @@ public class DatabaseSeeder implements CommandLineRunner {
             c.setName(name);
             return categoryRepository.save(c);
         });
+    }
+
+    private Addon upsertAddon(String name, BigDecimal price, String groupName, String selectionType) {
+        return addonRepository.findAll().stream()
+                .filter(a -> a.getName().equalsIgnoreCase(name))
+                .findFirst()
+                .orElseGet(() -> {
+                    Addon a = new Addon();
+                    a.setName(name);
+                    a.setPrice(price);
+                    a.setGroupName(groupName);
+                    a.setSelectionType(selectionType);
+                    a.setActive(true);
+                    return addonRepository.save(a);
+                });
     }
 }

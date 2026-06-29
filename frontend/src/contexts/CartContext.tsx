@@ -12,11 +12,22 @@ export type Product = {
   isPromotion: boolean;
   originalPrice?: number;
   category: { name: string };
+  addons?: {
+    id: number;
+    name: string;
+    price: number;
+    groupName: string;
+    selectionType: 'SINGLE' | 'MULTIPLE';
+    active: boolean;
+  }[];
 };
 
 export type CartAddonSelection = {
   beverageAddon?: "FANTA" | "COCA_COLA" | "GUARANA";
   friesAddon?: boolean;
+  addonIds?: number[];
+  addonsSummary?: string;
+  addonsTotal?: number;
 };
 
 export type CartItem = {
@@ -70,20 +81,30 @@ const ADDON_LABELS: Record<NonNullable<CartAddonSelection["beverageAddon"]>, str
 const normalizeAddons = (addons: CartAddonSelection): CartAddonSelection => ({
   beverageAddon: addons.beverageAddon,
   friesAddon: addons.friesAddon === true,
+  addonIds: addons.addonIds || [],
+  addonsSummary: addons.addonsSummary,
+  addonsTotal: addons.addonsTotal
 });
 
-const getAddonsTotal = (addons: CartAddonSelection) =>
-  (addons.beverageAddon ? ADDON_PRICES[addons.beverageAddon] : 0) + (addons.friesAddon ? 10 : 0);
+const getAddonsTotal = (addons: CartAddonSelection) => {
+  if (addons.addonsTotal !== undefined) return addons.addonsTotal;
+  return (addons.beverageAddon ? ADDON_PRICES[addons.beverageAddon] : 0) + (addons.friesAddon ? 10 : 0);
+};
 
 const getAddonsSummary = (addons: CartAddonSelection) => {
+  if (addons.addonsSummary !== undefined) return addons.addonsSummary;
   const summary = [];
   if (addons.beverageAddon) summary.push(`Refrigerante: ${ADDON_LABELS[addons.beverageAddon]}`);
   if (addons.friesAddon) summary.push("Batata frita");
   return summary.join("; ");
 };
 
-const getCartItemId = (productId: number, addons: CartAddonSelection) =>
-  `${productId}:${addons.beverageAddon ?? "NO_DRINK"}:${addons.friesAddon ? "FRIES" : "NO_FRIES"}`;
+const getCartItemId = (productId: number, addons: CartAddonSelection) => {
+  const addonPart = addons.addonIds && addons.addonIds.length > 0 
+    ? [...addons.addonIds].sort((a, b) => a - b).join('-')
+    : `${addons.beverageAddon ?? "NO_DRINK"}:${addons.friesAddon ? "FRIES" : "NO_FRIES"}`;
+  return `${productId}:${addonPart}`;
+};
 
 interface CartContextData {
   cartItems: CartItem[];

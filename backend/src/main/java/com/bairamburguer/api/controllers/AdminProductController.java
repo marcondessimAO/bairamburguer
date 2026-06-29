@@ -2,8 +2,10 @@ package com.bairamburguer.api.controllers;
 
 import com.bairamburguer.api.models.Category;
 import com.bairamburguer.api.models.Product;
+import com.bairamburguer.api.models.Addon;
 import com.bairamburguer.api.repositories.CategoryRepository;
 import com.bairamburguer.api.repositories.ProductRepository;
+import com.bairamburguer.api.repositories.AddonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
@@ -29,6 +31,9 @@ public class AdminProductController {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private AddonRepository addonRepository;
 
     private final String UPLOAD_DIR = "uploads/";
 
@@ -65,6 +70,11 @@ public class AdminProductController {
                 if (imageUrl != null) {
                     product.setImageUrl(imageUrl);
                 }
+            }
+
+            if (request.addonIds != null) {
+                List<Addon> addons = addonRepository.findAllById(request.addonIds);
+                product.setAddons(addons);
             }
 
             return ResponseEntity.ok(productRepository.save(product));
@@ -113,6 +123,11 @@ public class AdminProductController {
                 }
             }
 
+            if (request.addonIds != null) {
+                List<Addon> addons = addonRepository.findAllById(request.addonIds);
+                product.setAddons(addons);
+            }
+
             return ResponseEntity.ok(productRepository.save(product));
         } catch (Exception e) {
             e.printStackTrace();
@@ -158,5 +173,6 @@ public class AdminProductController {
         public Boolean isAvailable;
         public Boolean isPromotion;
         public BigDecimal originalPrice;
+        public List<Long> addonIds;
     }
 }

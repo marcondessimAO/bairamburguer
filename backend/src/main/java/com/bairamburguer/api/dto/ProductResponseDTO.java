@@ -1,55 +1,22 @@
-package com.bairamburguer.api.models;
+package com.bairamburguer.api.dto;
 
-import jakarta.persistence.*;
+import com.bairamburguer.api.models.Category;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@Entity
-@Table(name = "products")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Product {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ProductResponseDTO {
     private Integer id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
-
-    @Column(nullable = false)
     private String name;
-
-    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
-
-    @Column(columnDefinition = "TEXT")
     private String description;
-
-    @Column(name = "image_url")
     private String imageUrl;
-
-    @Column(name = "is_available", columnDefinition = "BOOLEAN DEFAULT TRUE")
-    private Boolean isAvailable = true;
-
-    @Column(name = "is_promotion", columnDefinition = "BOOLEAN DEFAULT FALSE")
-    private Boolean isPromotion = false;
-
-    @Column(name = "original_price", precision = 10, scale = 2)
+    private Boolean isAvailable;
+    private Boolean isPromotion;
     private BigDecimal originalPrice;
+    private List<AddonResponseDTO> addons;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "product_addons",
-        joinColumns = @JoinColumn(name = "product_id"),
-        inverseJoinColumns = @JoinColumn(name = "addon_id")
-    )
-    @JsonIgnoreProperties("products")
-    private List<Addon> addons = new ArrayList<>();
-
-    // Getters and Setters
+    // Getters e Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public Category getCategory() { return category; }
@@ -68,6 +35,6 @@ public class Product {
     public void setIsPromotion(Boolean isPromotion) { this.isPromotion = isPromotion; }
     public BigDecimal getOriginalPrice() { return originalPrice; }
     public void setOriginalPrice(BigDecimal originalPrice) { this.originalPrice = originalPrice; }
-    public List<Addon> getAddons() { return addons; }
-    public void setAddons(List<Addon> addons) { this.addons = addons; }
+    public List<AddonResponseDTO> getAddons() { return addons; }
+    public void setAddons(List<AddonResponseDTO> addons) { this.addons = addons; }
 }
