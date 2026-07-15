@@ -41,7 +41,7 @@ public class OrderService {
     private static final AddonOption FRIES_ADDON = new AddonOption("Batata frita", new BigDecimal("10.00"));
     private static final List<String> BLOCKED_NEIGHBORHOODS = List.of(
             "manaira", "bessa", "colinas do sul",
-            "cuia", "geisel", "ernesto geisel", "cabo branco", "centro"
+            "cuia", "cabo branco", "centro"
     );
 
     private final OrderRepository orderRepository;
