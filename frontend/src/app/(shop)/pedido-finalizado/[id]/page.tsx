@@ -129,7 +129,7 @@ export default function FinishedOrderPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#121212] px-4 py-6 text-white">
+    <main className="min-h-screen bg-[#F7F8FA] px-4 py-6 text-zinc-900">
       <div className="mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-2xl flex-col">
         <header className="mb-6 flex items-center justify-between">
           <Image
@@ -145,7 +145,7 @@ export default function FinishedOrderPage() {
           </Link>
         </header>
 
-        <section className="flex-1 rounded-2xl border border-gray-800 bg-[#1A1A1A] p-5 shadow-xl">
+        <section className="flex-1 rounded-2xl border border-gray-800 bg-[#1A1A1A] p-5 shadow-xl text-white">
           {loading ? (
             <div className="flex min-h-[420px] flex-col items-center justify-center text-center">
               <div className="mb-5 h-12 w-12 animate-spin rounded-full border-4 border-[#F1C40F] border-t-transparent" />

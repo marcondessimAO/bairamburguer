@@ -129,9 +129,9 @@ export default function AcompanharPedidoPage() {
   const isCanceled = order?.orderStatus === "CANCELED" || order?.orderStatus === "CANCELLED";
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 text-zinc-100 min-h-[80vh]">
+    <div className="max-w-4xl mx-auto px-4 py-8 text-zinc-900 min-h-[80vh]">
       {!order ? (
-        <div className="max-w-md mx-auto bg-[#1E1E1E] rounded-2xl border border-zinc-800 shadow-2xl p-8 space-y-6">
+        <div className="max-w-md mx-auto bg-[#1E1E1E] text-zinc-100 rounded-2xl border border-zinc-800 shadow-2xl p-8 space-y-6">
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold text-[#F1C40F]">Acompanhar Pedido</h1>
             <p className="text-zinc-400 text-sm">Insira os dados do seu pedido para visualizar o status em tempo real.</p>
@@ -271,7 +271,7 @@ export default function AcompanharPedidoPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Order Items & Calculations */}
-            <div className="md:col-span-2 bg-[#1E1E1E] rounded-2xl border border-zinc-800 shadow-xl overflow-hidden flex flex-col">
+            <div className="md:col-span-2 bg-[#1E1E1E] text-zinc-100 rounded-2xl border border-zinc-800 shadow-xl overflow-hidden flex flex-col">
               <div className="p-6 border-b border-zinc-800 bg-[#1A1A1A] flex items-center gap-2">
                 <ClipboardList className="w-5 h-5 text-[#F1C40F]" />
                 <h3 className="font-bold text-zinc-200">Resumo dos Itens</h3>

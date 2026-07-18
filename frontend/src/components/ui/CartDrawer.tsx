@@ -222,7 +222,7 @@ export function CartDrawer() {
         role="dialog"
         aria-modal="true"
         aria-label="Carrinho de compras"
-        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full md:w-[420px] h-[100dvh] bg-[#07110B] shadow-[-8px_0_40px_rgba(0,0,0,0.8)] border-l border-[#2B4725]"
+        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full md:w-[420px] h-[100dvh] bg-[#07110B] text-[#FFF8E6] shadow-[-8px_0_40px_rgba(0,0,0,0.8)] border-l border-[#2B4725]"
       >
         {/* ── Header (shrink-0 — nunca encolhe) ── */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#2B4725] shrink-0">

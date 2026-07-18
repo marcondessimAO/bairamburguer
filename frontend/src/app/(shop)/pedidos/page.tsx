@@ -122,7 +122,7 @@ export default function ShopHome() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#121212] flex flex-col items-center justify-center font-sans text-[#FFFFFF]">
+      <main className="min-h-screen bg-[#F7F8FA] flex flex-col items-center justify-center font-sans text-zinc-900">
         <div className="w-16 h-16 border-4 border-[#F1C40F] border-t-transparent rounded-full animate-spin mb-6"></div>
         <h1 className="text-2xl font-medium tracking-tight">
           Procurando seus pedidos na cozinha...
@@ -133,7 +133,7 @@ export default function ShopHome() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-[#121212] flex flex-col items-center justify-center p-6 font-sans text-[#FFFFFF]">
+      <main className="min-h-screen bg-[#F7F8FA] flex flex-col items-center justify-center p-6 font-sans text-zinc-900">
         <div className="bg-[#1e1e1e] p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] max-w-md text-center border border-gray-800">
           <h1 className="text-2xl font-bold mb-2 tracking-tight">
             Ops, sistema offline
@@ -147,7 +147,7 @@ export default function ShopHome() {
   }
 
   return (
-    <main className="min-h-screen bg-[#121212] p-6 md:p-12 font-sans text-[#FFFFFF]">
+    <main className="min-h-screen bg-[#F7F8FA] p-6 md:p-12 font-sans text-zinc-900">
       <div className="max-w-5xl mx-auto">
         <header className="flex flex-col items-center justify-center mb-12 border-b border-gray-800 pb-8 text-center">
           <img src="/images/bairam-logo.jpg.jpg" alt="Logo Bairamburguer" className="h-20 w-auto mb-6 rounded-lg" />

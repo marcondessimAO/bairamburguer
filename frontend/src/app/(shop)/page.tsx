@@ -131,7 +131,7 @@ export default function Cardapio() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#07110B] flex flex-col items-center justify-center font-sans text-[#FFF8E6]">
+      <main className="min-h-screen bg-[#F7F8FA] flex flex-col items-center justify-center font-sans text-zinc-900">
         <div className="w-16 h-16 border-4 border-[#B7D438] border-t-transparent rounded-full animate-spin mb-6"></div>
         <h1 className="text-2xl font-medium tracking-tight">
           Preparando o cardÃ¡pio...
@@ -142,8 +142,8 @@ export default function Cardapio() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-[#07110B] flex flex-col items-center justify-center p-6 font-sans text-[#FFF8E6]">
-        <div className="bg-[#122016] p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] max-w-md text-center border border-[#35532A]">
+      <main className="min-h-screen bg-[#F7F8FA] flex flex-col items-center justify-center p-6 font-sans text-zinc-900">
+        <div className="bg-[#122016] text-[#FFF8E6] p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] max-w-md text-center border border-[#35532A]">
           <h1 className="text-2xl font-bold mb-2 tracking-tight">
             CardÃ¡pio indisponÃ­vel
           </h1>
@@ -158,7 +158,7 @@ export default function Cardapio() {
   const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <main className="min-h-screen bg-[#07110B] [background-image:linear-gradient(135deg,rgba(183,212,56,0.045)_1px,transparent_1px),radial-gradient(circle_at_top,rgba(8,82,43,0.38),transparent_34rem)] [background-size:26px_26px,100%_100%] font-sans text-[#FFF8E6] relative flex flex-col uppercase">
+    <main className="min-h-screen bg-[#F7F8FA] font-sans text-zinc-900 relative flex flex-col uppercase">
       {/* Product Detail Modal */}
       <ProductDetailModal 
         isOpen={!!selectedProduct} 
@@ -195,10 +195,10 @@ export default function Cardapio() {
       {/* Banner Loja Fechada */}
       {!isStoreOpen && (
         <div className="bg-[#B42318]/95 backdrop-blur-sm text-white px-4 py-2 flex items-center justify-center gap-2 font-bold text-sm sticky top-[118px] z-20 shadow-lg shadow-red-900/20">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          Estamos fechados no momento. VocÃª pode navegar, mas nÃ£o realizar pedidos.
+          🔴 ESTAMOS FECHADOS NO MOMENTO. NOSSO HORÁRIO DE FUNCIONAMENTO É DAS 19H00 ÀS 03H00.
         </div>
       )}
 
@@ -208,8 +208,8 @@ export default function Cardapio() {
             <Truck className="h-5 w-5" strokeWidth={2.6} />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-black tracking-wide text-[#FFF8E6]">ENTREGA GRATIS EM TODOS OS BAIRROS</p>
-            <p className="mt-0.5 text-xs font-semibold text-[#C7D3B6]">O frete fica por nossa conta para voce aproveitar mais no pedido.</p>
+            <p className="text-sm font-black tracking-wide text-zinc-900">ENTREGA GRATIS EM TODOS OS BAIRROS</p>
+            <p className="mt-0.5 text-xs font-semibold text-zinc-600">O frete fica por nossa conta para voce aproveitar mais no pedido.</p>
           </div>
         </div>
       </div>
@@ -236,8 +236,8 @@ export default function Cardapio() {
       {/* Listagem de Produtos */}
       <div className="flex-1 px-4 space-y-4 pb-28 w-full max-w-[560px] mx-auto">
         {productSections.length === 0 ? (
-           <div className="text-center py-16 bg-[#101A12] rounded-3xl border border-[#2B4725]/70 mx-auto max-w-sm mt-8">
-             <svg className="w-12 h-12 text-[#6F8064] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+           <div className="text-center py-16 bg-[#101A12] text-[#FFF8E6] rounded-3xl border border-[#2A3C24] mx-auto max-w-sm mt-8">
+             <svg className="w-12 h-12 text-[#7E8D75] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
              </svg>
              <p className="text-[#C7D3B6] font-medium">Nenhum lanche encontrado.</p>
@@ -257,10 +257,10 @@ export default function Cardapio() {
             >
               <div className="flex items-center gap-2">
                 {isPromotionSection && <Flame className="h-5 w-5 text-[#F6B51B]" fill="#F6B51B" />}
-                <h2 className="text-lg font-black tracking-wide text-[#FFF8E6]">{category}</h2>
+                <h2 className={`text-lg font-black tracking-wide ${isPromotionSection ? "text-[#FFF8E6]" : "text-zinc-900"}`}>{category}</h2>
               </div>
               {isPromotionSection && (
-                <p className="mt-1 text-xs font-semibold text-[#C7D3B6]">
+                <p className={`mt-1 text-xs font-semibold ${isPromotionSection ? "text-[#C7D3B6]" : "text-zinc-500"}`}>
                   Ofertas selecionadas para pedir agora.
                 </p>
               )}
