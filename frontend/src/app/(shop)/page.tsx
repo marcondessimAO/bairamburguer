@@ -167,18 +167,18 @@ export default function Cardapio() {
       />
 
       {/* Header & Busca Fixos no Topo */}
-      <div className="pt-6 pb-3 px-4 sticky top-0 bg-[#07110B]/95 backdrop-blur-md z-30 border-b border-[#22391F]/70 w-full max-w-[560px] mx-auto">
+      <div className="pt-6 pb-4 px-4 sticky top-0 bg-[#F7F8FA]/95 backdrop-blur-md z-30 border-b border-zinc-200 w-full max-w-[560px] mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-black text-[#FFF8E6] tracking-tight leading-none">Bairam Burguer</h1>
-            <p className="mt-1 text-sm font-black tracking-wide text-[#B7D438]">E PETISCARIA</p>
+            <h1 className="text-2xl font-black text-zinc-900 tracking-tight leading-none">Bairam Burguer</h1>
+            <p className="mt-1 text-sm font-black tracking-wide text-green-700">E PETISCARIA</p>
           </div>
-          <img src="/images/bairam-logo.jpg.jpg" alt="Logo" className="w-12 h-12 rounded-full object-cover border-2 border-[#FFF8E6] shadow-[0_0_0_3px_rgba(183,212,56,0.28)]" />
+          <img src="/images/bairam-logo.jpg.jpg" alt="Logo" className="w-12 h-12 rounded-full object-cover border border-zinc-200 shadow-sm" />
         </div>
         
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <svg className="w-5 h-5 text-[#B7D438]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
@@ -187,18 +187,20 @@ export default function Cardapio() {
             placeholder="Buscar lanches..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#111A13] text-[#FFF8E6] rounded-2xl pl-12 pr-4 py-3.5 border border-[#2B4725] focus:outline-none focus:ring-2 focus:ring-[#B7D438]/70 transition-all placeholder:text-[#859279] font-medium shadow-inner"
+            className="w-full bg-white text-zinc-900 rounded-2xl pl-11 pr-4 py-3.5 border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all placeholder:text-zinc-400 font-medium shadow-sm"
           />
         </div>
       </div>
 
       {/* Banner Loja Fechada */}
       {!isStoreOpen && (
-        <div className="bg-[#B42318]/95 backdrop-blur-sm text-white px-4 py-2 flex items-center justify-center gap-2 font-bold text-sm sticky top-[118px] z-20 shadow-lg shadow-red-900/20">
-          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          🔴 ESTAMOS FECHADOS NO MOMENTO. NOSSO HORÁRIO DE FUNCIONAMENTO É DAS 19H00 ÀS 03H00.
+        <div className="w-full max-w-[560px] mx-auto px-4 mt-4">
+          <div className="bg-[#B42318] text-white px-4 py-3 rounded-2xl flex items-center justify-center gap-2 font-bold text-[13px] shadow-lg shadow-red-900/10 leading-snug text-center">
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>🔴 ESTAMOS FECHADOS NO MOMENTO. NOSSO HORÁRIO DE FUNCIONAMENTO É DAS 19H00 ÀS 03H00.</span>
+          </div>
         </div>
       )}
 
@@ -215,7 +217,7 @@ export default function Cardapio() {
       </div>
 
       {/* Carrossel de Categorias */}
-      <div className="px-4 mt-5 mb-6 w-full max-w-[560px] mx-auto sticky top-[118px] z-20 bg-[#07110B]/95 backdrop-blur-md border-b border-[#22391F]/70">
+      <div className="px-4 mt-5 mb-6 w-full max-w-[560px] mx-auto sticky top-[166px] z-20 bg-[#F7F8FA]/95 backdrop-blur-md border-b border-zinc-200">
         <div className="overflow-x-auto scrollbar-hide flex gap-5 pb-2 pt-3">
           {categories.map(cat => (
             <button
@@ -223,8 +225,8 @@ export default function Cardapio() {
               onClick={() => scrollToCategory(cat)}
               className={`whitespace-nowrap font-bold text-sm pb-2 border-b-2 transition-all ${
                 selectedCategory === cat
-                  ? "text-[#F6B51B] border-[#F6B51B]"
-                  : "text-[#7E8D75] border-transparent hover:text-[#C7D3B6]"
+                  ? "text-green-700 border-green-700"
+                  : "text-zinc-500 border-transparent hover:text-zinc-800"
               }`}
             >
               {cat}
@@ -349,14 +351,14 @@ export default function Cardapio() {
       )}
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 w-full bg-[#07110B]/95 backdrop-blur-md border-t border-[#22391F] flex justify-around items-center h-16 pb-safe z-40">
-        <Link href="/" className="flex flex-col items-center justify-center w-full h-full text-[#F6B51B]">
+      <nav className="fixed bottom-0 w-full bg-[#F7F8FA]/95 backdrop-blur-md border-t border-zinc-200 flex justify-around items-center h-16 pb-safe z-40">
+        <Link href="/" className="flex flex-col items-center justify-center w-full h-full text-green-700">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
         </Link>
         
-        <Link href="/pedidos" className="flex flex-col items-center justify-center w-full h-full text-[#7E8D75] hover:text-[#C7D3B6]">
+        <Link href="/pedidos" className="flex flex-col items-center justify-center w-full h-full text-zinc-500 hover:text-zinc-800">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
@@ -364,21 +366,21 @@ export default function Cardapio() {
 
         <button 
           onClick={() => setIsCartOpen(true)}
-          className="flex flex-col items-center justify-center w-full h-full text-[#7E8D75] hover:text-[#C7D3B6] relative"
+          className="flex flex-col items-center justify-center w-full h-full text-zinc-500 hover:text-zinc-800 relative"
         >
           <div className="relative">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
             {totalItems > 0 && (
-              <span className="absolute -top-1.5 -right-2 bg-[#F6B51B] text-[#07110B] text-[10px] font-black w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-[#07110B]">
+              <span className="absolute -top-1.5 -right-2 bg-green-600 text-white text-[10px] font-black w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-white">
                 {totalItems}
               </span>
             )}
           </div>
         </button>
 
-        <Link href="/acompanhar-pedido" className="flex flex-col items-center justify-center w-full h-full text-[#7E8D75] hover:text-[#C7D3B6]" title="Acompanhar Pedido">
+        <Link href="/acompanhar-pedido" className="flex flex-col items-center justify-center w-full h-full text-zinc-500 hover:text-zinc-800" title="Acompanhar Pedido">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
