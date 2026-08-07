@@ -49,6 +49,12 @@ public class Order {
     @Column(name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "production_started_at")
+    private LocalDateTime productionStartedAt;
+
+    @Column(name = "ready_at")
+    private LocalDateTime readyAt;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
@@ -77,6 +83,10 @@ public class Order {
     public void setOrderStatus(String orderStatus) { this.orderStatus = orderStatus; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getProductionStartedAt() { return productionStartedAt; }
+    public void setProductionStartedAt(LocalDateTime productionStartedAt) { this.productionStartedAt = productionStartedAt; }
+    public LocalDateTime getReadyAt() { return readyAt; }
+    public void setReadyAt(LocalDateTime readyAt) { this.readyAt = readyAt; }
     public List<OrderItem> getItems() { return items; }
     public void setItems(List<OrderItem> items) { this.items = items; }
 }

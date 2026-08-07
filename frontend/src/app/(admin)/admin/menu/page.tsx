@@ -9,7 +9,7 @@ import { getImageUrl } from "@/utils/imageUrl";
 export default function AdminMenuPage() {
   const [products, setProducts] = useState<ProductDTO[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('create') === 'true');
   const [selectedProduct, setSelectedProduct] = useState<ProductDTO | null>(null);
   const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
 

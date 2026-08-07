@@ -1,63 +1,39 @@
 package com.bairamburguer.api.controllers;
 
 import com.bairamburguer.api.dto.DashboardMetricsDTO;
-import com.bairamburguer.api.repositories.OrderItemRepository;
-import com.bairamburguer.api.repositories.OrderRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.bairamburguer.api.services.DashboardService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
+
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
+@RequiredArgsConstructor
 public class DashboardController {
-
-    @Autowired
-    private OrderRepository orderRepository;
-
-    @Autowired
-    private OrderItemRepository orderItemRepository;
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Recife");
+    private final DashboardService dashboardService;
 
     @GetMapping("/metrics")
-    public ResponseEntity<DashboardMetricsDTO> getMetrics() {
-        java.time.LocalDateTime startOfMonth = java.time.YearMonth.now().atDay(1).atStartOfDay();
-        java.time.LocalDateTime endOfMonth = java.time.YearMonth.now().atEndOfMonth().atTime(23, 59, 59);
-
-        BigDecimal totalRevenue = orderRepository.calculateMonthlyRevenue(startOfMonth, endOfMonth);
-        Long totalOrders = orderRepository.countMonthlyOrders(startOfMonth, endOfMonth);
-
-        BigDecimal averageTicket = BigDecimal.ZERO;
-        if (totalOrders != null && totalOrders > 0 && totalRevenue != null) {
-            averageTicket = totalRevenue.divide(BigDecimal.valueOf(totalOrders), 2, RoundingMode.HALF_UP);
+    public ResponseEntity<DashboardMetricsDTO> getMetrics(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        LocalDate today = LocalDate.now(STORE_ZONE);
+        LocalDate start = startDate == null ? YearMonth.from(today).atDay(1) : startDate;
+        LocalDate end = endDate == null ? today : endDate;
+        if (end.isBefore(start)) {
+            throw new ResponseStatusException(BAD_REQUEST, "A data final deve ser igual ou posterior à data inicial.");
         }
-
-        List<Object[]> revenueLast7DaysData = orderRepository.getRevenueLast7Days(java.time.LocalDateTime.now().minusDays(7));
-        List<DashboardMetricsDTO.DateRevenueDTO> revenueHistory = revenueLast7DaysData.stream()
-                .map(row -> new DashboardMetricsDTO.DateRevenueDTO(
-                        (String) row[0],
-                        row[1] != null ? new BigDecimal(row[1].toString()) : BigDecimal.ZERO
-                ))
-                .collect(Collectors.toList());
-
-        List<Object[]> top5ProductsData = orderItemRepository.getTop5Products();
-        List<DashboardMetricsDTO.TopProductDTO> topProducts = top5ProductsData.stream()
-                .map(row -> new DashboardMetricsDTO.TopProductDTO(
-                        (String) row[0],
-                        row[1] != null ? ((Number) row[1]).longValue() : 0L,
-                        row[2] != null ? new BigDecimal(row[2].toString()) : BigDecimal.ZERO
-                ))
-                .collect(Collectors.toList());
-
-        DashboardMetricsDTO metrics = new DashboardMetricsDTO(
-                totalRevenue, totalOrders, averageTicket, revenueHistory, topProducts
-        );
-
-        return ResponseEntity.ok(metrics);
+        return ResponseEntity.ok(dashboardService.getMetrics(start, end));
     }
 }

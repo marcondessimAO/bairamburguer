@@ -27,6 +27,9 @@ public class OrderItem {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
 
+    @Column(name = "product_name_snapshot", length = 255)
+    private String productNameSnapshot;
+
     @Column(name = "addons_summary", length = 255)
     private String addonsSummary;
 
@@ -44,6 +47,8 @@ public class OrderItem {
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
     public BigDecimal getSubtotal() { return subtotal; }
     public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
+    public String getProductNameSnapshot() { return productNameSnapshot; }
+    public void setProductNameSnapshot(String productNameSnapshot) { this.productNameSnapshot = productNameSnapshot; }
     public String getAddonsSummary() { return addonsSummary; }
     public void setAddonsSummary(String addonsSummary) { this.addonsSummary = addonsSummary; }
     public BigDecimal getAddonsTotal() { return addonsTotal; }
