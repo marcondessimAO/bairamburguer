@@ -33,7 +33,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query(value = "SELECT date_trunc(:bucket, o.created_at), COALESCE(SUM(o.total_amount), 0), COUNT(o) " +
            "FROM orders o WHERE o.payment_status = 'PAID' AND UPPER(o.order_status) NOT IN ('CANCELED', 'CANCELLED') " +
            "AND o.created_at >= :startDate AND o.created_at < :endDate " +
-           "GROUP BY date_trunc(:bucket, o.created_at) ORDER BY date_trunc(:bucket, o.created_at)", nativeQuery = true)
+           "GROUP BY 1 ORDER BY 1", nativeQuery = true)
     List<Object[]> getSalesEvolution(@org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,
                                      @org.springframework.data.repository.query.Param("endDate") java.time.LocalDateTime endDate,
                                      @org.springframework.data.repository.query.Param("bucket") String bucket);

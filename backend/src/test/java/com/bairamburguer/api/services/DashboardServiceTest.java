@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -67,16 +68,39 @@ class DashboardServiceTest {
     }
 
     @Test
-    void includesZeroValueDaysAndUsesHourlyBucketsForOneDayPeriods() {
+    void usesHourlyBucketsForOneDayAndMapsGroupedAndSeparateHours() {
         when(orders.getValidOrderSummary(any(), any())).thenReturn(orderSummary("0", 0L));
+        when(orders.getSalesEvolution(any(), any(), org.mockito.ArgumentMatchers.eq("hour"))).thenReturn(List.of(
+                new Object[]{Timestamp.valueOf("2026-07-24 10:00:00"), new BigDecimal("30.75"), 2L},
+                new Object[]{Timestamp.valueOf("2026-07-24 11:00:00"), new BigDecimal("30.75"), 1L}
+        ));
 
         DashboardMetricsDTO metrics = service.getMetrics(LocalDate.of(2026, 7, 24), LocalDate.of(2026, 7, 24));
 
-        assertThat(metrics.salesEvolution()).hasSize(24).allSatisfy(point -> {
-            assertThat(point.revenue()).isEqualByComparingTo(BigDecimal.ZERO);
-            assertThat(point.orders()).isZero();
-        });
+        assertThat(metrics.salesEvolution()).hasSize(24);
+        assertThat(metrics.salesEvolution().get(10).revenue()).isEqualByComparingTo("30.75");
+        assertThat(metrics.salesEvolution().get(10).orders()).isEqualTo(2L);
+        assertThat(metrics.salesEvolution().get(11).revenue()).isEqualByComparingTo("30.75");
+        assertThat(metrics.salesEvolution().get(11).orders()).isEqualTo(1L);
         verify(orders).getSalesEvolution(any(), any(), org.mockito.ArgumentMatchers.eq("hour"));
+    }
+
+    @Test
+    void usesDailyBucketsForMultiDayPeriodsAndMapsGroupedAndSeparateDays() {
+        when(orders.getValidOrderSummary(any(), any())).thenReturn(orderSummary("0", 0L));
+        when(orders.getSalesEvolution(any(), any(), org.mockito.ArgumentMatchers.eq("day"))).thenReturn(List.of(
+                new Object[]{Timestamp.valueOf("2026-08-01 00:00:00"), new BigDecimal("40.00"), 2L},
+                new Object[]{Timestamp.valueOf("2026-08-02 00:00:00"), new BigDecimal("35.00"), 1L}
+        ));
+
+        DashboardMetricsDTO metrics = service.getMetrics(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 2));
+
+        assertThat(metrics.salesEvolution()).hasSize(2);
+        assertThat(metrics.salesEvolution().get(0).revenue()).isEqualByComparingTo("40.00");
+        assertThat(metrics.salesEvolution().get(0).orders()).isEqualTo(2L);
+        assertThat(metrics.salesEvolution().get(1).revenue()).isEqualByComparingTo("35.00");
+        assertThat(metrics.salesEvolution().get(1).orders()).isEqualTo(1L);
+        verify(orders).getSalesEvolution(any(), any(), org.mockito.ArgumentMatchers.eq("day"));
     }
 
     @Test
@@ -119,6 +143,8 @@ class DashboardServiceTest {
 
         assertThat(summaryQuery).contains("paymentStatus = 'PAID'");
         assertThat(evolutionQuery).contains("payment_status = 'PAID'");
+        assertThat(evolutionQuery.split(":bucket", -1)).hasSize(2);
+        assertThat(evolutionQuery).contains("GROUP BY 1", "ORDER BY 1");
         assertThat(rankingQuery).contains("payment_status = 'PAID'");
         assertThat(summaryQuery).doesNotContain("DINHEIRO", "CARTAO");
     }
