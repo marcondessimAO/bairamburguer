@@ -83,6 +83,8 @@ class ManualOrderServiceTest {
 
         assertThat(saved.getPaymentMethod()).isEqualTo(PaymentMethod.CARTAO);
         assertThat(saved.getPaymentStatus()).isEqualTo("AWAITING_PAYMENT");
+        assertThat(saved.getPaymentSurcharge()).isEqualByComparingTo("2.00");
+        assertThat(saved.getTotalAmount()).isEqualByComparingTo("22.00");
     }
 
     @Test
@@ -119,7 +121,7 @@ class ManualOrderServiceTest {
 
         assertThat(saved.getNeighborhood()).isSameAs(neighborhood);
         assertThat(saved.getDeliveryFee()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(saved.getTotalAmount()).isEqualByComparingTo("20.00");
+        assertThat(saved.getTotalAmount()).isEqualByComparingTo("22.00");
     }
 
     @Test
@@ -188,8 +190,8 @@ class ManualOrderServiceTest {
         Method method = OrderRepository.class.getMethod("findOperationalOrders");
         String query = method.getAnnotation(Query.class).value();
 
-        assertThat(query).contains("OrderSource.MANUAL", "paymentStatus = 'PAID'");
-        assertThat(query).doesNotContain("AWAITING_PAYMENT");
+        assertThat(query).contains("PaymentMethod.DINHEIRO", "PaymentMethod.CARTAO", "paymentStatus = 'PAID'");
+        assertThat(query).doesNotContain("AWAITING_PAYMENT", "PaymentMethod.PIX");
     }
 
     @Test
@@ -202,7 +204,7 @@ class ManualOrderServiceTest {
         manual.setOrderStatus("PREPARING");
         when(orders.findById(8L)).thenReturn(Optional.of(manual));
 
-        Order paid = service.markManualOrderAsPaid(8L, "admin@bairam.com");
+        Order paid = service.markOrderAsPaid(8L, "admin@bairam.com");
 
         assertThat(paid.getPaymentStatus()).isEqualTo("PAID");
         assertThat(paid.getOrderStatus()).isEqualTo("PREPARING");
@@ -224,8 +226,31 @@ class ManualOrderServiceTest {
         online.setPaymentStatus("AWAITING_PAYMENT");
         when(orders.findById(9L)).thenReturn(Optional.of(online));
 
-        assertThatThrownBy(() -> service.markManualOrderAsPaid(9L, "admin"))
+        assertThatThrownBy(() -> service.markOrderAsPaid(9L, "admin"))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("webhook");
+    }
+
+    @Test
+    void allowsOnlineCashPaymentConfirmationWithoutChangingKitchenStatus() {
+        Order onlineCash = onlineAwaitingOrder(10L, PaymentMethod.DINHEIRO);
+        onlineCash.setOrderStatus("PREPARING");
+        when(orders.findById(10L)).thenReturn(Optional.of(onlineCash));
+
+        Order paid = service.markOrderAsPaid(10L, "admin");
+
+        assertThat(paid.getPaymentStatus()).isEqualTo("PAID");
+        assertThat(paid.getOrderStatus()).isEqualTo("PREPARING");
+    }
+
+    @Test
+    void allowsOnlineCardPaymentConfirmation() {
+        Order onlineCard = onlineAwaitingOrder(11L, PaymentMethod.CARTAO);
+        when(orders.findById(11L)).thenReturn(Optional.of(onlineCard));
+
+        Order paid = service.markOrderAsPaid(11L, "admin");
+
+        assertThat(paid.getPaymentStatus()).isEqualTo("PAID");
+        assertThat(paid.getPaymentConfirmedAt()).isNotNull();
     }
 
     private ManualOrderRequestDTO request(PaymentMethod paymentMethod) {
@@ -251,5 +276,15 @@ class ManualOrderServiceTest {
         addon.setPrice(new BigDecimal(price));
         addon.setActive(true);
         return addon;
+    }
+
+    private Order onlineAwaitingOrder(Long id, PaymentMethod paymentMethod) {
+        Order order = new Order();
+        order.setId(id);
+        order.setSource(OrderSource.ONLINE);
+        order.setPaymentMethod(paymentMethod);
+        order.setPaymentStatus("AWAITING_PAYMENT");
+        order.setOrderStatus("PENDING");
+        return order;
     }
 }

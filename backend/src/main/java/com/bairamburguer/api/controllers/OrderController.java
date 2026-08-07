@@ -5,7 +5,11 @@ import com.bairamburguer.api.models.Order;
 import com.bairamburguer.api.services.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.server.ResponseStatusException;
 import jakarta.validation.Valid;
 import java.util.List;
 
@@ -48,10 +52,28 @@ public class OrderController {
         return orderService.trackOrder(request.getOrderId(), request.getPhone());
     }
 
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<java.util.Map<String, String>> handleOrderError(ResponseStatusException exception) {
+        String message = exception.getReason() == null ? "Nao foi possivel processar o pedido." : exception.getReason();
+        return ResponseEntity.status(exception.getStatusCode()).body(java.util.Map.of("error_message", message));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<java.util.Map<String, String>> handleValidationError(MethodArgumentNotValidException exception) {
+        String message = exception.getBindingResult().getFieldErrors().stream()
+                .findFirst().map(error -> error.getDefaultMessage()).orElse("Dados invalidos para o pedido.");
+        return ResponseEntity.badRequest().body(java.util.Map.of("error_message", message));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<java.util.Map<String, String>> handleUnreadableBody() {
+        return ResponseEntity.badRequest().body(java.util.Map.of("error_message", "Forma de pagamento ou dados do pedido invalidos."));
+    }
+
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public java.util.Map<String, String> handleExceptions(Exception e) {
-        System.err.println("Erro no Checkout: " + e.getMessage());
-        return java.util.Collections.singletonMap("error_message", e.getMessage() == null ? e.toString() : e.getMessage());
+    public ResponseEntity<java.util.Map<String, String>> handleExceptions(Exception exception) {
+        System.err.println("Erro no Checkout: " + exception.getClass().getSimpleName());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(java.util.Map.of("error_message", "Nao foi possivel processar o pedido. Tente novamente."));
     }
 }

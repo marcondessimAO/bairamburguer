@@ -126,12 +126,14 @@ export default function AdminDashboard() {
     const colors = colorMap[colorHex];
     const subtotal = order.items?.reduce((sum, item) => sum + Number(item.subtotal || 0), 0) ?? 0;
     const total = Number(order.totalAmount || 0);
-    const deliveryFee = Number(order.deliveryFee ?? Math.max(total - subtotal, 0));
+    const paymentSurcharge = Number(order.paymentSurcharge ?? 0);
+    const deliveryFee = Number(order.deliveryFee ?? Math.max(total - subtotal - paymentSurcharge, 0));
     const address = [order.street, order.number, order.complement].filter(Boolean).join(", ");
     const isUpdating = updatingOrderId === order.id;
     const isManual = order.source === "MANUAL";
     const isAwaitingPayment = order.paymentStatus === "AWAITING_PAYMENT" || order.paymentStatus === "PENDING";
     const paymentMethod = order.paymentMethod === "DINHEIRO" ? "DINHEIRO" : order.paymentMethod === "CARTAO" ? "CARTÃO" : "PIX";
+    const canConfirmPayment = isAwaitingPayment && (order.paymentMethod === "DINHEIRO" || order.paymentMethod === "CARTAO");
     return (
       <div key={order.id} className={`${colors.bg} p-4 rounded-xl border ${colors.border} shadow-lg mb-4 flex flex-col`}>
         <div className="flex justify-between items-start mb-3">
@@ -172,6 +174,10 @@ export default function AdminDashboard() {
               <span>Frete</span>
               <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deliveryFee)}</span>
             </div>
+            {paymentSurcharge > 0 && <div className="flex justify-between text-gray-400">
+              <span>Acréscimo cartão</span>
+              <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(paymentSurcharge)}</span>
+            </div>}
             <div className="flex justify-between text-gray-100 font-black">
               <span>Total</span>
               <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total)}</span>
@@ -181,7 +187,7 @@ export default function AdminDashboard() {
           {order.paymentMethod === "DINHEIRO" && order.changeFor && <div className="mt-2 text-xs font-bold text-gray-300">Troco para {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(order.changeFor))}</div>}
         </div>
 
-        {isManual && isAwaitingPayment && <button type="button" onClick={() => void handleMarkAsPaid(order)} disabled={payingOrderId === order.id} className="mb-2 w-full rounded-lg border border-emerald-400/40 bg-emerald-500/15 py-2.5 text-sm font-black text-emerald-200 hover:bg-emerald-500/25 disabled:cursor-wait disabled:opacity-50">{payingOrderId === order.id ? "Confirmando..." : "Marcar como pago"}</button>}
+        {canConfirmPayment && <button type="button" onClick={() => void handleMarkAsPaid(order)} disabled={payingOrderId === order.id} className="mb-2 w-full rounded-lg border border-emerald-400/40 bg-emerald-500/15 py-2.5 text-sm font-black text-emerald-200 hover:bg-emerald-500/25 disabled:cursor-wait disabled:opacity-50">{payingOrderId === order.id ? "Confirmando..." : "Marcar como pago"}</button>}
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <PrintOrderButton order={order} />
@@ -202,7 +208,7 @@ export default function AdminDashboard() {
     setStatusError("");
     setPayingOrderId(order.id);
     try {
-      const updatedOrder = await adminService.markManualOrderAsPaid(order.id);
+      const updatedOrder = await adminService.markOrderAsPaid(order.id);
       setOrders((current) => current.map((entry) => entry.id === order.id ? updatedOrder : entry));
     } catch (reason) {
       setStatusError(reason instanceof Error ? reason.message : "Não foi possível confirmar o pagamento.");

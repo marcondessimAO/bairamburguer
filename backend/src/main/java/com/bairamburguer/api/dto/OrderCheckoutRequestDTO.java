@@ -1,5 +1,6 @@
 package com.bairamburguer.api.dto;
 
+import com.bairamburguer.api.models.PaymentMethod;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -12,6 +13,7 @@ public class OrderCheckoutRequestDTO {
     private String number;
     private String complement;
     private String neighborhoodName;
+    private PaymentMethod paymentMethod = PaymentMethod.PIX;
     
     @NotBlank(message = "O e-mail é obrigatório")
     private String customerEmail;
@@ -40,6 +42,9 @@ public class OrderCheckoutRequestDTO {
 
     public String getNeighborhoodName() { return neighborhoodName; }
     public void setNeighborhoodName(String neighborhoodName) { this.neighborhoodName = neighborhoodName; }
+
+    public PaymentMethod getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }
 
     public List<OrderItemRequestDTO> getItems() { return items; }
     public void setItems(List<OrderItemRequestDTO> items) { this.items = items; }

@@ -38,13 +38,13 @@ class AdminOrderControllerTest {
         Order updatedOrder = new Order();
         updatedOrder.setId(7L);
         updatedOrder.setPaymentStatus("PAID");
-        when(orderService.markManualOrderAsPaid(7L, "admin@example.com")).thenReturn(updatedOrder);
+        when(orderService.markOrderAsPaid(7L, "admin@example.com")).thenReturn(updatedOrder);
         Principal principal = () -> "admin@example.com";
 
         ResponseEntity<Order> response = new AdminOrderController(orderService)
-                .markManualOrderAsPaid(7L, principal);
+                .markOrderAsPaid(7L, principal);
 
         assertThat(response.getBody()).isSameAs(updatedOrder);
-        verify(orderService).markManualOrderAsPaid(7L, "admin@example.com");
+        verify(orderService).markOrderAsPaid(7L, "admin@example.com");
     }
 }

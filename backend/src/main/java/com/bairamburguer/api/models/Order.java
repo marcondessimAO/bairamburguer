@@ -54,6 +54,9 @@ public class Order {
     @Column(name = "delivery_fee", nullable = false, precision = 10, scale = 2, columnDefinition = "DECIMAL(10,2) DEFAULT 0")
     private BigDecimal deliveryFee = BigDecimal.ZERO;
 
+    @Column(name = "payment_surcharge", nullable = false, precision = 10, scale = 2, columnDefinition = "DECIMAL(10,2) DEFAULT 0")
+    private BigDecimal paymentSurcharge = BigDecimal.ZERO;
+
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
@@ -108,6 +111,8 @@ public class Order {
     public void setChangeFor(BigDecimal changeFor) { this.changeFor = changeFor; }
     public BigDecimal getDeliveryFee() { return deliveryFee; }
     public void setDeliveryFee(BigDecimal deliveryFee) { this.deliveryFee = deliveryFee; }
+    public BigDecimal getPaymentSurcharge() { return paymentSurcharge; }
+    public void setPaymentSurcharge(BigDecimal paymentSurcharge) { this.paymentSurcharge = paymentSurcharge; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     public String getPaymentStatus() { return paymentStatus; }

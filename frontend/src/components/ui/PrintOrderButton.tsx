@@ -55,7 +55,8 @@ const buildAddress = (order: OrderDTO) => {
 export const buildPrintableOrderHtml = (order: OrderDTO) => {
   const subtotal = order.items?.reduce((sum, item) => sum + Number(item.subtotal || 0), 0) ?? 0;
   const total = Number(order.totalAmount || 0);
-  const deliveryFee = Number(order.deliveryFee ?? Math.max(total - subtotal, 0));
+  const paymentSurcharge = Number(order.paymentSurcharge ?? 0);
+  const deliveryFee = Number(order.deliveryFee ?? Math.max(total - subtotal - paymentSurcharge, 0));
   const isManual = order.source === "MANUAL";
   const itemsHtml = (order.items ?? []).map((item) => `
     <tr>
@@ -98,6 +99,7 @@ export const buildPrintableOrderHtml = (order: OrderDTO) => {
     <table><thead><tr><th>Qtd.</th><th>Item</th><th class="price">Total</th></tr></thead><tbody>${itemsHtml}</tbody></table>
     <div style="margin-top:12px"><div class="row"><span>Subtotal</span><span>${escapeHtml(BRL(subtotal))}</span></div>
       <div class="row"><span>Frete</span><span>${escapeHtml(BRL(deliveryFee))}</span></div>
+      ${paymentSurcharge > 0 ? `<div class="row"><span>Acréscimo cartão</span><span>${escapeHtml(BRL(paymentSurcharge))}</span></div>` : ""}
       <div class="row total"><span>TOTAL</span><span>${escapeHtml(BRL(total))}</span></div></div>
     ${order.changeFor ? `<div class="row"><strong>Troco para</strong><strong>${escapeHtml(BRL(Number(order.changeFor)))}</strong></div>` : ""}
     ${order.observation ? `<div class="divider"></div><div class="title">Observação</div><div class="note">${escapeHtml(order.observation)}</div>` : ""}

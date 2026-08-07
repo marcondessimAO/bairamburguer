@@ -47,6 +47,9 @@ export type Neighborhood = {
 export type PendingPayment = {
   orderId: number;
   totalAmount: number;
+  paymentSurcharge: number;
+  paymentMethod: "PIX" | "DINHEIRO" | "CARTAO";
+  paymentStatus: string;
   pixQrCodeBase64?: string;
   pixCopiaECola?: string;
 };

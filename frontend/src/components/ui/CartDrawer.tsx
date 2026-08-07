@@ -4,9 +4,61 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart, NEIGHBORHOODS } from "@/contexts/CartContext";
 import { getImageUrl } from "@/utils/imageUrl";
+import { STORE_WHATSAPP_NUMBER } from "@/config/store";
+
+type CheckoutPaymentMethod = "PIX" | "DINHEIRO" | "CARTAO";
+
+const CARD_SURCHARGE = 2;
+
+type OrderSnapshot = {
+  customerName: string;
+  customerPhone: string;
+  items: { name: string; quantity: number; price: number; addonsSummary?: string; addonsTotal: number }[];
+  street: string;
+  number: string;
+  complement: string;
+  neighborhoodName: string;
+  deliveryMode: "DELIVERY" | "TAKEOUT";
+  total: number;
+  paymentMethod: CheckoutPaymentMethod;
+  paymentSurcharge: number;
+};
 
 const BRL = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
+const paymentMethodLabel = (method: CheckoutPaymentMethod) => ({
+  PIX: "Pix",
+  DINHEIRO: "Dinheiro",
+  CARTAO: "Cartão",
+}[method]);
+
+const buildWhatsAppUrl = (orderId: number, snapshot: OrderSnapshot | null) => {
+  const method = snapshot?.paymentMethod ?? "PIX";
+  let message = `Olá! Finalizei o pedido #${orderId} pelo site.\n\n`;
+  message += `Forma de pagamento: ${paymentMethodLabel(method)}\n`;
+  if (snapshot) {
+    message += `Total: ${BRL(snapshot.total)}\n`;
+    if (snapshot.paymentSurcharge > 0) {
+      message += `Acréscimo do cartão: ${BRL(snapshot.paymentSurcharge)}\n`;
+    }
+    message += `\nResumo dos itens:\n`;
+    snapshot.items.forEach((item) => {
+      message += `- ${item.quantity}x ${item.name}\n`;
+      if (item.addonsSummary) message += `  Complementos: ${item.addonsSummary}\n`;
+    });
+    if (snapshot.deliveryMode === "DELIVERY") {
+      const address = [snapshot.street, snapshot.number, snapshot.complement].filter(Boolean).join(", ");
+      message += `\nEndereço: ${address} — ${snapshot.neighborhoodName}\n`;
+    } else {
+      message += `\nModalidade: Retirada na loja\n`;
+    }
+  }
+  message += method === "PIX"
+    ? `\nPix gerado. Aguardando confirmação de pagamento.`
+    : `\nVou finalizar o pagamento/atendimento por aqui.`;
+  return `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+};
 
 export function CartDrawer() {
   const router = useRouter();
@@ -37,23 +89,15 @@ export function CartDrawer() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [deliveryMode, setDeliveryMode] = useState<"DELIVERY" | "TAKEOUT">("DELIVERY");
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>("PIX");
+  const checkoutInFlightRef = useRef(false);
 
   // Snapshot dos dados do pedido (preservado após clearCart para o WhatsApp)
-  const orderSnapshotRef = useRef<{
-    customerName: string;
-    customerPhone: string;
-    items: { name: string; quantity: number; price: number; addonsSummary?: string; addonsTotal: number }[];
-    street: string;
-    number: string;
-    complement: string;
-    neighborhoodName: string;
-    deliveryMode: "DELIVERY" | "TAKEOUT";
-    total: number;
-  } | null>(null);
+  const orderSnapshotRef = useRef<OrderSnapshot | null>(null);
 
   // ─── Integração da API do Backend ─────────────────────────────────────────
   const handleCheckout = async () => {
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0 || checkoutInFlightRef.current) return;
     if (deliveryMode === "DELIVERY" && (!deliveryNeighborhood || !street || !number)) {
       alert("Por favor, preencha todos os campos de endereço de entrega.");
       return;
@@ -63,6 +107,7 @@ export function CartDrawer() {
       return;
     }
 
+    checkoutInFlightRef.current = true;
     setIsProcessing(true);
 
     try {
@@ -71,6 +116,7 @@ export function CartDrawer() {
         customerPhone,
         customerEmail,
         customerCpf,
+        paymentMethod,
         street: deliveryMode === "DELIVERY" ? street : "",
         number: deliveryMode === "DELIVERY" ? number : "",
         complement: deliveryMode === "DELIVERY" ? complement : "",
@@ -114,20 +160,29 @@ export function CartDrawer() {
           complement: deliveryMode === "DELIVERY" ? complement : "",
           neighborhoodName: deliveryMode === "DELIVERY" && deliveryNeighborhood ? deliveryNeighborhood.name : "Retirada na Loja",
           deliveryMode,
-          total: deliveryMode === "TAKEOUT" ? subtotal : totalAmount,
+          total: Number(data.totalAmount),
+          paymentMethod: data.paymentMethod,
+          paymentSurcharge: Number(data.paymentSurcharge ?? 0),
         };
-        setPendingPayment(data);
+
         clearCart();
+        if (data.paymentMethod === "PIX") {
+          setPendingPayment(data);
+        } else {
+          setIsCartOpen(false);
+          window.location.assign(buildWhatsAppUrl(data.orderId, orderSnapshotRef.current));
+        }
       } else {
         const errorText = await response.text();
-        console.error("Erro na API de Pagamento Pix (Status", response.status, "):", errorText);
-        alert("Não foi possível gerar o Pix no momento. Tente novamente ou fale com a loja pelo WhatsApp.");
+        console.error("Erro na API de checkout (Status", response.status, "):", errorText);
+        alert("Não foi possível finalizar o pedido. Tente novamente ou fale com a loja pelo WhatsApp.");
         return;
       }
     } catch (error) {
-      console.error("Erro geral no checkout Pix:", error);
-      alert("Não foi possível gerar o Pix no momento. Tente novamente ou fale com a loja pelo WhatsApp.");
+      console.error("Erro geral no checkout:", error);
+      alert("Não foi possível finalizar o pedido. Tente novamente ou fale com a loja pelo WhatsApp.");
     } finally {
+      checkoutInFlightRef.current = false;
       setIsProcessing(false);
     }
   };
@@ -178,35 +233,14 @@ export function CartDrawer() {
 
   const handleWhatsApp = () => {
     if (!pendingPayment) return;
-    const snap = orderSnapshotRef.current;
-    const LOJA_WHATSAPP = "558399327186";
-
-    let mensagem = `🍔 *Novo Pedido - Bairamburguer!*\n`;
-    mensagem += `*Pedido:* #${pendingPayment.orderId}\n`;
-    if (snap) {
-      mensagem += `*Nome:* ${snap.customerName}\n`;
-      mensagem += `*WhatsApp:* ${snap.customerPhone}\n`;
-      mensagem += `\n*Itens:*\n`;
-      snap.items.forEach(item => {
-        mensagem += `  - ${item.quantity}x ${item.name}\n`;
-        if (item.addonsSummary) mensagem += `    Complementos: ${item.addonsSummary}\n`;
-      });
-      mensagem += `\n*Total:* ${BRL(snap.total)}\n`;
-      if (snap.deliveryMode === "DELIVERY") {
-        const addr = [snap.street, snap.number, snap.complement].filter(Boolean).join(", ");
-        mensagem += `*Endereço:* ${addr} — ${snap.neighborhoodName}\n`;
-      } else {
-        mensagem += `*Modalidade:* Retirada na Loja\n`;
-      }
-    }
-    mensagem += `\n_Pix gerado. Aguardando confirmação de pagamento._`;
-
-    window.open(`https://wa.me/${LOJA_WHATSAPP}?text=${encodeURIComponent(mensagem)}`, '_blank');
+    window.open(buildWhatsAppUrl(pendingPayment.orderId, orderSnapshotRef.current), "_blank");
   };
 
   if (!isCartOpen) return null;
 
   const totalItems = cartItems.reduce((acc, i) => acc + i.quantity, 0);
+  const paymentSurcharge = paymentMethod === "CARTAO" ? CARD_SURCHARGE : 0;
+  const orderTotal = (deliveryMode === "TAKEOUT" ? subtotal : totalAmount) + paymentSurcharge;
   const isValidToSubmit = cartItems.length > 0 && customerName.trim() !== "" && customerPhone.trim() !== "" && customerEmail.trim() !== "" && customerCpf.trim() !== "" && (deliveryMode === "TAKEOUT" || (deliveryNeighborhood !== null && street.trim() !== "" && number.trim() !== ""));
 
   return (
@@ -476,6 +510,23 @@ export function CartDrawer() {
                 </div>
               )}
 
+              <fieldset className="space-y-2 rounded-2xl border border-zinc-200 bg-white p-4">
+                <legend className="px-1 text-sm font-black text-zinc-900">FORMA DE PAGAMENTO</legend>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {([
+                    ["PIX", "Pix", "Pagamento instantâneo"],
+                    ["DINHEIRO", "Dinheiro", "Finalize pelo WhatsApp"],
+                    ["CARTAO", "Cartão", "WhatsApp + R$ 2,00"],
+                  ] as const).map(([method, title, description]) => (
+                    <label key={method} className={`cursor-pointer rounded-xl border p-3 transition ${paymentMethod === method ? "border-green-600 bg-green-50 ring-1 ring-green-600" : "border-zinc-200 hover:border-zinc-300"}`}>
+                      <input type="radio" name="paymentMethod" value={method} checked={paymentMethod === method} onChange={() => setPaymentMethod(method)} className="sr-only" />
+                      <span className="block text-sm font-black text-zinc-900">{title}</span>
+                      <span className="mt-1 block text-[11px] leading-tight text-zinc-500">{description}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
               {/* Inputs do Visitante */}
               <div className="space-y-3">
                 <input
@@ -575,9 +626,13 @@ export function CartDrawer() {
                     {deliveryMode === "TAKEOUT" ? "Grátis (Retirada)" : (deliveryNeighborhood ? (deliveryFee === 0 ? "Grátis" : BRL(deliveryFee)) : "Selecione um bairro")}
                   </span>
                 </div>
+                {paymentSurcharge > 0 && <div className="flex justify-between text-zinc-500">
+                  <span className="font-medium">Acréscimo cartão</span>
+                  <span className="font-semibold text-zinc-900">{BRL(paymentSurcharge)}</span>
+                </div>}
                 <div className="flex justify-between pt-3 border-t border-zinc-200 items-center">
                   <span className="text-zinc-900 font-bold">Total</span>
-                  <span className="text-2xl font-black text-green-700 tabular-nums">{BRL(deliveryMode === "TAKEOUT" ? subtotal : totalAmount)}</span>
+                  <span className="text-2xl font-black text-green-700 tabular-nums">{BRL(orderTotal)}</span>
                 </div>
               </div>
 
@@ -587,7 +642,7 @@ export function CartDrawer() {
                 disabled={!isStoreOpen || !isValidToSubmit || isProcessing}
                 className={`w-full flex items-center justify-center gap-2.5 font-black py-4 rounded-xl shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ${!isStoreOpen ? "bg-red-600 text-white shadow-red-600/10" : "bg-[#F6B51B] hover:bg-[#FFD33D] active:scale-[0.98] text-[#07110B] shadow-[#F6B51B]/10"}`}
               >
-                {!isStoreOpen ? "Loja Fechada no momento" : (isProcessing ? "Processando..." : "Finalizar Pedido via Pix")}
+                {!isStoreOpen ? "Loja Fechada no momento" : (isProcessing ? "Processando..." : paymentMethod === "PIX" ? "Finalizar Pedido via Pix" : "Finalizar e ir para o WhatsApp")}
               </button>
             </div>
           </>

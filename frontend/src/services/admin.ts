@@ -38,6 +38,7 @@ export interface OrderDTO {
   paymentMethod?: 'PIX' | 'DINHEIRO' | 'CARTAO';
   changeFor?: number;
   deliveryFee?: number;
+  paymentSurcharge?: number;
   paymentConfirmedAt?: string;
   paymentConfirmedBy?: string;
   createdAt: string;
@@ -149,7 +150,7 @@ export const adminService = {
     return response.json();
   },
 
-  markManualOrderAsPaid: async (id: number): Promise<OrderDTO> => {
+  markOrderAsPaid: async (id: number): Promise<OrderDTO> => {
     const response = await fetchWithAuth(`/v1/admin/orders/${id}/payment/paid`, { method: 'PATCH' });
     if (!response.ok) throw new Error(await readApiError(response, 'Falha ao confirmar pagamento'));
     return response.json();

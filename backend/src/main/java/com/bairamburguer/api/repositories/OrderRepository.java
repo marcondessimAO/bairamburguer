@@ -13,8 +13,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCustomerId(Long customerId);
     List<Order> findAllByOrderByCreatedAtAsc();
 
-    @Query("SELECT o FROM Order o WHERE o.source = com.bairamburguer.api.models.OrderSource.MANUAL " +
-           "OR o.paymentStatus = 'PAID' ORDER BY o.createdAt ASC")
+    @Query("SELECT o FROM Order o WHERE o.paymentStatus = 'PAID' " +
+           "OR o.paymentMethod IN (com.bairamburguer.api.models.PaymentMethod.DINHEIRO, " +
+           "com.bairamburguer.api.models.PaymentMethod.CARTAO) ORDER BY o.createdAt ASC")
     List<Order> findOperationalOrders();
 
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0), COUNT(o) FROM Order o " +

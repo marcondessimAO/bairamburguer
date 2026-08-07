@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import { STORE_WHATSAPP_NUMBER } from "@/config/store";
 import { useEffect, useMemo, useState } from "react";
 
 type OrderItem = {
@@ -104,7 +105,6 @@ export default function FinishedOrderPage() {
 
   const handleWhatsApp = () => {
     if (!order) return;
-    const lojaWhatsApp = "558399327186";
     let message = `Novo Pedido - Bairamburguer!\n`;
     message += `Pedido: #${order.id}\n`;
     if (order.customerName) message += `Nome: ${order.customerName}\n`;
@@ -125,7 +125,7 @@ export default function FinishedOrderPage() {
       message += `Modalidade: Retirada na loja\n`;
     }
 
-    window.open(`https://wa.me/${lojaWhatsApp}?text=${encodeURIComponent(message)}`, "_blank");
+    window.open(`https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   return (

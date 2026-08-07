@@ -5,11 +5,13 @@ import com.bairamburguer.api.repositories.OrderItemRepository;
 import com.bairamburguer.api.repositories.OrderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -86,5 +88,23 @@ class DashboardServiceTest {
         assertThat(metrics.topProducts().mostSold().get(0).name()).isEqualTo("Mais pedido");
         assertThat(metrics.topProducts().highestRevenue().get(0).name()).isEqualTo("Maior receita");
         assertThat(metrics.topProducts().leastSold().get(0).name()).isEqualTo("Menos pedido");
+    }
+
+    @Test
+    void financialQueriesCountOnlyPaidOrdersRegardlessOfPaymentMethod() throws Exception {
+        String summaryQuery = OrderRepository.class
+                .getMethod("getValidOrderSummary", LocalDateTime.class, LocalDateTime.class)
+                .getAnnotation(Query.class).value();
+        String evolutionQuery = OrderRepository.class
+                .getMethod("getSalesEvolution", LocalDateTime.class, LocalDateTime.class, String.class)
+                .getAnnotation(Query.class).value();
+        Method rankingMethod = OrderItemRepository.class
+                .getMethod("getTopProductsByRevenue", LocalDateTime.class, LocalDateTime.class);
+        String rankingQuery = rankingMethod.getAnnotation(Query.class).value();
+
+        assertThat(summaryQuery).contains("paymentStatus = 'PAID'");
+        assertThat(evolutionQuery).contains("payment_status = 'PAID'");
+        assertThat(rankingQuery).contains("payment_status = 'PAID'");
+        assertThat(summaryQuery).doesNotContain("DINHEIRO", "CARTAO");
     }
 }

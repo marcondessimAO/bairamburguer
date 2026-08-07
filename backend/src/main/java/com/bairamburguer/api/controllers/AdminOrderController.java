@@ -50,9 +50,9 @@ public class AdminOrderController {
     }
 
     @PatchMapping("/{id}/payment/paid")
-    public ResponseEntity<Order> markManualOrderAsPaid(@PathVariable Long id, Principal principal) {
+    public ResponseEntity<Order> markOrderAsPaid(@PathVariable Long id, Principal principal) {
         String confirmedBy = principal == null ? null : principal.getName();
-        return ResponseEntity.ok(orderService.markManualOrderAsPaid(id, confirmedBy));
+        return ResponseEntity.ok(orderService.markOrderAsPaid(id, confirmedBy));
     }
 
     @ExceptionHandler(ResponseStatusException.class)

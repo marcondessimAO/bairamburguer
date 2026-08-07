@@ -111,7 +111,20 @@ export default function DashboardPage() {
     try {
       const params = new URLSearchParams({ startDate: range.start, endDate: range.end });
       const response = await fetchWithAuth(`/v1/admin/dashboard/metrics?${params}`, { signal: controller.signal });
-      if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? "Seu acesso administrativo expirou." : "Não foi possível atualizar o Dashboard.");
+      if (!response.ok) {
+        const responseBody = await response.text();
+        if (process.env.NODE_ENV === "development") {
+          console.error("Falha ao carregar métricas do Dashboard", {
+            status: response.status,
+            statusText: response.statusText,
+            endpoint: response.url,
+            responseBody,
+          });
+        }
+        throw new Error(response.status === 401 || response.status === 403
+          ? "Seu acesso administrativo expirou."
+          : "Não foi possível atualizar o Dashboard.");
+      }
       setMetrics(await response.json());
       setError(null);
       setLastUpdated(new Date());

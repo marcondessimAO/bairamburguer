@@ -6,6 +6,8 @@ import com.bairamburguer.api.dto.OrderItemRequestDTO;
 import com.bairamburguer.api.models.Category;
 import com.bairamburguer.api.models.Neighborhood;
 import com.bairamburguer.api.models.Order;
+import com.bairamburguer.api.models.OrderSource;
+import com.bairamburguer.api.models.PaymentMethod;
 import com.bairamburguer.api.models.Product;
 import com.bairamburguer.api.repositories.AddonRepository;
 import com.bairamburguer.api.repositories.NeighborhoodRepository;
@@ -23,6 +25,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class OrderServiceTest {
@@ -70,6 +74,75 @@ class OrderServiceTest {
         OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("  JOSE   AMERICO  "));
 
         assertThat(response.getTotalAmount()).isEqualByComparingTo("20.00");
+        assertThat(response.getPaymentMethod()).isEqualTo(PaymentMethod.PIX);
+        assertThat(response.getPaymentSurcharge()).isEqualByComparingTo("0.00");
+        verify(pix).generatePixCharge(any(Order.class), anyString(), anyString());
+    }
+
+    @Test
+    void cashCheckoutSkipsMercadoPagoAndPublishesOperationalOrder() {
+        OrderRepository orders = mock(OrderRepository.class);
+        ProductRepository products = mock(ProductRepository.class);
+        NeighborhoodRepository neighborhoods = mock(NeighborhoodRepository.class);
+        PixPaymentService pix = mock(PixPaymentService.class);
+        StoreSettingsService storeSettings = mock(StoreSettingsService.class);
+        SimpMessagingTemplate messaging = mock(SimpMessagingTemplate.class);
+        Product product = availableProduct();
+
+        when(storeSettings.isStoreOpen()).thenReturn(true);
+        when(products.findAllById(List.of(10))).thenReturn(List.of(product));
+        when(orders.save(any(Order.class))).thenAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            order.setId(41L);
+            return order;
+        });
+
+        OrderService service = new OrderService(orders, products, neighborhoods, pix, storeSettings,
+                messaging, mock(AddonRepository.class));
+        OrderCheckoutRequestDTO request = checkoutRequest(null);
+        request.setNeighborhoodName(null);
+        request.setPaymentMethod(PaymentMethod.DINHEIRO);
+
+        OrderCheckoutResponseDTO response = service.createOrder(request);
+
+        assertThat(response.getOrderId()).isEqualTo(41L);
+        assertThat(response.getPaymentMethod()).isEqualTo(PaymentMethod.DINHEIRO);
+        assertThat(response.getPaymentStatus()).isEqualTo("AWAITING_PAYMENT");
+        assertThat(response.getPaymentSurcharge()).isEqualByComparingTo("0.00");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("20.00");
+        verify(pix, never()).generatePixCharge(any(), anyString(), anyString());
+        verify(messaging).convertAndSend(org.mockito.ArgumentMatchers.eq("/topic/orders/new"), any(Order.class));
+    }
+
+    @Test
+    void cardCheckoutSkipsMercadoPagoAndAddsExactlyTwoReaisOnBackend() {
+        OrderRepository orders = mock(OrderRepository.class);
+        ProductRepository products = mock(ProductRepository.class);
+        NeighborhoodRepository neighborhoods = mock(NeighborhoodRepository.class);
+        PixPaymentService pix = mock(PixPaymentService.class);
+        StoreSettingsService storeSettings = mock(StoreSettingsService.class);
+        Product product = availableProduct();
+
+        when(storeSettings.isStoreOpen()).thenReturn(true);
+        when(products.findAllById(List.of(10))).thenReturn(List.of(product));
+        when(orders.save(any(Order.class))).thenAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            order.setId(42L);
+            return order;
+        });
+
+        OrderService service = new OrderService(orders, products, neighborhoods, pix, storeSettings,
+                mock(SimpMessagingTemplate.class), mock(AddonRepository.class));
+        OrderCheckoutRequestDTO request = checkoutRequest(null);
+        request.setNeighborhoodName(null);
+        request.setPaymentMethod(PaymentMethod.CARTAO);
+
+        OrderCheckoutResponseDTO response = service.createOrder(request);
+
+        assertThat(response.getPaymentMethod()).isEqualTo(PaymentMethod.CARTAO);
+        assertThat(response.getPaymentSurcharge()).isEqualByComparingTo("2.00");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("22.00");
+        verify(pix, never()).generatePixCharge(any(), anyString(), anyString());
     }
 
     @Test
@@ -246,5 +319,14 @@ class OrderServiceTest {
         request.setNeighborhoodName(neighborhoodName);
         request.setItems(List.of(item));
         return request;
+    }
+
+    private Product availableProduct() {
+        Product product = new Product();
+        product.setId(10);
+        product.setName("Bairam Teste");
+        product.setPrice(new BigDecimal("20.00"));
+        product.setIsAvailable(true);
+        return product;
     }
 }

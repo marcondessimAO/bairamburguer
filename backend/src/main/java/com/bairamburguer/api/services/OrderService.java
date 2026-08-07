@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderService {
 
+    static final BigDecimal CARD_SURCHARGE = new BigDecimal("2.00");
+
     private static final Map<String, AddonOption> BEVERAGE_ADDONS = Map.of(
             "FANTA", new AddonOption("Fanta", BigDecimal.ZERO),
             "COCA_COLA", new AddonOption("Coca-Cola", new BigDecimal("4.00")),
@@ -66,6 +68,10 @@ public class OrderService {
         }
 
         validateItems(request.getItems());
+        PaymentMethod paymentMethod = request.getPaymentMethod();
+        if (paymentMethod == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A forma de pagamento e obrigatoria.");
+        }
 
         Neighborhood neighborhood = null;
         if (request.getNeighborhoodName() != null
@@ -93,16 +99,30 @@ public class OrderService {
         order.setOrderStatus("PENDING");
         order.setPaymentStatus("AWAITING_PAYMENT");
         order.setSource(OrderSource.ONLINE);
-        order.setPaymentMethod(PaymentMethod.PIX);
+        order.setPaymentMethod(paymentMethod);
 
         BigDecimal totalAmount = buildOrderItems(order, request.getItems(), productMap);
         BigDecimal deliveryFee = neighborhood == null ? BigDecimal.ZERO : resolveDeliveryFee();
+        BigDecimal paymentSurcharge = paymentSurchargeFor(paymentMethod);
         order.setDeliveryFee(deliveryFee);
-        totalAmount = totalAmount.add(deliveryFee);
+        order.setPaymentSurcharge(paymentSurcharge);
+        totalAmount = totalAmount.add(deliveryFee).add(paymentSurcharge);
         order.setTotalAmount(totalAmount);
 
         Order savedOrder = saveOrder(order);
-        return pixPaymentService.generatePixCharge(savedOrder, request.getCustomerEmail(), request.getCustomerCpf());
+        if (paymentMethod == PaymentMethod.PIX) {
+            OrderCheckoutResponseDTO response = pixPaymentService.generatePixCharge(
+                    savedOrder, request.getCustomerEmail(), request.getCustomerCpf());
+            enrichCheckoutResponse(response, savedOrder);
+            return response;
+        }
+
+        messagingTemplate.convertAndSend("/topic/orders/new", savedOrder);
+        OrderCheckoutResponseDTO response = new OrderCheckoutResponseDTO();
+        response.setOrderId(savedOrder.getId());
+        response.setTotalAmount(savedOrder.getTotalAmount());
+        enrichCheckoutResponse(response, savedOrder);
+        return response;
     }
 
     @Transactional
@@ -154,8 +174,10 @@ public class OrderService {
 
         BigDecimal subtotal = buildOrderItems(order, request.getItems(), productMap);
         BigDecimal deliveryFee = neighborhood == null ? BigDecimal.ZERO : resolveDeliveryFee();
+        BigDecimal paymentSurcharge = paymentSurchargeFor(request.getPaymentMethod());
         order.setDeliveryFee(deliveryFee);
-        order.setTotalAmount(subtotal.add(deliveryFee));
+        order.setPaymentSurcharge(paymentSurcharge);
+        order.setTotalAmount(subtotal.add(deliveryFee).add(paymentSurcharge));
 
         if (order.getChangeFor() != null && order.getChangeFor().compareTo(order.getTotalAmount()) < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O valor para troco nao pode ser menor que o total do pedido.");
@@ -209,6 +231,7 @@ public class OrderService {
 
         pedido.setTotalAmount(totalAmount);
         pedido.setDeliveryFee(deliveryFee);
+        pedido.setPaymentSurcharge(BigDecimal.ZERO);
         pedido.setNeighborhood(neighborhood);
         pedido.setOrderStatus("PENDING");
         pedido.setPaymentStatus("AWAITING_PAYMENT");
@@ -275,11 +298,14 @@ public class OrderService {
     }
 
     @Transactional
-    public Order markManualOrderAsPaid(Long id, String confirmedBy) {
+    public Order markOrderAsPaid(Long id, String confirmedBy) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido nao encontrado"));
-        if (order.getSource() != OrderSource.MANUAL) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pedidos Pix online so podem ser confirmados pelo webhook do Mercado Pago.");
+        if (order.getPaymentMethod() == PaymentMethod.PIX) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pedidos Pix so podem ser confirmados pelo webhook do Mercado Pago.");
+        }
+        if (order.getPaymentMethod() != PaymentMethod.DINHEIRO && order.getPaymentMethod() != PaymentMethod.CARTAO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A forma de pagamento deste pedido nao permite confirmacao manual.");
         }
         if ("PAID".equals(order.getPaymentStatus())) {
             return order;
@@ -394,6 +420,16 @@ public class OrderService {
 
     private BigDecimal resolveDeliveryFee() {
         return BigDecimal.ZERO;
+    }
+
+    private BigDecimal paymentSurchargeFor(PaymentMethod paymentMethod) {
+        return paymentMethod == PaymentMethod.CARTAO ? CARD_SURCHARGE : BigDecimal.ZERO;
+    }
+
+    private void enrichCheckoutResponse(OrderCheckoutResponseDTO response, Order order) {
+        response.setPaymentMethod(order.getPaymentMethod());
+        response.setPaymentStatus(order.getPaymentStatus());
+        response.setPaymentSurcharge(order.getPaymentSurcharge());
     }
 
     private BigDecimal buildOrderItems(Order order, List<OrderItemRequestDTO> itemDtos, Map<Integer, Product> productMap) {
