@@ -191,6 +191,7 @@ class ManualOrderServiceTest {
         String query = method.getAnnotation(Query.class).value();
 
         assertThat(query).contains("PaymentMethod.DINHEIRO", "PaymentMethod.CARTAO", "paymentStatus = 'PAID'");
+        assertThat(query).contains("CANCELED", "CANCELLED");
         assertThat(query).doesNotContain("AWAITING_PAYMENT", "PaymentMethod.PIX");
     }
 
@@ -202,7 +203,7 @@ class ManualOrderServiceTest {
         manual.setPaymentMethod(PaymentMethod.DINHEIRO);
         manual.setPaymentStatus("AWAITING_PAYMENT");
         manual.setOrderStatus("PREPARING");
-        when(orders.findById(8L)).thenReturn(Optional.of(manual));
+        when(orders.findByIdForUpdate(8L)).thenReturn(Optional.of(manual));
 
         Order paid = service.markOrderAsPaid(8L, "admin@bairam.com");
 
@@ -224,7 +225,7 @@ class ManualOrderServiceTest {
         online.setSource(OrderSource.ONLINE);
         online.setPaymentMethod(PaymentMethod.PIX);
         online.setPaymentStatus("AWAITING_PAYMENT");
-        when(orders.findById(9L)).thenReturn(Optional.of(online));
+        when(orders.findByIdForUpdate(9L)).thenReturn(Optional.of(online));
 
         assertThatThrownBy(() -> service.markOrderAsPaid(9L, "admin"))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("webhook");
@@ -234,7 +235,7 @@ class ManualOrderServiceTest {
     void allowsOnlineCashPaymentConfirmationWithoutChangingKitchenStatus() {
         Order onlineCash = onlineAwaitingOrder(10L, PaymentMethod.DINHEIRO);
         onlineCash.setOrderStatus("PREPARING");
-        when(orders.findById(10L)).thenReturn(Optional.of(onlineCash));
+        when(orders.findByIdForUpdate(10L)).thenReturn(Optional.of(onlineCash));
 
         Order paid = service.markOrderAsPaid(10L, "admin");
 
@@ -245,7 +246,7 @@ class ManualOrderServiceTest {
     @Test
     void allowsOnlineCardPaymentConfirmation() {
         Order onlineCard = onlineAwaitingOrder(11L, PaymentMethod.CARTAO);
-        when(orders.findById(11L)).thenReturn(Optional.of(onlineCard));
+        when(orders.findByIdForUpdate(11L)).thenReturn(Optional.of(onlineCard));
 
         Order paid = service.markOrderAsPaid(11L, "admin");
 

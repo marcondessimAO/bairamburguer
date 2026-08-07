@@ -156,6 +156,12 @@ export const adminService = {
     return response.json();
   },
 
+  cancelOrder: async (id: number): Promise<OrderDTO> => {
+    const response = await fetchWithAuth(`/v1/admin/orders/${id}/cancel`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(await readApiError(response, 'Não foi possível cancelar o pedido. Tente novamente.'));
+    return response.json();
+  },
+
   // Products CRUD
   getProducts: async (): Promise<ProductDTO[]> => {
     const response = await fetchWithAuth('/v1/admin/products');

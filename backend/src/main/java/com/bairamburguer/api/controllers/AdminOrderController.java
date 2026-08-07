@@ -55,6 +55,11 @@ public class AdminOrderController {
         return ResponseEntity.ok(orderService.markOrderAsPaid(id, confirmedBy));
     }
 
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<Order> cancelOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.cancelOrder(id));
+    }
+
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, String>> handleOrderError(ResponseStatusException exception) {
         String message = exception.getReason() == null ? "Nao foi possivel processar o pedido." : exception.getReason();

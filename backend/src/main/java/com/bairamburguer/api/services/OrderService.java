@@ -242,18 +242,27 @@ public class OrderService {
         return orderRepository.save(pedido);
     }
 
+    @Transactional
     public Order atualizarStatus(Long id, String novoStatus) {
-        Order order = orderRepository.findById(id)
+        Order order = orderRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido nao encontrado"));
 
         String currentStatus = order.getOrderStatus();
         List<String> validFlow = List.of("PENDING", "PREPARING", "DISPATCHED", "DELIVERED");
+
+        if ("CANCELED".equalsIgnoreCase(currentStatus) || "CANCELLED".equalsIgnoreCase(currentStatus)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Pedido cancelado nao pode voltar ao fluxo da cozinha.");
+        }
 
         int currentIndex = validFlow.indexOf(currentStatus);
         int nextIndex = validFlow.indexOf(novoStatus);
 
         if (nextIndex == -1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status invalido: " + novoStatus);
+        }
+
+        if (currentIndex == -1) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "O status atual do pedido nao permite avancar no fluxo da cozinha.");
         }
 
         if (nextIndex < currentIndex) {
@@ -299,7 +308,7 @@ public class OrderService {
 
     @Transactional
     public Order markOrderAsPaid(Long id, String confirmedBy) {
-        Order order = orderRepository.findById(id)
+        Order order = orderRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido nao encontrado"));
         if (order.getPaymentMethod() == PaymentMethod.PIX) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pedidos Pix so podem ser confirmados pelo webhook do Mercado Pago.");
@@ -321,6 +330,49 @@ public class OrderService {
         messagingTemplate.convertAndSend("/topic/orders/update", savedOrder);
         messagingTemplate.convertAndSend("/topic/orders/status/" + savedOrder.getId(),
                 java.util.Collections.singletonMap("paymentStatus", "PAID"));
+        return savedOrder;
+    }
+
+    @Transactional
+    public Order cancelOrder(Long id) {
+        Order order = orderRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido nao encontrado"));
+
+        String currentStatus = order.getOrderStatus();
+        if ("CANCELED".equalsIgnoreCase(currentStatus) || "CANCELLED".equalsIgnoreCase(currentStatus)) {
+            return order;
+        }
+
+        if (order.getPaymentMethod() == PaymentMethod.PIX) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Pedidos pagos online nao podem ser cancelados por esta acao.");
+        }
+        if (order.getPaymentMethod() != PaymentMethod.DINHEIRO && order.getPaymentMethod() != PaymentMethod.CARTAO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "A forma de pagamento deste pedido nao permite cancelamento por esta acao.");
+        }
+        if (!"AWAITING_PAYMENT".equals(order.getPaymentStatus()) && !"PENDING".equals(order.getPaymentStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Este pedido possui pagamento confirmado e nao pode ser cancelado por esta acao.");
+        }
+        if ("DELIVERED".equalsIgnoreCase(currentStatus)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Este pedido ja foi finalizado e nao pode ser cancelado.");
+        }
+        if ("DISPATCHED".equalsIgnoreCase(currentStatus)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Este pedido ja saiu para entrega e nao pode ser cancelado.");
+        }
+        if (!"PENDING".equalsIgnoreCase(currentStatus) && !"PREPARING".equalsIgnoreCase(currentStatus)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "O status atual deste pedido nao permite cancelamento.");
+        }
+
+        order.setOrderStatus("CANCELED");
+        Order savedOrder = orderRepository.save(order);
+        messagingTemplate.convertAndSend("/topic/orders/update", savedOrder);
+        messagingTemplate.convertAndSend("/topic/orders/status/" + savedOrder.getId(),
+                java.util.Collections.singletonMap("status", savedOrder.getOrderStatus()));
         return savedOrder;
     }
 

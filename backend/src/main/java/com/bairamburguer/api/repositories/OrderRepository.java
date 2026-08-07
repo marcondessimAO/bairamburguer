@@ -4,21 +4,30 @@ import com.bairamburguer.api.models.Order;
 import com.bairamburguer.api.repositories.projections.OrderSummaryProjection;
 import com.bairamburguer.api.repositories.projections.PreparationTimeProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCustomerId(Long customerId);
     List<Order> findAllByOrderByCreatedAtAsc();
 
-    @Query("SELECT o FROM Order o WHERE o.paymentStatus = 'PAID' " +
+    @Query("SELECT o FROM Order o WHERE (o.paymentStatus = 'PAID' " +
            "OR o.paymentMethod IN (com.bairamburguer.api.models.PaymentMethod.DINHEIRO, " +
-           "com.bairamburguer.api.models.PaymentMethod.CARTAO) ORDER BY o.createdAt ASC")
+           "com.bairamburguer.api.models.PaymentMethod.CARTAO)) " +
+           "AND UPPER(o.orderStatus) NOT IN ('CANCELED', 'CANCELLED') ORDER BY o.createdAt ASC")
     List<Order> findOperationalOrders();
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT o FROM Order o WHERE o.id = :id")
+    Optional<Order> findByIdForUpdate(@Param("id") Long id);
 
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) AS revenue, COUNT(o) AS orderCount FROM Order o " +
            "WHERE o.paymentStatus = 'PAID' AND UPPER(o.orderStatus) NOT IN ('CANCELED', 'CANCELLED') " +

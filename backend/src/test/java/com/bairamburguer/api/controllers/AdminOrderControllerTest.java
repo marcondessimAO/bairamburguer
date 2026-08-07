@@ -47,4 +47,19 @@ class AdminOrderControllerTest {
         assertThat(response.getBody()).isSameAs(updatedOrder);
         verify(orderService).markOrderAsPaid(7L, "admin@example.com");
     }
+
+    @Test
+    void cancelDelegatesToCentralOrderServiceRule() {
+        OrderService orderService = mock(OrderService.class);
+        Order canceledOrder = new Order();
+        canceledOrder.setId(8L);
+        canceledOrder.setOrderStatus("CANCELED");
+        when(orderService.cancelOrder(8L)).thenReturn(canceledOrder);
+
+        ResponseEntity<Order> response = new AdminOrderController(orderService).cancelOrder(8L);
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isSameAs(canceledOrder);
+        verify(orderService).cancelOrder(8L);
+    }
 }

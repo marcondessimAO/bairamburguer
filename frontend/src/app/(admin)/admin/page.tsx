@@ -6,6 +6,7 @@ import { removeAuthToken } from "@/services/auth";
 import { adminService, OrderDTO } from "@/services/admin";
 import { PrintOrderButton } from "@/components/ui/PrintOrderButton";
 import { ManualOrderModal } from "@/components/ui/ManualOrderModal";
+import { CancelOrderButton, removeCanceledOrder } from "@/components/admin/CancelOrderButton";
 
 const BELL_SOUND_URL = "/sounds/campainha.mp3.mp3";
 
@@ -199,6 +200,10 @@ export default function AdminDashboard() {
             {isUpdating ? "Atualizando..." : buttonText}
           </button>
         </div>
+        <CancelOrderButton order={order} onCanceled={(canceledOrder) => {
+          setOrders((current) => removeCanceledOrder(current, canceledOrder.id));
+          knownOrderIdsRef.current.delete(canceledOrder.id);
+        }} />
       </div>
     );
   };

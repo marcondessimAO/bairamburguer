@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.context.annotation.Import;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.mockito.ArgumentMatchers.any;
@@ -62,6 +63,19 @@ class AdminManualOrderEndpointSecurityTest {
         mockMvc.perform(post("/api/v1/admin/orders/manual")
                         .with(csrf())
                         .contentType("application/json").content(VALID_BODY))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void rejectsUnauthenticatedCancellation() throws Exception {
+        mockMvc.perform(patch("/api/v1/admin/orders/41/cancel").with(csrf()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(authorities = "USER")
+    void rejectsNonAdminCancellation() throws Exception {
+        mockMvc.perform(patch("/api/v1/admin/orders/41/cancel").with(csrf()))
                 .andExpect(status().isForbidden());
     }
 }

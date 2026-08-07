@@ -6,6 +6,7 @@ import { StoreToggle } from '@/components/ui/StoreToggle';
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { isAuthenticated, removeAuthToken } from '@/services/auth';
+import { AdminBrand } from '@/components/admin/AdminBrand';
 
 export default function AdminLayout({
   children,
@@ -45,11 +46,8 @@ export default function AdminLayout({
       {/* Sidebar */}
       <aside className="w-64 bg-[#1E1E1E] border-r border-zinc-800 hidden md:flex flex-col">
         <div className="p-6 border-b border-zinc-800">
-          <h2 className="text-xl font-bold text-[#F1C40F]">
-            Bairamburguer
-          </h2>
-          <p className="text-xs text-zinc-400 mt-1 mb-4">Painel do Administrador</p>
-          <div className="flex items-center justify-between bg-zinc-800/50 p-3 rounded-xl border border-zinc-700/50">
+          <AdminBrand />
+          <div className="mt-4 flex items-center justify-between bg-zinc-800/50 p-3 rounded-xl border border-zinc-700/50">
             <div className="flex items-center space-x-2">
               <Store className="w-4 h-4 text-zinc-400" />
               <span className="text-sm font-medium text-zinc-300">Loja</span>
@@ -105,7 +103,7 @@ export default function AdminLayout({
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Mobile Header */}
         <header className="md:hidden bg-[#1E1E1E] p-4 border-b border-zinc-800 flex justify-between items-center gap-2">
-          <h2 className="text-lg font-bold text-[#F1C40F]">Bairam</h2>
+          <AdminBrand compact />
           <div className="flex items-center gap-3 bg-zinc-800/50 px-3 py-1.5 rounded-lg border border-zinc-700/50">
             <Store className="w-4 h-4 text-zinc-400" />
             <StoreToggle />
