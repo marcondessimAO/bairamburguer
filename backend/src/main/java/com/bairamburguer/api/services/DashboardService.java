@@ -3,6 +3,8 @@ package com.bairamburguer.api.services;
 import com.bairamburguer.api.dto.DashboardMetricsDTO;
 import com.bairamburguer.api.repositories.OrderItemRepository;
 import com.bairamburguer.api.repositories.OrderRepository;
+import com.bairamburguer.api.repositories.projections.OrderSummaryProjection;
+import com.bairamburguer.api.repositories.projections.PreparationTimeProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -52,9 +54,9 @@ public class DashboardService {
     }
 
     private Summary summary(LocalDateTime start, LocalDateTime endExclusive) {
-        Object[] row = orderRepository.getValidOrderSummary(start, endExclusive);
-        BigDecimal revenue = decimal(row != null ? row[0] : null);
-        long orders = number(row != null ? row[1] : null);
+        OrderSummaryProjection summary = orderRepository.getValidOrderSummary(start, endExclusive);
+        BigDecimal revenue = decimal(summary == null ? null : summary.getRevenue());
+        long orders = number(summary == null ? null : summary.getOrderCount());
         BigDecimal ticket = orders == 0 ? BigDecimal.ZERO : revenue.divide(BigDecimal.valueOf(orders), SCALE, RoundingMode.HALF_UP);
         return new Summary(revenue, orders, ticket);
     }
@@ -107,9 +109,10 @@ public class DashboardService {
     }
 
     private DashboardMetricsDTO.PreparationTimeDTO preparationTime(LocalDateTime start, LocalDateTime endExclusive) {
-        Object[] row = orderRepository.getAveragePreparationTime(start, endExclusive);
-        long sampleSize = number(row != null ? row[1] : null);
-        return new DashboardMetricsDTO.PreparationTimeDTO(sampleSize == 0 ? null : decimal(row[0]), sampleSize);
+        PreparationTimeProjection preparation = orderRepository.getAveragePreparationTime(start, endExclusive);
+        long sampleSize = number(preparation == null ? null : preparation.getSampleSize());
+        return new DashboardMetricsDTO.PreparationTimeDTO(
+                sampleSize == 0 ? null : decimal(preparation.getAverageMinutes()), sampleSize);
     }
 
     private List<DashboardMetricsDTO.SalesPointDTO> salesEvolution(LocalDateTime start, LocalDateTime endExclusive, long days) {
@@ -137,7 +140,13 @@ public class DashboardService {
     }
 
     private BigDecimal decimal(Object value) {
-        return value == null ? BigDecimal.ZERO : new BigDecimal(value.toString());
+        if (value == null) return BigDecimal.ZERO;
+        if (value instanceof BigDecimal decimal) return decimal;
+        if (value instanceof Number number) return new BigDecimal(number.toString());
+        if (value instanceof Object[]) {
+            throw new IllegalArgumentException("Aggregate query returned a nested Object[] instead of a numeric value");
+        }
+        throw new IllegalArgumentException("Expected a numeric aggregate value, but received " + value.getClass().getName());
     }
 
     private long number(Object value) {

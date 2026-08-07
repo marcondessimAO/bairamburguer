@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -30,5 +31,14 @@ class DashboardEndpointSecurityTest {
     void metricsEndpointRejectsUnauthenticatedRequests() throws Exception {
         mockMvc.perform(get("/api/v1/admin/dashboard/metrics"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(authorities = "ADMIN")
+    void metricsEndpointReturnsOkForAnAuthenticatedAdmin() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/dashboard/metrics")
+                        .param("startDate", "2026-08-01")
+                        .param("endDate", "2026-08-07"))
+                .andExpect(status().isOk());
     }
 }
