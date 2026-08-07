@@ -89,3 +89,19 @@ CREATE TABLE IF NOT EXISTS product_addons (
         REFERENCES addons(id)
         ON DELETE CASCADE
 );
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS production_started_at TIMESTAMP;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS ready_at TIMESTAMP;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS source VARCHAR(20) DEFAULT 'ONLINE';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20) DEFAULT 'PIX';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS observation TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS change_for DECIMAL(10,2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee DECIMAL(10,2) DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_confirmed_at TIMESTAMP;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_confirmed_by VARCHAR(255);
+UPDATE orders SET source = 'ONLINE' WHERE source IS NULL;
+UPDATE orders SET payment_method = 'PIX' WHERE payment_method IS NULL;
+UPDATE orders SET delivery_fee = 0 WHERE delivery_fee IS NULL;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS product_name_snapshot VARCHAR(255);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS product_price_snapshot DECIMAL(10,2);
+ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;

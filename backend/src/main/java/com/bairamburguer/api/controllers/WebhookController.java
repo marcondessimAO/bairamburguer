@@ -1,6 +1,8 @@
 package com.bairamburguer.api.controllers;
 
 import com.bairamburguer.api.models.Order;
+import com.bairamburguer.api.models.OrderSource;
+import com.bairamburguer.api.models.PaymentMethod;
 import com.bairamburguer.api.repositories.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +14,7 @@ import com.mercadopago.resources.payment.Payment;
 
 import java.util.Map;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
@@ -49,8 +52,12 @@ public class WebhookController {
                     Optional<Order> orderOpt = orderRepository.findById(orderId);
                     if (orderOpt.isPresent()) {
                         Order order = orderOpt.get();
-                        if ("AWAITING_PAYMENT".equals(order.getPaymentStatus())) {
+                        if (order.getSource() == OrderSource.ONLINE
+                                && order.getPaymentMethod() == PaymentMethod.PIX
+                                && "AWAITING_PAYMENT".equals(order.getPaymentStatus())) {
                             order.setPaymentStatus("PAID");
+                            order.setPaymentConfirmedAt(LocalDateTime.now());
+                            order.setPaymentConfirmedBy("MERCADO_PAGO_WEBHOOK");
                             Order savedOrder = orderRepository.save(order);
                             
                             // Dispara o alerta para a cozinha

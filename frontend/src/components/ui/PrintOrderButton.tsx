@@ -10,28 +10,6 @@ type PrintOrderButtonProps = {
 const BRL = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
-const statusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    PENDING: "Pendente",
-    PREPARING: "Em produção",
-    DISPATCHED: "Saiu para entrega",
-    DELIVERED: "Entregue",
-  };
-
-  return labels[status] ?? status ?? "Não informado";
-};
-
-const paymentLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    PAID: "Pago",
-    AWAITING_PAYMENT: "Aguardando pagamento",
-    WHATSAPP: "WhatsApp",
-    PENDING: "Pendente",
-  };
-
-  return labels[status] ?? status ?? "Não informado";
-};
-
 const escapeHtml = (value: unknown) =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -42,347 +20,107 @@ const escapeHtml = (value: unknown) =>
 
 const formatDateTime = (value: string) => {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Não informado";
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(date);
+  return Number.isNaN(date.getTime())
+    ? "Não informado"
+    : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
 };
+
+const orderStatusLabel = (status: string) => ({
+  PENDING: "Pendente",
+  PREPARING: "Em produção",
+  DISPATCHED: "Saiu para entrega",
+  DELIVERED: "Entregue",
+}[status] ?? status ?? "Não informado");
+
+const paymentStatusLabel = (status: string) => ({
+  PAID: "Pago",
+  AWAITING_PAYMENT: "A receber",
+  PENDING: "A receber",
+}[status] ?? status ?? "Não informado");
+
+const paymentMethodLabel = (method?: string) => ({
+  PIX: "Pix",
+  DINHEIRO: "Dinheiro",
+  CARTAO: "Cartão",
+}[method ?? ""] ?? method ?? "Não informado");
 
 const buildAddress = (order: OrderDTO) => {
-  const street = order.street ? escapeHtml(order.street) : "";
-  const num = order.number ? escapeHtml(order.number) : "S/N";
-  const comp = order.complement ? escapeHtml(order.complement) : "";
-  const neigh = order.neighborhood?.name ? escapeHtml(order.neighborhood.name) : "";
-
-  if (!street && !neigh) return "Não informado";
-
-  let html = "";
-  if (street) {
-    html += `${street}, ${num}`;
-  }
-  if (comp) {
-    html += `<br />Compl: ${comp}`;
-  }
-  if (neigh) {
-    html += `<br />Bairro: ${neigh}`;
-  }
-  
-  return html || "Não informado";
+  if (!order.neighborhood) return "Retirada na loja";
+  const parts = [order.street, order.number && `nº ${order.number}`, order.complement]
+    .filter(Boolean)
+    .map(escapeHtml);
+  return `${parts.join(", ")}<br />Bairro: ${escapeHtml(order.neighborhood.name)}`;
 };
 
-const getObservation = (order: OrderDTO) =>
-  order.observation ?? order.notes ?? order.customerNote ?? order.orderNote ?? "";
-
-const buildPrintableOrderHtml = (order: OrderDTO) => {
+export const buildPrintableOrderHtml = (order: OrderDTO) => {
   const subtotal = order.items?.reduce((sum, item) => sum + Number(item.subtotal || 0), 0) ?? 0;
   const total = Number(order.totalAmount || 0);
-  const deliveryFee = Math.max(total - subtotal, 0);
-  const observation = getObservation(order);
-  const isDelivery = !!(order.street || order.neighborhood?.name);
+  const deliveryFee = Number(order.deliveryFee ?? Math.max(total - subtotal, 0));
+  const isManual = order.source === "MANUAL";
+  const itemsHtml = (order.items ?? []).map((item) => `
+    <tr>
+      <td class="qty">${escapeHtml(item.quantity)}x</td>
+      <td><strong>${escapeHtml(item.productNameSnapshot || item.product?.name || "Produto")}</strong>
+        ${item.addonsSummary ? `<div class="addons">${escapeHtml(item.addonsSummary)}</div>` : ""}
+      </td>
+      <td class="price">${escapeHtml(BRL(Number(item.subtotal || 0)))}</td>
+    </tr>`).join("");
 
-  const itemsHtml = (order.items ?? [])
-    .map((item) => {
-      const productName = item.product?.name || "Produto sem nome";
-      const addons = item.addonsSummary
-        ? `<div class="addons">${escapeHtml(item.addonsSummary)}</div>`
-        : "";
-
-      return `
-        <tr>
-          <td class="td-qty">${escapeHtml(item.quantity)}x</td>
-          <td class="td-item">
-            <strong>${escapeHtml(productName)}</strong>
-            ${addons}
-          </td>
-          <td class="td-price">${escapeHtml(BRL(Number(item.subtotal || 0)))}</td>
-        </tr>
-      `;
-    })
-    .join("");
-
-  return `
-    <!doctype html>
-    <html lang="pt-BR">
-      <head>
-        <meta charset="utf-8" />
-        <title>Pedido #${escapeHtml(order.id)}</title>
-        <style>
-          @page {
-            size: 80mm auto;
-            margin: 4mm;
-          }
-          * { box-sizing: border-box; }
-          body {
-            margin: 0;
-            background: #fff;
-            color: #000;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 13px;
-            line-height: 1.4;
-          }
-          .receipt {
-            width: 100%;
-            max-width: 80mm;
-            margin: 0 auto;
-            padding-bottom: 20px;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 15px;
-          }
-          .header h1 {
-            margin: 0 0 5px;
-            font-size: 22px;
-            font-weight: 900;
-            text-transform: uppercase;
-          }
-          .header p {
-            margin: 2px 0;
-            font-size: 14px;
-            font-weight: bold;
-          }
-          .divider {
-            border-top: 2px dashed #000;
-            margin: 12px 0;
-          }
-          .section-title {
-            margin: 0 0 6px;
-            font-weight: 800;
-            font-size: 14px;
-            text-transform: uppercase;
-          }
-          .row {
-            display: flex;
-            justify-content: space-between;
-            margin: 4px 0;
-          }
-          .row-status {
-            display: flex;
-            justify-content: space-between;
-            background: #f0f0f0;
-            padding: 8px;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            font-weight: bold;
-          }
-          .row-status div {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-          }
-          .row-status span:first-child {
-            font-size: 11px;
-            text-transform: uppercase;
-            color: #444;
-          }
-          .row-status span:last-child {
-            font-size: 14px;
-            color: #000;
-          }
-          table.items {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
-          }
-          table.items th {
-            text-align: left;
-            border-bottom: 2px solid #000;
-            padding-bottom: 4px;
-            font-size: 12px;
-          }
-          table.items th.td-price {
-            text-align: right;
-          }
-          table.items td {
-            padding: 8px 0;
-            border-bottom: 1px dashed #ccc;
-            vertical-align: top;
-          }
-          .td-qty {
-            width: 30px;
-            font-weight: bold;
-          }
-          .td-item {
-            padding-right: 10px;
-          }
-          .td-price {
-            text-align: right;
-            font-weight: bold;
-            white-space: nowrap;
-            width: 70px;
-          }
-          .addons {
-            font-size: 11px;
-            color: #333;
-            margin-top: 4px;
-            font-style: italic;
-          }
-          .totals {
-            margin-top: 15px;
-          }
-          .total-row {
-            font-size: 18px;
-            font-weight: 900;
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 2px solid #000;
-          }
-          .info-block {
-            margin-bottom: 8px;
-          }
-          .info-block strong {
-            display: inline-block;
-            min-width: 55px;
-          }
-          .delivery-badge {
-            display: inline-block;
-            background: #000;
-            color: #fff;
-            padding: 4px 8px;
-            font-weight: bold;
-            font-size: 14px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-          }
-          .observation {
-            background: #f8f8f8;
-            border-left: 4px solid #000;
-            padding: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            white-space: pre-wrap;
-          }
-          .footer {
-            text-align: center;
-            font-size: 11px;
-            color: #555;
-            margin-top: 20px;
-          }
-          @media print {
-            body {
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <main class="receipt">
-          <div class="header">
-            <h1>BAIRAM BURGUER</h1>
-            <p>PEDIDO #${escapeHtml(order.id)}</p>
-            <p style="font-weight: normal;">${escapeHtml(formatDateTime(order.createdAt))}</p>
-          </div>
-
-          <div style="text-align: center;">
-            <div class="delivery-badge">
-              ${isDelivery ? '🚗 ENTREGA' : '🛍️ RETIRADA NA LOJA'}
-            </div>
-          </div>
-
-          <div class="row-status">
-            <div>
-              <span>Status do Pedido</span>
-              <span>${escapeHtml(statusLabel(order.orderStatus))}</span>
-            </div>
-            <div style="text-align: right;">
-              <span>Status Financeiro</span>
-              <span>${escapeHtml(paymentLabel(order.paymentStatus))}</span>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="section-title">Dados do Cliente</div>
-          <div class="info-block">
-            <strong>Nome:</strong> ${escapeHtml(order.customerName || "Não informado")}
-          </div>
-          <div class="info-block">
-            <strong>Tel:</strong> ${escapeHtml(order.customerPhone || "Não informado")}
-          </div>
-
-          ${isDelivery ? `
-          <div class="divider"></div>
-          <div class="section-title">Endereço de Entrega</div>
-          <div class="info-block" style="font-size: 14px; font-weight: bold;">
-            ${buildAddress(order)}
-          </div>
-          ` : ''}
-
-          <div class="divider"></div>
-
-          <div class="section-title">Itens do Pedido</div>
-          <table class="items">
-            <thead>
-              <tr>
-                <th>QTD</th>
-                <th>ITEM</th>
-                <th class="td-price">TOTAL</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itemsHtml || '<tr><td colspan="3">Nenhum item</td></tr>'}
-            </tbody>
-          </table>
-
-          <div class="totals">
-            <div class="row"><span>Subtotal</span><span>${escapeHtml(BRL(subtotal))}</span></div>
-            <div class="row"><span>Taxa de Entrega</span><span>${escapeHtml(BRL(deliveryFee))}</span></div>
-            <div class="row total-row"><span>TOTAL</span><span>${escapeHtml(BRL(total))}</span></div>
-          </div>
-
-          ${observation ? `
-            <div class="divider"></div>
-            <div class="section-title">Observações do Cliente</div>
-            <div class="observation">${escapeHtml(observation)}</div>
-          ` : ''}
-
-          <div class="divider"></div>
-          
-          <div class="footer">
-            <p><strong>*** COMPROVANTE DE PEDIDO ***</strong></p>
-            <p>Este documento não possui valor fiscal.</p>
-          </div>
-        </main>
-      </body>
-    </html>
-  `;
+  return `<!doctype html>
+  <html lang="pt-BR"><head><meta charset="utf-8" /><title>Pedido #${escapeHtml(order.id)}</title>
+  <style>
+    @page { size: 80mm auto; margin: 4mm; }
+    * { box-sizing: border-box; } body { margin:0; color:#000; background:#fff; font:13px/1.4 Arial,sans-serif; }
+    main { width:100%; max-width:80mm; margin:auto; padding-bottom:20px; }
+    header { text-align:center; margin-bottom:12px; } h1 { font-size:21px; margin:0; } header p { margin:2px; font-weight:bold; }
+    .manual { border:3px solid #000; padding:5px; margin:8px 0; font-size:16px; font-weight:900; letter-spacing:1px; }
+    .badge { display:inline-block; padding:4px 8px; color:#fff; background:#000; font-weight:bold; }
+    .divider { border-top:2px dashed #000; margin:11px 0; } .title { font-weight:900; text-transform:uppercase; margin-bottom:6px; }
+    .status { display:grid; grid-template-columns:1fr 1fr; gap:8px; background:#eee; padding:8px; margin:9px 0; }
+    .status small { display:block; text-transform:uppercase; } .status strong { font-size:14px; }
+    table { width:100%; border-collapse:collapse; } th { text-align:left; border-bottom:2px solid #000; } td { padding:7px 0; border-bottom:1px dashed #bbb; vertical-align:top; }
+    .qty { width:30px; font-weight:bold; } .price { text-align:right; white-space:nowrap; font-weight:bold; } .addons { font-size:11px; font-style:italic; }
+    .row { display:flex; justify-content:space-between; margin:4px 0; } .total { border-top:2px solid #000; padding-top:7px; font-size:18px; font-weight:900; }
+    .note { border-left:4px solid #000; background:#eee; padding:8px; white-space:pre-wrap; font-weight:bold; }
+    footer { text-align:center; font-size:11px; margin-top:18px; } @media print { body { print-color-adjust:exact; -webkit-print-color-adjust:exact; } }
+  </style></head><body><main>
+    <header><h1>BAIRAM BURGUER</h1><p>PEDIDO #${escapeHtml(order.id)}</p><p>${escapeHtml(formatDateTime(order.createdAt))}</p>
+      ${isManual ? '<div class="manual">PEDIDO MANUAL</div>' : ""}
+      <span class="badge">${order.neighborhood ? "ENTREGA" : "RETIRADA NA LOJA"}</span>
+    </header>
+    <div class="status"><div><small>Status do pedido</small><strong>${escapeHtml(orderStatusLabel(order.orderStatus))}</strong></div>
+      <div><small>Pagamento</small><strong>${escapeHtml(paymentMethodLabel(order.paymentMethod))} — ${escapeHtml(paymentStatusLabel(order.paymentStatus))}</strong></div></div>
+    <div class="divider"></div><div class="title">Cliente</div>
+    <div><strong>Nome:</strong> ${escapeHtml(order.customerName || "Não informado")}</div>
+    <div><strong>Telefone:</strong> ${escapeHtml(order.customerPhone || "Não informado")}</div>
+    <div><strong>Atendimento:</strong> ${buildAddress(order)}</div>
+    <div class="divider"></div><div class="title">Itens</div>
+    <table><thead><tr><th>Qtd.</th><th>Item</th><th class="price">Total</th></tr></thead><tbody>${itemsHtml}</tbody></table>
+    <div style="margin-top:12px"><div class="row"><span>Subtotal</span><span>${escapeHtml(BRL(subtotal))}</span></div>
+      <div class="row"><span>Frete</span><span>${escapeHtml(BRL(deliveryFee))}</span></div>
+      <div class="row total"><span>TOTAL</span><span>${escapeHtml(BRL(total))}</span></div></div>
+    ${order.changeFor ? `<div class="row"><strong>Troco para</strong><strong>${escapeHtml(BRL(Number(order.changeFor)))}</strong></div>` : ""}
+    ${order.observation ? `<div class="divider"></div><div class="title">Observação</div><div class="note">${escapeHtml(order.observation)}</div>` : ""}
+    <div class="divider"></div><footer><strong>*** COMPROVANTE DE PEDIDO ***</strong><br />Este documento não possui valor fiscal.</footer>
+  </main></body></html>`;
 };
 
+export function printOrder(order: OrderDTO, existingWindow?: Window | null) {
+  const printWindow = existingWindow ?? window.open("", "_blank", "width=420,height=640");
+  if (!printWindow) {
+    window.alert("Não foi possível abrir a janela de impressão. Verifique o bloqueador de pop-ups.");
+    return;
+  }
+  printWindow.document.open();
+  printWindow.document.write(buildPrintableOrderHtml(order));
+  printWindow.document.close();
+  window.setTimeout(() => { printWindow.focus(); printWindow.print(); }, 150);
+  printWindow.onafterprint = () => printWindow.close();
+}
+
 export function PrintOrderButton({ order, className = "" }: PrintOrderButtonProps) {
-  const handlePrint = () => {
-    const printWindow = window.open("", "_blank", "width=420,height=640");
-
-    if (!printWindow) {
-      window.alert("Não foi possível abrir a janela de impressão. Verifique o bloqueador de pop-ups.");
-      return;
-    }
-
-    printWindow.document.open();
-    printWindow.document.write(buildPrintableOrderHtml(order));
-    printWindow.document.close();
-
-    window.setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-    }, 150);
-
-    printWindow.onafterprint = () => {
-      printWindow.close();
-    };
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={handlePrint}
-      className={`w-full rounded-lg border border-gray-700 bg-black/30 py-2.5 text-sm font-bold text-gray-200 transition-colors hover:border-gray-500 hover:bg-black/50 ${className}`}
-    >
-      Imprimir pedido
-    </button>
-  );
+  return <button type="button" onClick={() => printOrder(order)}
+    className={`w-full rounded-lg border border-gray-700 bg-black/30 py-2.5 text-sm font-bold text-gray-200 transition-colors hover:border-gray-500 hover:bg-black/50 ${className}`}>
+    Imprimir pedido
+  </button>;
 }

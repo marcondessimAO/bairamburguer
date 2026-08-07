@@ -14,6 +14,8 @@ export interface OrderItemDTO {
   subtotal: number;
   addonsSummary?: string;
   addonsTotal?: number;
+  productNameSnapshot?: string;
+  productPriceSnapshot?: number;
 }
 
 export interface OrderDTO {
@@ -23,7 +25,7 @@ export interface OrderDTO {
   street?: string;
   number?: string;
   complement?: string;
-  neighborhood: {
+  neighborhood?: {
     id: number;
     name: string;
     deliveryFee: number;
@@ -32,11 +34,41 @@ export interface OrderDTO {
   totalAmount: number;
   orderStatus: string;
   paymentStatus: string;
+  source?: 'ONLINE' | 'MANUAL';
+  paymentMethod?: 'PIX' | 'DINHEIRO' | 'CARTAO';
+  changeFor?: number;
+  deliveryFee?: number;
+  paymentConfirmedAt?: string;
+  paymentConfirmedBy?: string;
   createdAt: string;
   observation?: string;
   notes?: string;
   customerNote?: string;
   orderNote?: string;
+}
+
+export interface ManualOrderItemPayload {
+  product: number;
+  quantity: number;
+  addonIds: number[];
+}
+
+export interface ManualOrderPayload {
+  customerName: string;
+  customerPhone: string;
+  deliveryMode: 'ENTREGA' | 'RETIRADA';
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhoodName?: string;
+  observation?: string;
+  paymentMethod: 'DINHEIRO' | 'CARTAO';
+  changeFor?: number;
+  items: ManualOrderItemPayload[];
+}
+
+export interface ManualOrderOptionsDTO {
+  neighborhoods: Array<{ id: number; name: string; deliveryFee: number }>;
 }
 
 export interface ProductDTO {
@@ -99,6 +131,27 @@ export const adminService = {
       const errorText = await response.text();
       throw new Error(errorText || 'Falha ao atualizar o pedido');
     }
+    return response.json();
+  },
+
+  getManualOrderOptions: async (): Promise<ManualOrderOptionsDTO> => {
+    const response = await fetchWithAuth('/v1/admin/orders/manual/options');
+    if (!response.ok) throw new Error(await readApiError(response, 'Falha ao carregar opcoes do pedido'));
+    return response.json();
+  },
+
+  createManualOrder: async (payload: ManualOrderPayload): Promise<OrderDTO> => {
+    const response = await fetchWithAuth('/v1/admin/orders/manual', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error(await readApiError(response, 'Falha ao criar pedido manual'));
+    return response.json();
+  },
+
+  markManualOrderAsPaid: async (id: number): Promise<OrderDTO> => {
+    const response = await fetchWithAuth(`/v1/admin/orders/${id}/payment/paid`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(await readApiError(response, 'Falha ao confirmar pagamento'));
     return response.json();
   },
 
@@ -195,3 +248,14 @@ export const adminService = {
     return response.json();
   }
 };
+
+async function readApiError(response: Response, fallback: string) {
+  const raw = await response.text();
+  if (!raw) return fallback;
+  try {
+    const body = JSON.parse(raw) as { detail?: string; message?: string; error?: string; error_message?: string };
+    return body.detail || body.message || body.error_message || body.error || fallback;
+  } catch {
+    return raw;
+  }
+}

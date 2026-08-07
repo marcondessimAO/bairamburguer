@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { removeAuthToken } from "@/services/auth";
 import { adminService, OrderDTO } from "@/services/admin";
 import { PrintOrderButton } from "@/components/ui/PrintOrderButton";
+import { ManualOrderModal } from "@/components/ui/ManualOrderModal";
 
 const BELL_SOUND_URL = "/sounds/campainha.mp3.mp3";
 
@@ -14,6 +15,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [statusError, setStatusError] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [payingOrderId, setPayingOrderId] = useState<number | null>(null);
+  const [isManualOrderOpen, setIsManualOrderOpen] = useState(false);
   const [isSoundEnabled, setIsSoundEnabled] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const knownOrderIdsRef = useRef<Set<number>>(new Set());
@@ -123,9 +126,12 @@ export default function AdminDashboard() {
     const colors = colorMap[colorHex];
     const subtotal = order.items?.reduce((sum, item) => sum + Number(item.subtotal || 0), 0) ?? 0;
     const total = Number(order.totalAmount || 0);
-    const deliveryFee = Math.max(total - subtotal, 0);
+    const deliveryFee = Number(order.deliveryFee ?? Math.max(total - subtotal, 0));
     const address = [order.street, order.number, order.complement].filter(Boolean).join(", ");
     const isUpdating = updatingOrderId === order.id;
+    const isManual = order.source === "MANUAL";
+    const isAwaitingPayment = order.paymentStatus === "AWAITING_PAYMENT" || order.paymentStatus === "PENDING";
+    const paymentMethod = order.paymentMethod === "DINHEIRO" ? "DINHEIRO" : order.paymentMethod === "CARTAO" ? "CARTÃO" : "PIX";
     return (
       <div key={order.id} className={`${colors.bg} p-4 rounded-xl border ${colors.border} shadow-lg mb-4 flex flex-col`}>
         <div className="flex justify-between items-start mb-3">
@@ -135,15 +141,24 @@ export default function AdminDashboard() {
           </div>
           <span className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
+
+        <div className="mb-3 flex flex-wrap gap-2">
+          {isManual && <span className="rounded-md border border-fuchsia-400/40 bg-fuchsia-500/20 px-2 py-1 text-[11px] font-black tracking-wide text-fuchsia-200">PEDIDO MANUAL</span>}
+          <span className={`rounded-md border px-2 py-1 text-[11px] font-black tracking-wide ${isAwaitingPayment ? "border-amber-400/40 bg-amber-500/20 text-amber-200" : "border-emerald-400/40 bg-emerald-500/20 text-emerald-200"}`}>
+            {paymentMethod} — {isAwaitingPayment ? "A RECEBER" : "PAGO"}
+          </span>
+          <span className="rounded-md border border-sky-400/30 bg-sky-500/10 px-2 py-1 text-[11px] font-black text-sky-200">{order.neighborhood ? "ENTREGA" : "RETIRADA"}</span>
+        </div>
         
         <div className="text-sm text-gray-300 mb-4 bg-black/30 p-2 rounded-lg">
-          <p className="font-semibold text-gray-100 mb-1">📍 {order.neighborhood?.name || "Bairro não informado"}</p>
+          <p className="font-semibold text-gray-100 mb-1">{order.neighborhood ? `📍 ${order.neighborhood.name}` : "🏪 Retirada na loja"}</p>
+          {order.customerPhone && <p className="mb-1 text-xs text-gray-400">WhatsApp: {order.customerPhone}</p>}
           {address && <p className="text-xs text-gray-400 mb-2">{address}</p>}
           <ul className="space-y-1">
             {order.items?.map(item => (
               <li key={item.id} className="flex justify-between">
                 <span>
-                  {item.quantity}x {item.product.name}
+                  {item.quantity}x {item.productNameSnapshot || item.product.name}
                   {item.addonsSummary && (
                     <span className="block text-[11px] text-gray-500">{item.addonsSummary}</span>
                   )}
@@ -162,7 +177,11 @@ export default function AdminDashboard() {
               <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total)}</span>
             </div>
           </div>
+          {order.observation && <div className="mt-3 rounded-lg border-l-4 border-[#F1C40F] bg-[#F1C40F]/10 p-2 text-xs font-bold text-gray-100">Obs.: {order.observation}</div>}
+          {order.paymentMethod === "DINHEIRO" && order.changeFor && <div className="mt-2 text-xs font-bold text-gray-300">Troco para {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(order.changeFor))}</div>}
         </div>
+
+        {isManual && isAwaitingPayment && <button type="button" onClick={() => void handleMarkAsPaid(order)} disabled={payingOrderId === order.id} className="mb-2 w-full rounded-lg border border-emerald-400/40 bg-emerald-500/15 py-2.5 text-sm font-black text-emerald-200 hover:bg-emerald-500/25 disabled:cursor-wait disabled:opacity-50">{payingOrderId === order.id ? "Confirmando..." : "Marcar como pago"}</button>}
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <PrintOrderButton order={order} />
@@ -176,6 +195,26 @@ export default function AdminDashboard() {
         </div>
       </div>
     );
+  };
+
+  const handleMarkAsPaid = async (order: OrderDTO) => {
+    if (!window.confirm(`Confirmar que o pagamento do pedido #${order.id} foi recebido?`)) return;
+    setStatusError("");
+    setPayingOrderId(order.id);
+    try {
+      const updatedOrder = await adminService.markManualOrderAsPaid(order.id);
+      setOrders((current) => current.map((entry) => entry.id === order.id ? updatedOrder : entry));
+    } catch (reason) {
+      setStatusError(reason instanceof Error ? reason.message : "Não foi possível confirmar o pagamento.");
+    } finally {
+      setPayingOrderId(null);
+    }
+  };
+
+  const handleManualOrderCreated = (order: OrderDTO) => {
+    setOrders((current) => current.some((entry) => entry.id === order.id)
+      ? current.map((entry) => entry.id === order.id ? order : entry)
+      : [...current, order].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
   };
 
   const getButtonText = (status: string) => {
@@ -213,7 +252,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
+      <div className="mb-6 flex flex-col gap-4 border-b border-gray-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-[#F1C40F] rounded-xl flex items-center justify-center">
             <svg className="w-6 h-6 text-[#121212]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,9 +261,10 @@ export default function AdminDashboard() {
           </div>
           <h1 className="text-2xl font-black">Cozinha & Expedição</h1>
         </div>
-        <button onClick={handleLogout} className="text-gray-400 hover:text-white border border-gray-700 px-4 py-2 rounded-lg text-sm font-bold">
-          Encerrar Expediente
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setIsManualOrderOpen(true)} className="rounded-lg bg-[#F1C40F] px-4 py-2 text-sm font-black text-[#121212] hover:bg-[#F39C12]">+ Novo Pedido Manual</button>
+          <button onClick={handleLogout} className="text-gray-400 hover:text-white border border-gray-700 px-4 py-2 rounded-lg text-sm font-bold">Encerrar Expediente</button>
+        </div>
       </div>
 
       {statusError && (
@@ -295,6 +335,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+      <ManualOrderModal open={isManualOrderOpen} onClose={() => setIsManualOrderOpen(false)} onCreated={handleManualOrderCreated} />
     </div>
   );
 }

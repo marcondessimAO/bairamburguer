@@ -37,6 +37,23 @@ public class Order {
     @Column(name = "complement", length = 255)
     private String complement;
 
+    @Column(name = "observation", columnDefinition = "TEXT")
+    private String observation;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false, length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'ONLINE'")
+    private OrderSource source = OrderSource.ONLINE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false, length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'PIX'")
+    private PaymentMethod paymentMethod = PaymentMethod.PIX;
+
+    @Column(name = "change_for", precision = 10, scale = 2)
+    private BigDecimal changeFor;
+
+    @Column(name = "delivery_fee", nullable = false, precision = 10, scale = 2, columnDefinition = "DECIMAL(10,2) DEFAULT 0")
+    private BigDecimal deliveryFee = BigDecimal.ZERO;
+
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
@@ -54,6 +71,12 @@ public class Order {
 
     @Column(name = "ready_at")
     private LocalDateTime readyAt;
+
+    @Column(name = "payment_confirmed_at")
+    private LocalDateTime paymentConfirmedAt;
+
+    @Column(name = "payment_confirmed_by", length = 255)
+    private String paymentConfirmedBy;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
@@ -75,6 +98,16 @@ public class Order {
     public void setNumber(String number) { this.number = number; }
     public String getComplement() { return complement; }
     public void setComplement(String complement) { this.complement = complement; }
+    public String getObservation() { return observation; }
+    public void setObservation(String observation) { this.observation = observation; }
+    public OrderSource getSource() { return source; }
+    public void setSource(OrderSource source) { this.source = source; }
+    public PaymentMethod getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }
+    public BigDecimal getChangeFor() { return changeFor; }
+    public void setChangeFor(BigDecimal changeFor) { this.changeFor = changeFor; }
+    public BigDecimal getDeliveryFee() { return deliveryFee; }
+    public void setDeliveryFee(BigDecimal deliveryFee) { this.deliveryFee = deliveryFee; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     public String getPaymentStatus() { return paymentStatus; }
@@ -87,6 +120,10 @@ public class Order {
     public void setProductionStartedAt(LocalDateTime productionStartedAt) { this.productionStartedAt = productionStartedAt; }
     public LocalDateTime getReadyAt() { return readyAt; }
     public void setReadyAt(LocalDateTime readyAt) { this.readyAt = readyAt; }
+    public LocalDateTime getPaymentConfirmedAt() { return paymentConfirmedAt; }
+    public void setPaymentConfirmedAt(LocalDateTime paymentConfirmedAt) { this.paymentConfirmedAt = paymentConfirmedAt; }
+    public String getPaymentConfirmedBy() { return paymentConfirmedBy; }
+    public void setPaymentConfirmedBy(String paymentConfirmedBy) { this.paymentConfirmedBy = paymentConfirmedBy; }
     public List<OrderItem> getItems() { return items; }
     public void setItems(List<OrderItem> items) { this.items = items; }
 }

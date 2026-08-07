@@ -13,6 +13,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCustomerId(Long customerId);
     List<Order> findAllByOrderByCreatedAtAsc();
 
+    @Query("SELECT o FROM Order o WHERE o.source = com.bairamburguer.api.models.OrderSource.MANUAL " +
+           "OR o.paymentStatus = 'PAID' ORDER BY o.createdAt ASC")
+    List<Order> findOperationalOrders();
+
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0), COUNT(o) FROM Order o " +
            "WHERE o.paymentStatus = 'PAID' AND UPPER(o.orderStatus) NOT IN ('CANCELED', 'CANCELLED') " +
            "AND o.createdAt >= :startDate AND o.createdAt < :endDate")

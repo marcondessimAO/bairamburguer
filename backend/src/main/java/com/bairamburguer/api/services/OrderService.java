@@ -3,10 +3,13 @@ package com.bairamburguer.api.services;
 import com.bairamburguer.api.dto.OrderCheckoutRequestDTO;
 import com.bairamburguer.api.dto.OrderCheckoutResponseDTO;
 import com.bairamburguer.api.dto.OrderItemRequestDTO;
+import com.bairamburguer.api.dto.ManualOrderRequestDTO;
 import com.bairamburguer.api.models.Addon;
 import com.bairamburguer.api.models.Neighborhood;
 import com.bairamburguer.api.models.Order;
 import com.bairamburguer.api.models.OrderItem;
+import com.bairamburguer.api.models.OrderSource;
+import com.bairamburguer.api.models.PaymentMethod;
 import com.bairamburguer.api.models.Product;
 import com.bairamburguer.api.repositories.AddonRepository;
 import com.bairamburguer.api.repositories.NeighborhoodRepository;
@@ -14,8 +17,10 @@ import com.bairamburguer.api.repositories.OrderRepository;
 import com.bairamburguer.api.repositories.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataAccessException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.bairamburguer.api.dto.OrderTrackResponseDTO;
@@ -27,6 +32,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,10 +59,13 @@ public class OrderService {
     private final SimpMessagingTemplate messagingTemplate;
     private final AddonRepository addonRepository;
 
+    @Transactional
     public OrderCheckoutResponseDTO createOrder(OrderCheckoutRequestDTO request) {
         if (!storeSettingsService.isStoreOpen()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A loja esta fechada no momento.");
         }
+
+        validateItems(request.getItems());
 
         Neighborhood neighborhood = null;
         if (request.getNeighborhoodName() != null
@@ -82,46 +92,78 @@ public class OrderService {
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderStatus("PENDING");
         order.setPaymentStatus("AWAITING_PAYMENT");
+        order.setSource(OrderSource.ONLINE);
+        order.setPaymentMethod(PaymentMethod.PIX);
 
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        List<OrderItem> orderItems = new ArrayList<>();
-
-        for (OrderItemRequestDTO itemDto : request.getItems()) {
-            Product product = productMap.get(itemDto.getProductId().intValue());
-            if (product == null) {
-                throw new RuntimeException("Produto nao encontrado no banco de dados: ID " + itemDto.getProductId());
-            }
-            if (Boolean.FALSE.equals(product.getIsAvailable())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Produto indisponivel: " + product.getName());
-            }
-
-            AddonCalculation addons = calculateAddons(product, itemDto);
-
-            OrderItem orderItem = new OrderItem();
-            orderItem.setProduct(product);
-            orderItem.setQuantity(itemDto.getQuantity());
-            orderItem.setAddonsSummary(addons.summary());
-            orderItem.setAddonsTotal(addons.total().multiply(new BigDecimal(itemDto.getQuantity())));
-
-            BigDecimal subtotal = product.getPrice()
-                    .add(addons.total())
-                    .multiply(new BigDecimal(itemDto.getQuantity()));
-            orderItem.setSubtotal(subtotal);
-            orderItem.setOrder(order);
-
-            totalAmount = totalAmount.add(subtotal);
-            orderItems.add(orderItem);
-        }
-
-        order.setItems(orderItems);
-
-        if (neighborhood != null) {
-            totalAmount = totalAmount.add(resolveDeliveryFee());
-        }
+        BigDecimal totalAmount = buildOrderItems(order, request.getItems(), productMap);
+        BigDecimal deliveryFee = neighborhood == null ? BigDecimal.ZERO : resolveDeliveryFee();
+        order.setDeliveryFee(deliveryFee);
+        totalAmount = totalAmount.add(deliveryFee);
         order.setTotalAmount(totalAmount);
 
-        Order savedOrder = orderRepository.save(order);
+        Order savedOrder = saveOrder(order);
         return pixPaymentService.generatePixCharge(savedOrder, request.getCustomerEmail(), request.getCustomerCpf());
+    }
+
+    @Transactional
+    public Order createManualOrder(ManualOrderRequestDTO request) {
+        validateItems(request.getItems());
+        requireText(request.getCustomerName(), "O nome do cliente e obrigatorio.");
+        requireText(request.getCustomerPhone(), "O telefone do cliente e obrigatorio.");
+        if (request.getPaymentMethod() != PaymentMethod.DINHEIRO
+                && request.getPaymentMethod() != PaymentMethod.CARTAO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pedidos manuais aceitam apenas dinheiro ou cartao.");
+        }
+        if (request.getPaymentMethod() == PaymentMethod.CARTAO && request.getChangeFor() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Troco para so pode ser informado em pagamentos em dinheiro.");
+        }
+
+        String deliveryMode = request.getDeliveryMode() == null ? "" : request.getDeliveryMode().trim().toUpperCase();
+        Neighborhood neighborhood;
+        if ("ENTREGA".equals(deliveryMode)) {
+            requireText(request.getStreet(), "O endereco e obrigatorio para entrega.");
+            requireText(request.getNumber(), "O numero do endereco e obrigatorio para entrega.");
+            requireText(request.getNeighborhoodName(), "O bairro e obrigatorio para entrega.");
+            neighborhood = findNeighborhoodByName(request.getNeighborhoodName());
+        } else if ("RETIRADA".equals(deliveryMode)) {
+            neighborhood = null;
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tipo de atendimento invalido. Use ENTREGA ou RETIRADA.");
+        }
+
+        List<Integer> productIds = request.getItems().stream()
+                .map(item -> item.getProductId().intValue())
+                .toList();
+        Map<Integer, Product> productMap = productRepository.findAllById(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, product -> product));
+
+        Order order = new Order();
+        order.setCustomerName(request.getCustomerName().trim());
+        order.setCustomerPhone(request.getCustomerPhone().trim());
+        order.setNeighborhood(neighborhood);
+        order.setStreet(neighborhood == null ? null : request.getStreet().trim());
+        order.setNumber(neighborhood == null ? null : request.getNumber().trim());
+        order.setComplement(neighborhood == null ? null : trimToNull(request.getComplement()));
+        order.setObservation(trimToNull(request.getObservation()));
+        order.setChangeFor(request.getChangeFor());
+        order.setSource(OrderSource.MANUAL);
+        order.setPaymentMethod(request.getPaymentMethod());
+        order.setPaymentStatus("AWAITING_PAYMENT");
+        order.setOrderStatus("PENDING");
+        order.setCreatedAt(LocalDateTime.now());
+
+        BigDecimal subtotal = buildOrderItems(order, request.getItems(), productMap);
+        BigDecimal deliveryFee = neighborhood == null ? BigDecimal.ZERO : resolveDeliveryFee();
+        order.setDeliveryFee(deliveryFee);
+        order.setTotalAmount(subtotal.add(deliveryFee));
+
+        if (order.getChangeFor() != null && order.getChangeFor().compareTo(order.getTotalAmount()) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O valor para troco nao pode ser menor que o total do pedido.");
+        }
+
+        Order savedOrder = saveOrder(order);
+        messagingTemplate.convertAndSend("/topic/orders/new", savedOrder);
+        return savedOrder;
     }
 
     public Order criarPedido(Order pedido) {
@@ -152,6 +194,8 @@ public class OrderService {
             }
 
             item.setProduct(product);
+            item.setProductNameSnapshot(product.getName());
+            item.setProductPriceSnapshot(product.getPrice());
 
             BigDecimal subtotal = product.getPrice().multiply(new BigDecimal(item.getQuantity()));
             item.setSubtotal(subtotal);
@@ -160,17 +204,19 @@ public class OrderService {
             item.setOrder(pedido);
         }
 
-        totalAmount = totalAmount.add(resolveDeliveryFee());
+        BigDecimal deliveryFee = resolveDeliveryFee();
+        totalAmount = totalAmount.add(deliveryFee);
 
         pedido.setTotalAmount(totalAmount);
+        pedido.setDeliveryFee(deliveryFee);
         pedido.setNeighborhood(neighborhood);
         pedido.setOrderStatus("PENDING");
+        pedido.setPaymentStatus("AWAITING_PAYMENT");
+        pedido.setSource(OrderSource.ONLINE);
+        pedido.setPaymentMethod(PaymentMethod.PIX);
         pedido.setCreatedAt(LocalDateTime.now());
 
-        Order savedOrder = orderRepository.save(pedido);
-        messagingTemplate.convertAndSend("/topic/orders/new", savedOrder);
-
-        return savedOrder;
+        return orderRepository.save(pedido);
     }
 
     public Order atualizarStatus(Long id, String novoStatus) {
@@ -191,6 +237,14 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transicao invalida: nao e permitido retroceder de " + currentStatus + " para " + novoStatus);
         }
 
+        LocalDateTime now = LocalDateTime.now();
+        if ("PREPARING".equals(novoStatus) && order.getProductionStartedAt() == null) {
+            order.setProductionStartedAt(now);
+        }
+        // O fluxo atual não possui o status READY. O despacho representa o fim do preparo.
+        if ("DISPATCHED".equals(novoStatus) && order.getReadyAt() == null) {
+            order.setReadyAt(now);
+        }
         order.setOrderStatus(novoStatus);
         Order savedOrder = orderRepository.save(order);
 
@@ -207,6 +261,41 @@ public class OrderService {
 
     public List<Order> listarTodos() {
         return orderRepository.findAllByOrderByCreatedAtAsc();
+    }
+
+    public List<Order> listarOperacionais() {
+        return orderRepository.findOperationalOrders();
+    }
+
+    public List<Neighborhood> listDeliveryNeighborhoods() {
+        return neighborhoodRepository.findAll().stream()
+                .filter(neighborhood -> !isBlockedNeighborhood(neighborhood.getName()))
+                .sorted(java.util.Comparator.comparing(Neighborhood::getName, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    @Transactional
+    public Order markManualOrderAsPaid(Long id, String confirmedBy) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido nao encontrado"));
+        if (order.getSource() != OrderSource.MANUAL) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pedidos Pix online so podem ser confirmados pelo webhook do Mercado Pago.");
+        }
+        if ("PAID".equals(order.getPaymentStatus())) {
+            return order;
+        }
+        if (!"AWAITING_PAYMENT".equals(order.getPaymentStatus()) && !"PENDING".equals(order.getPaymentStatus())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O pagamento deste pedido nao pode ser confirmado manualmente.");
+        }
+
+        order.setPaymentStatus("PAID");
+        order.setPaymentConfirmedAt(LocalDateTime.now());
+        order.setPaymentConfirmedBy(trimToNull(confirmedBy));
+        Order savedOrder = saveOrder(order);
+        messagingTemplate.convertAndSend("/topic/orders/update", savedOrder);
+        messagingTemplate.convertAndSend("/topic/orders/status/" + savedOrder.getId(),
+                java.util.Collections.singletonMap("paymentStatus", "PAID"));
+        return savedOrder;
     }
 
     public List<Order> listarPorCliente(Long customerId) {
@@ -239,7 +328,11 @@ public class OrderService {
                     .map(Addon::getId)
                     .collect(Collectors.toList());
 
+            Set<Long> seenAddonIds = new HashSet<>();
             for (Long addonId : itemDto.getAddonIds()) {
+                if (addonId == null || !seenAddonIds.add(addonId)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A lista de adicionais contem um ID invalido ou duplicado.");
+                }
                 Addon addon = addonRepository.findById(addonId)
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Adicional nao encontrado: ID " + addonId));
 
@@ -301,6 +394,73 @@ public class OrderService {
 
     private BigDecimal resolveDeliveryFee() {
         return BigDecimal.ZERO;
+    }
+
+    private BigDecimal buildOrderItems(Order order, List<OrderItemRequestDTO> itemDtos, Map<Integer, Product> productMap) {
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        List<OrderItem> orderItems = new ArrayList<>();
+
+        for (OrderItemRequestDTO itemDto : itemDtos) {
+            Product product = productMap.get(itemDto.getProductId().intValue());
+            if (product == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Produto nao encontrado: ID " + itemDto.getProductId());
+            }
+            if (Boolean.FALSE.equals(product.getIsAvailable())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Produto indisponivel: " + product.getName());
+            }
+
+            AddonCalculation addons = calculateAddons(product, itemDto);
+            BigDecimal quantity = BigDecimal.valueOf(itemDto.getQuantity());
+            BigDecimal subtotal = product.getPrice().add(addons.total()).multiply(quantity);
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setProduct(product);
+            orderItem.setProductNameSnapshot(product.getName());
+            orderItem.setProductPriceSnapshot(product.getPrice());
+            orderItem.setQuantity(itemDto.getQuantity());
+            orderItem.setAddonsSummary(addons.summary());
+            orderItem.setAddonsTotal(addons.total().multiply(quantity));
+            orderItem.setSubtotal(subtotal);
+            orderItem.setOrder(order);
+            orderItems.add(orderItem);
+            totalAmount = totalAmount.add(subtotal);
+        }
+
+        order.setItems(orderItems);
+        return totalAmount;
+    }
+
+    private void validateItems(List<OrderItemRequestDTO> items) {
+        if (items == null || items.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O pedido deve ter ao menos um item.");
+        }
+        for (OrderItemRequestDTO item : items) {
+            if (item == null || item.getProductId() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Produto invalido no pedido.");
+            }
+            if (item.getQuantity() <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A quantidade deve ser maior que zero.");
+            }
+        }
+    }
+
+    private void requireText(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+        }
+    }
+
+    private String trimToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private Order saveOrder(Order order) {
+        try {
+            return orderRepository.save(order);
+        } catch (DataAccessException exception) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Nao foi possivel salvar o pedido. Tente novamente.", exception);
+        }
     }
 
     private String normalizeAddonCode(String value) {
@@ -370,7 +530,7 @@ public class OrderService {
         BigDecimal subtotal = BigDecimal.ZERO;
         for (OrderItem item : order.getItems()) {
             TrackItemDTO idto = new TrackItemDTO();
-            idto.setProductName(item.getProduct().getName());
+            idto.setProductName(item.getProductNameSnapshot() != null ? item.getProductNameSnapshot() : item.getProduct().getName());
             idto.setQuantity(item.getQuantity());
             idto.setPrice(item.getProduct().getPrice());
             idto.setAddonsSummary(item.getAddonsSummary());

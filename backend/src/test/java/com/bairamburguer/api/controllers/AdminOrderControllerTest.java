@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
+import java.security.Principal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -29,5 +30,21 @@ class AdminOrderControllerTest {
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isSameAs(updatedOrder);
         verify(orderService).atualizarStatus(7L, "PREPARING");
+    }
+
+    @Test
+    void markPaidDelegatesAuthenticatedAdministratorForAudit() {
+        OrderService orderService = mock(OrderService.class);
+        Order updatedOrder = new Order();
+        updatedOrder.setId(7L);
+        updatedOrder.setPaymentStatus("PAID");
+        when(orderService.markManualOrderAsPaid(7L, "admin@example.com")).thenReturn(updatedOrder);
+        Principal principal = () -> "admin@example.com";
+
+        ResponseEntity<Order> response = new AdminOrderController(orderService)
+                .markManualOrderAsPaid(7L, principal);
+
+        assertThat(response.getBody()).isSameAs(updatedOrder);
+        verify(orderService).markManualOrderAsPaid(7L, "admin@example.com");
     }
 }
