@@ -10,6 +10,12 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  dashboardPointLabel,
+  dashboardRange,
+  formatStoreTime,
+  type DashboardGranularity,
+} from "@/lib/storeTime";
 
 type DateRange = { start: string; end: string };
 type Preset = "today" | "yesterday" | "last7" | "last30" | "month" | "custom";
@@ -18,9 +24,9 @@ type RankingTab = "mostSold" | "highestRevenue" | "leastSold";
 type Change = { percentage: number | null; direction: "up" | "down" | "neutral"; previousValueWasZero: boolean };
 type Product = { name: string; quantity: number; revenue: number; revenueShare: number };
 type Metrics = {
-  period: DateRange;
-  summary: { revenue: number; paidOrders: number; averageTicket: number };
-  comparison: { revenue: Change; paidOrders: Change; averageTicket: Change };
+  period: DateRange & { granularity: DashboardGranularity };
+  summary: { revenue: number; orders: number; paidOrders: number; averageTicket: number };
+  comparison: { revenue: Change; orders: Change; averageTicket: Change };
   ordersByStatus: { status: string; label: string; count: number; requiresAttention: boolean }[];
   averagePreparationTime: { minutes: number | null; sampleSize: number };
   salesEvolution: { timestamp: string; revenue: number; orders: number }[];
@@ -35,28 +41,8 @@ const presets: { id: Preset; label: string }[] = [
   { id: "month", label: "Mês atual" }, { id: "custom", label: "Personalizado" }
 ];
 
-function localIso(date: Date) {
-  const offset = date.getTimezoneOffset();
-  return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 10);
-}
-
 function getRange(preset: Exclude<Preset, "custom">): DateRange {
-  const end = new Date();
-  const start = new Date(end);
-  if (preset === "yesterday") {
-    start.setDate(start.getDate() - 1);
-    end.setDate(end.getDate() - 1);
-  }
-  if (preset === "last7") start.setDate(start.getDate() - 6);
-  if (preset === "last30") start.setDate(start.getDate() - 29);
-  if (preset === "month") start.setDate(1);
-  return { start: localIso(start), end: localIso(end) };
-}
-
-function dateLabel(value: string, hourly: boolean) {
-  if (hourly) return `${value.slice(11, 13)}h`;
-  const [, month, day] = value.slice(0, 10).split("-");
-  return `${day}/${month}`;
+  return dashboardRange(preset);
 }
 
 function statusStyle(status: string) {
@@ -157,12 +143,12 @@ export default function DashboardPage() {
   };
 
   const chartData = useMemo(() => metrics?.salesEvolution.map(point => ({
-    ...point, label: dateLabel(point.timestamp, metrics.salesEvolution.length <= 24)
+    ...point, label: dashboardPointLabel(point.timestamp, metrics.period.granularity)
   })) ?? [], [metrics]);
   const activeProducts = metrics?.topProducts[rankingTab] ?? [];
   const summaryCards: { label: string; value: string; change: Change; Icon: LucideIcon; color: string }[] = metrics ? [
     { label: "Faturamento", value: formatter.format(metrics.summary.revenue), change: metrics.comparison.revenue, Icon: DollarSign, color: "text-emerald-400" },
-    { label: "Pedidos pagos", value: String(metrics.summary.paidOrders), change: metrics.comparison.paidOrders, Icon: ShoppingBag, color: "text-blue-400" },
+    { label: "Pedidos no período", value: String(metrics.summary.orders), change: metrics.comparison.orders, Icon: ShoppingBag, color: "text-blue-400" },
     { label: "Ticket médio", value: formatter.format(metrics.summary.averageTicket), change: metrics.comparison.averageTicket, Icon: Receipt, color: "text-violet-400" }
   ] : [];
 
@@ -180,7 +166,7 @@ export default function DashboardPage() {
       </div>
     </header>
 
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500"><span>Período: {range.start.split("-").reverse().join("/")} a {range.end.split("-").reverse().join("/")}</span>{lastUpdated && <span>Última atualização: {lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>}{refreshing && <span className="text-[#F1C40F]">Atualizando…</span>}</div>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500"><span>Período: {range.start.split("-").reverse().join("/")} a {range.end.split("-").reverse().join("/")}</span>{lastUpdated && <span>Última atualização: {formatStoreTime(lastUpdated)}</span>}{refreshing && <span className="text-[#F1C40F]">Atualizando…</span>}</div>
     {error && <div role="alert" className="flex items-center justify-between gap-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200"><span>{error}</span><button onClick={() => void loadMetrics(true)} className="font-bold underline">Tentar novamente</button></div>}
 
     {metrics && <>
@@ -191,12 +177,12 @@ export default function DashboardPage() {
       <section className="rounded-2xl border border-zinc-800 bg-[#1E1E1E] p-5 shadow-lg"><div className="mb-4 flex items-center gap-2"><LayoutDashboard className="h-5 w-5 text-[#F1C40F]" /><h2 className="text-lg font-bold text-zinc-100">Pedidos por status</h2></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{metrics.ordersByStatus.map(status => <Link href="/admin" key={status.status} className={`rounded-xl border p-4 transition hover:-translate-y-0.5 ${statusStyle(status.status)} ${status.requiresAttention ? "ring-1 ring-current/20" : ""}`}><p className="text-xs font-semibold uppercase tracking-wide opacity-80">{status.label}</p><p className="mt-2 text-3xl font-black">{status.count}</p>{status.requiresAttention && <p className="mt-1 text-xs">Requer atenção</p>}</Link>)}</div></section>
 
       <section className="grid gap-6 xl:grid-cols-3">
-        <article className="xl:col-span-2 rounded-2xl border border-zinc-800 bg-[#1E1E1E] p-5 shadow-lg"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-bold text-zinc-100">Evolução de Vendas</h2><p className="text-sm text-zinc-500">Dias sem vendas são exibidos como zero.</p></div><div className="rounded-xl bg-zinc-800 p-1"><button onClick={() => setChartMode("revenue")} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${chartMode === "revenue" ? "bg-[#F1C40F] text-black" : "text-zinc-400"}`}>Faturamento</button><button onClick={() => setChartMode("orders")} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${chartMode === "orders" ? "bg-[#F1C40F] text-black" : "text-zinc-400"}`}>Pedidos</button></div></div><div className="h-[310px]"><ResponsiveContainer width="100%" height="100%"><LineChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}><CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} /><XAxis dataKey="label" minTickGap={20} stroke="#71717a" tick={{ fill: "#a1a1aa", fontSize: 12 }} tickLine={false} axisLine={false} /><YAxis width={chartMode === "revenue" ? 72 : 36} stroke="#71717a" tick={{ fill: "#a1a1aa", fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={value => chartMode === "revenue" ? `R$ ${Number(value).toLocaleString("pt-BR")}` : value} /><Tooltip contentStyle={{ background: "#121212", border: "1px solid #3f3f46", borderRadius: 12 }} labelStyle={{ color: "#d4d4d8" }} formatter={(value) => [chartMode === "revenue" ? formatter.format(Number(value)) : `${value} pedido(s)`, chartMode === "revenue" ? "Faturamento" : "Pedidos"]} labelFormatter={(_, payload) => payload[0]?.payload?.timestamp ? dateLabel(String(payload[0].payload.timestamp), chartData.length <= 24) : ""} /><Line type="monotone" dataKey={chartMode} stroke="#F1C40F" strokeWidth={3} dot={false} activeDot={{ r: 5, fill: "#F1C40F" }} /></LineChart></ResponsiveContainer></div></article>
+        <article className="xl:col-span-2 rounded-2xl border border-zinc-800 bg-[#1E1E1E] p-5 shadow-lg"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-bold text-zinc-100">Evolução de Vendas</h2><p className="text-sm text-zinc-500">Dias sem vendas são exibidos como zero.</p></div><div className="rounded-xl bg-zinc-800 p-1"><button onClick={() => setChartMode("revenue")} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${chartMode === "revenue" ? "bg-[#F1C40F] text-black" : "text-zinc-400"}`}>Faturamento</button><button onClick={() => setChartMode("orders")} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${chartMode === "orders" ? "bg-[#F1C40F] text-black" : "text-zinc-400"}`}>Pedidos pagos</button></div></div><div className="h-[310px]"><ResponsiveContainer width="100%" height="100%"><LineChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}><CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} /><XAxis dataKey="label" minTickGap={20} stroke="#71717a" tick={{ fill: "#a1a1aa", fontSize: 12 }} tickLine={false} axisLine={false} /><YAxis width={chartMode === "revenue" ? 72 : 36} stroke="#71717a" tick={{ fill: "#a1a1aa", fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={value => chartMode === "revenue" ? `R$ ${Number(value).toLocaleString("pt-BR")}` : value} /><Tooltip contentStyle={{ background: "#121212", border: "1px solid #3f3f46", borderRadius: 12 }} labelStyle={{ color: "#d4d4d8" }} formatter={(value) => [chartMode === "revenue" ? formatter.format(Number(value)) : `${value} pedido(s)`, chartMode === "revenue" ? "Faturamento" : "Pedidos pagos"]} labelFormatter={(_, payload) => payload[0]?.payload?.timestamp ? dashboardPointLabel(String(payload[0].payload.timestamp), metrics.period.granularity) : ""} /><Line type="monotone" dataKey={chartMode} stroke="#F1C40F" strokeWidth={3} dot={false} activeDot={{ r: 5, fill: "#F1C40F" }} /></LineChart></ResponsiveContainer></div></article>
         <article className="rounded-2xl border border-zinc-800 bg-[#1E1E1E] p-5 shadow-lg"><div className="mb-5 flex items-center gap-2"><Clock3 className="h-5 w-5 text-[#F1C40F]" /><div><h2 className="text-lg font-bold text-zinc-100">Tempo médio de preparo</h2><p className="text-xs text-zinc-500">Da produção ao despacho</p></div></div>{metrics.averagePreparationTime.minutes === null ? <p className="py-8 text-center text-zinc-500">Sem dados de preparo no período.</p> : <><p className="text-4xl font-black text-zinc-100">{Number(metrics.averagePreparationTime.minutes).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}<span className="ml-1 text-lg text-zinc-400">min</span></p><p className="mt-3 text-sm text-zinc-500">Baseado em {metrics.averagePreparationTime.sampleSize} pedido(s) com transições registradas.</p></>}</article>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-3"><article className="xl:col-span-2 rounded-2xl border border-zinc-800 bg-[#1E1E1E] p-5 shadow-lg"><div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-2"><Trophy className="h-5 w-5 text-[#F1C40F]" /><h2 className="text-xl font-bold text-zinc-100">Produtos</h2></div><div className="flex flex-wrap gap-1 rounded-xl bg-zinc-800 p-1">{(["mostSold", "highestRevenue", "leastSold"] as RankingTab[]).map(tab => <button key={tab} onClick={() => setRankingTab(tab)} className={`rounded-lg px-3 py-1.5 text-xs font-bold ${rankingTab === tab ? "bg-[#F1C40F] text-black" : "text-zinc-400"}`}>{({ mostSold: "Mais vendidos", highestRevenue: "Maior faturamento", leastSold: "Menos vendidos" })[tab]}</button>)}</div></div>{activeProducts.length === 0 ? <p className="py-12 text-center text-zinc-500">Nenhuma venda válida no período.</p> : <div className="space-y-2">{activeProducts.map((product, index) => <div key={`${product.name}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-zinc-800 p-3"><div className="flex min-w-0 items-center gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-sm font-black text-[#F1C40F]">{index + 1}º</span><div className="min-w-0"><p className="truncate font-bold text-zinc-100">{product.name}</p><p className="text-xs text-zinc-500">{product.quantity} unid. · {Number(product.revenueShare).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% do faturamento</p></div></div><p className="shrink-0 font-bold text-emerald-400">{formatter.format(product.revenue)}</p></div>)}</div>}</article>
-        <article className="rounded-2xl border border-zinc-800 bg-[#1E1E1E] p-5 shadow-lg"><div className="mb-4 flex items-center gap-2"><ChefHat className="h-5 w-5 text-[#F1C40F]" /><h2 className="text-lg font-bold text-zinc-100">Atalhos rápidos</h2></div><div className="grid gap-2">{[["/admin", "Ver Kanban da Cozinha", LayoutDashboard], ["/admin/menu", "Gerir Cardápio", MenuSquare], ["/admin/menu?create=true", "Novo Produto", PackagePlus], ["/admin/addons", "Gerir Adicionais", Layers]].map(([href, label, Icon]) => { const ShortcutIcon = Icon as typeof LayoutDashboard; return <Link href={href as string} key={label as string} className="flex items-center gap-3 rounded-xl border border-zinc-800 p-3 text-sm font-semibold text-zinc-300 transition hover:border-[#F1C40F]/50 hover:bg-zinc-800"><ShortcutIcon className="h-4 w-4 text-[#F1C40F]" />{label as string}</Link>; })}<button onClick={() => void toggleStore()} disabled={!storeStatus || storeLoading} className={`flex items-center gap-3 rounded-xl border p-3 text-left text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${storeStatus?.isOpen ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-red-400/30 bg-red-400/10 text-red-200"}`}><Store className="h-4 w-4" />{storeLoading ? "Alterando loja…" : storeStatus?.isOpen ? "Fechar Loja" : "Abrir Loja"}</button>{storeStatus?.updatedAt && <p className="text-xs text-zinc-500">Última alteração: {new Date(storeStatus.updatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>}{storeError && <p role="alert" className="text-xs text-red-400">{storeError}</p>}</div></article></section>
+        <article className="rounded-2xl border border-zinc-800 bg-[#1E1E1E] p-5 shadow-lg"><div className="mb-4 flex items-center gap-2"><ChefHat className="h-5 w-5 text-[#F1C40F]" /><h2 className="text-lg font-bold text-zinc-100">Atalhos rápidos</h2></div><div className="grid gap-2">{[["/admin", "Ver Kanban da Cozinha", LayoutDashboard], ["/admin/menu", "Gerir Cardápio", MenuSquare], ["/admin/menu?create=true", "Novo Produto", PackagePlus], ["/admin/addons", "Gerir Adicionais", Layers]].map(([href, label, Icon]) => { const ShortcutIcon = Icon as typeof LayoutDashboard; return <Link href={href as string} key={label as string} className="flex items-center gap-3 rounded-xl border border-zinc-800 p-3 text-sm font-semibold text-zinc-300 transition hover:border-[#F1C40F]/50 hover:bg-zinc-800"><ShortcutIcon className="h-4 w-4 text-[#F1C40F]" />{label as string}</Link>; })}<button onClick={() => void toggleStore()} disabled={!storeStatus || storeLoading} className={`flex items-center gap-3 rounded-xl border p-3 text-left text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${storeStatus?.isOpen ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-red-400/30 bg-red-400/10 text-red-200"}`}><Store className="h-4 w-4" />{storeLoading ? "Alterando loja…" : storeStatus?.isOpen ? "Fechar Loja" : "Abrir Loja"}</button>{storeStatus?.updatedAt && <p className="text-xs text-zinc-500">Última alteração: {formatStoreTime(storeStatus.updatedAt)}</p>}{storeError && <p role="alert" className="text-xs text-red-400">{storeError}</p>}</div></article></section>
     </>}
   </div>;
 }

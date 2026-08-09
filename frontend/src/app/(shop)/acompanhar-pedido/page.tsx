@@ -6,6 +6,7 @@ import {
   MapPin, User, DollarSign, ClipboardList, AlertTriangle 
 } from "lucide-react";
 import Link from "next/link";
+import { formatStoreDateTime } from "@/lib/storeTime";
 
 interface TrackItem {
   productName: string;
@@ -195,7 +196,7 @@ export default function AcompanharPedidoPage() {
               <h1 className="text-2xl font-black text-zinc-900 flex items-center gap-2">
                 Pedido <span className="text-green-700">#{order.id}</span>
               </h1>
-              <p className="text-xs text-zinc-500">Criado em {order.createdAt}</p>
+              <p className="text-xs text-zinc-500">Criado em {formatStoreDateTime(order.createdAt)}</p>
             </div>
             <div className="flex gap-3">
               <button

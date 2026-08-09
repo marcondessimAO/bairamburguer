@@ -6,6 +6,7 @@ import { useCart } from "@/contexts/CartContext";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import Link from "next/link";
+import { formatStoreDateTime } from "@/lib/storeTime";
 
 type Neighborhood = {
   id: number;
@@ -214,7 +215,7 @@ export default function ShopHome() {
                 </div>
 
                 <div className="pt-4 border-t border-gray-800 mt-auto text-xs text-gray-500 font-medium mb-1">
-                  {order.createdAt ? `Criado em ${new Date(order.createdAt).toLocaleDateString('pt-BR')} às ${new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : "Data não disponível"}
+                  {order.createdAt ? `Criado em ${formatStoreDateTime(order.createdAt)}` : "Data não disponível"}
                 </div>
               </div>
             ))}

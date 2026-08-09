@@ -2,7 +2,7 @@ package com.bairamburguer.api.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record DashboardMetricsDTO(
@@ -14,11 +14,11 @@ public record DashboardMetricsDTO(
         List<SalesPointDTO> salesEvolution,
         ProductRankingsDTO topProducts
 ) {
-    public record PeriodDTO(LocalDate start, LocalDate end) {}
+    public record PeriodDTO(LocalDate start, LocalDate end, String granularity) {}
 
-    public record SummaryDTO(BigDecimal revenue, long paidOrders, BigDecimal averageTicket) {}
+    public record SummaryDTO(BigDecimal revenue, long orders, long paidOrders, BigDecimal averageTicket) {}
 
-    public record ComparisonDTO(ChangeDTO revenue, ChangeDTO paidOrders, ChangeDTO averageTicket) {}
+    public record ComparisonDTO(ChangeDTO revenue, ChangeDTO orders, ChangeDTO averageTicket) {}
 
     public record ChangeDTO(BigDecimal percentage, String direction, boolean previousValueWasZero) {}
 
@@ -26,7 +26,7 @@ public record DashboardMetricsDTO(
 
     public record PreparationTimeDTO(BigDecimal minutes, long sampleSize) {}
 
-    public record SalesPointDTO(LocalDateTime timestamp, BigDecimal revenue, long orders) {}
+    public record SalesPointDTO(OffsetDateTime timestamp, BigDecimal revenue, long orders) {}
 
     public record ProductRankingsDTO(List<TopProductDTO> mostSold, List<TopProductDTO> highestRevenue,
                                      List<TopProductDTO> leastSold) {}

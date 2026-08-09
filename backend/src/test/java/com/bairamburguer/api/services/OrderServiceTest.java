@@ -1,5 +1,6 @@
 package com.bairamburguer.api.services;
 
+import com.bairamburguer.api.config.TimeConfig;
 import com.bairamburguer.api.dto.OrderCheckoutRequestDTO;
 import com.bairamburguer.api.dto.OrderCheckoutResponseDTO;
 import com.bairamburguer.api.dto.OrderItemRequestDTO;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class OrderServiceTest {
+    private static final Clock STORE_CLOCK = Clock.system(TimeConfig.STORE_ZONE);
 
     @Test
     void checkoutNormalizesNeighborhoodNameAndKeepsDeliveryFree() {
@@ -68,7 +71,8 @@ class OrderServiceTest {
                 pix,
                 storeSettings,
                 mock(SimpMessagingTemplate.class),
-                mock(AddonRepository.class)
+                mock(AddonRepository.class),
+                STORE_CLOCK
         );
 
         OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("  JOSE   AMERICO  "));
@@ -98,7 +102,7 @@ class OrderServiceTest {
         });
 
         OrderService service = new OrderService(orders, products, neighborhoods, pix, storeSettings,
-                messaging, mock(AddonRepository.class));
+                messaging, mock(AddonRepository.class), STORE_CLOCK);
         OrderCheckoutRequestDTO request = checkoutRequest(null);
         request.setNeighborhoodName(null);
         request.setPaymentMethod(PaymentMethod.DINHEIRO);
@@ -132,7 +136,7 @@ class OrderServiceTest {
         });
 
         OrderService service = new OrderService(orders, products, neighborhoods, pix, storeSettings,
-                mock(SimpMessagingTemplate.class), mock(AddonRepository.class));
+                mock(SimpMessagingTemplate.class), mock(AddonRepository.class), STORE_CLOCK);
         OrderCheckoutRequestDTO request = checkoutRequest(null);
         request.setNeighborhoodName(null);
         request.setPaymentMethod(PaymentMethod.CARTAO);
@@ -181,7 +185,8 @@ class OrderServiceTest {
                 pix,
                 storeSettings,
                 mock(SimpMessagingTemplate.class),
-                mock(AddonRepository.class)
+                mock(AddonRepository.class),
+                STORE_CLOCK
         );
 
         OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("Mangabeira"));
@@ -229,7 +234,8 @@ class OrderServiceTest {
                 pix,
                 storeSettings,
                 mock(SimpMessagingTemplate.class),
-                mock(AddonRepository.class)
+                mock(AddonRepository.class),
+                STORE_CLOCK
         );
 
         OrderCheckoutRequestDTO request = checkoutRequest("Mangabeira");
@@ -258,7 +264,8 @@ class OrderServiceTest {
                 pix,
                 storeSettings,
                 mock(SimpMessagingTemplate.class),
-                mock(AddonRepository.class)
+                mock(AddonRepository.class),
+                STORE_CLOCK
         );
 
         assertThatThrownBy(() -> service.createOrder(checkoutRequest("  MANAIRA ")))
@@ -296,7 +303,8 @@ class OrderServiceTest {
                 pix,
                 storeSettings,
                 mock(SimpMessagingTemplate.class),
-                mock(AddonRepository.class)
+                mock(AddonRepository.class),
+                STORE_CLOCK
         );
 
         assertThatThrownBy(() -> service.createOrder(checkoutRequest("Mangabeira")))

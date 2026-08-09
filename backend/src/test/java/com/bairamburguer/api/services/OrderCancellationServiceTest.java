@@ -1,5 +1,6 @@
 package com.bairamburguer.api.services;
 
+import com.bairamburguer.api.config.TimeConfig;
 import com.bairamburguer.api.models.Order;
 import com.bairamburguer.api.models.OrderItem;
 import com.bairamburguer.api.models.PaymentMethod;
@@ -14,6 +15,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +38,8 @@ class OrderCancellationServiceTest {
         orders = mock(OrderRepository.class);
         messaging = mock(SimpMessagingTemplate.class);
         service = new OrderService(orders, mock(ProductRepository.class), mock(NeighborhoodRepository.class),
-                mock(PixPaymentService.class), mock(StoreSettingsService.class), messaging, mock(AddonRepository.class));
+                mock(PixPaymentService.class), mock(StoreSettingsService.class), messaging, mock(AddonRepository.class),
+                Clock.system(TimeConfig.STORE_ZONE));
         when(orders.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import type { OrderDTO } from "@/services/admin";
+import { formatStoreDateTime } from "@/lib/storeTime";
 
 type PrintOrderButtonProps = {
   order: OrderDTO;
@@ -17,13 +18,6 @@ const escapeHtml = (value: unknown) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-
-const formatDateTime = (value: string) => {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "Não informado"
-    : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
-};
 
 const orderStatusLabel = (status: string) => ({
   PENDING: "Pendente",
@@ -85,7 +79,7 @@ export const buildPrintableOrderHtml = (order: OrderDTO) => {
     .note { border-left:4px solid #000; background:#eee; padding:8px; white-space:pre-wrap; font-weight:bold; }
     footer { text-align:center; font-size:11px; margin-top:18px; } @media print { body { print-color-adjust:exact; -webkit-print-color-adjust:exact; } }
   </style></head><body><main>
-    <header><h1>BAIRAM BURGUER</h1><p>PEDIDO #${escapeHtml(order.id)}</p><p>${escapeHtml(formatDateTime(order.createdAt))}</p>
+    <header><h1>BAIRAM BURGUER</h1><p>PEDIDO #${escapeHtml(order.id)}</p><p>${escapeHtml(formatStoreDateTime(order.createdAt))}</p>
       ${isManual ? '<div class="manual">PEDIDO MANUAL</div>' : ""}
       <span class="badge">${order.neighborhood ? "ENTREGA" : "RETIRADA NA LOJA"}</span>
     </header>

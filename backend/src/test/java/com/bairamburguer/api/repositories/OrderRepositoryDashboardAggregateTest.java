@@ -12,6 +12,8 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,6 +54,29 @@ class OrderRepositoryDashboardAggregateTest {
     }
 
     @Test
+    void includesConfirmedManualCashAndCardButExcludesPendingPayments() {
+        Order paidCash = order("PAID", "PREPARING", "20.00", PERIOD_START, null, null);
+        paidCash.setSource(OrderSource.MANUAL);
+        paidCash.setPaymentMethod(PaymentMethod.DINHEIRO);
+        Order paidCard = order("PAID", "DELIVERED", "22.00", PERIOD_START.plusHours(1), null, null);
+        paidCard.setSource(OrderSource.MANUAL);
+        paidCard.setPaymentMethod(PaymentMethod.CARTAO);
+        Order pendingCard = order("AWAITING_PAYMENT", "PENDING", "22.00", PERIOD_START.plusHours(2), null, null);
+        pendingCard.setSource(OrderSource.MANUAL);
+        pendingCard.setPaymentMethod(PaymentMethod.CARTAO);
+        repository.save(paidCash);
+        repository.save(paidCard);
+        repository.save(pendingCard);
+        repository.flush();
+
+        OrderSummaryProjection summary = repository.getValidOrderSummary(PERIOD_START, PERIOD_END);
+
+        assertThat(summary.getRevenue()).isEqualByComparingTo("42.00");
+        assertThat(summary.getOrderCount()).isEqualTo(2L);
+        assertThat(repository.countOrdersInPeriod(PERIOD_START, PERIOD_END)).isEqualTo(3L);
+    }
+
+    @Test
     void mapsAveragePreparationMinutesAndSampleSizeFromTheRealNativeQuery() {
         repository.save(order("PAID", "DELIVERED", "20.00", PERIOD_START,
                 PERIOD_START.plusHours(1), PERIOD_START.plusHours(1).plusMinutes(10)));
@@ -73,6 +98,40 @@ class OrderRepositoryDashboardAggregateTest {
         assertThat(preparation).isNotNull();
         assertThat(preparation.getAverageMinutes()).isNull();
         assertThat(preparation.getSampleSize()).isZero();
+    }
+
+    @Test
+    void countsEachOrderOnceAndKeepsCanceledSpellingsAsSeparateRawGroups() {
+        repository.save(order("AWAITING_PAYMENT", "PENDING", "10.00", PERIOD_START, null, null));
+        repository.save(order("PAID", "DELIVERED", "20.00", PERIOD_START.plusDays(1), null, null));
+        repository.save(order("PAID", "CANCELED", "30.00", PERIOD_START.plusDays(2), null, null));
+        repository.save(order("PAID", "CANCELLED", "40.00", PERIOD_START.plusDays(3), null, null));
+        repository.save(order("PAID", "DELIVERED", "50.00", PERIOD_END, null, null));
+        repository.flush();
+
+        long total = repository.countOrdersInPeriod(PERIOD_START, PERIOD_END);
+        Map<String, Long> byStatus = repository.countOrdersByStatus(PERIOD_START, PERIOD_END).stream()
+                .collect(Collectors.toMap(row -> (String) row[0], row -> ((Number) row[1]).longValue()));
+
+        assertThat(total).isEqualTo(4L);
+        assertThat(byStatus).containsEntry("PENDING", 1L).containsEntry("DELIVERED", 1L)
+                .containsEntry("CANCELED", 1L).containsEntry("CANCELLED", 1L);
+        assertThat(byStatus.values().stream().mapToLong(Long::longValue).sum()).isEqualTo(total);
+    }
+
+    @Test
+    void preparationTimeUsesTheOrdersCreationPeriodEvenWhenCompletionCrossesMidnight() {
+        LocalDateTime createdInside = PERIOD_END.minusMinutes(30);
+        repository.save(order("PAID", "DELIVERED", "20.00", createdInside,
+                PERIOD_END.plusMinutes(5), PERIOD_END.plusMinutes(15)));
+        repository.save(order("PAID", "DELIVERED", "30.00", PERIOD_START.minusMinutes(1),
+                PERIOD_START.plusMinutes(5), PERIOD_START.plusMinutes(25)));
+        repository.flush();
+
+        PreparationTimeProjection preparation = repository.getAveragePreparationTime(PERIOD_START, PERIOD_END);
+
+        assertThat(preparation.getSampleSize()).isEqualTo(1L);
+        assertThat(preparation.getAverageMinutes()).isEqualByComparingTo("10.00");
     }
 
     private Order order(String paymentStatus, String orderStatus, String total, LocalDateTime createdAt,

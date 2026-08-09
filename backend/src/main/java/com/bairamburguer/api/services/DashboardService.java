@@ -1,5 +1,6 @@
 package com.bairamburguer.api.services;
 
+import com.bairamburguer.api.config.TimeConfig;
 import com.bairamburguer.api.dto.DashboardMetricsDTO;
 import com.bairamburguer.api.repositories.OrderItemRepository;
 import com.bairamburguer.api.repositories.OrderRepository;
@@ -30,13 +31,14 @@ public class DashboardService {
         LocalDateTime endExclusive = endDate.plusDays(1).atStartOfDay();
         long days = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1;
         LocalDateTime previousStart = start.minusDays(days);
+        String granularity = days == 1 ? "hour" : "day";
 
         Summary current = summary(start, endExclusive);
         Summary previous = summary(previousStart, start);
 
         return new DashboardMetricsDTO(
-                new DashboardMetricsDTO.PeriodDTO(startDate, endDate),
-                new DashboardMetricsDTO.SummaryDTO(current.revenue(), current.orders(), current.averageTicket()),
+                new DashboardMetricsDTO.PeriodDTO(startDate, endDate, granularity),
+                new DashboardMetricsDTO.SummaryDTO(current.revenue(), current.orders(), current.paidOrders(), current.averageTicket()),
                 new DashboardMetricsDTO.ComparisonDTO(
                         compare(current.revenue(), previous.revenue()),
                         compare(BigDecimal.valueOf(current.orders()), BigDecimal.valueOf(previous.orders())),
@@ -44,7 +46,7 @@ public class DashboardService {
                 ),
                 statusCounts(start, endExclusive),
                 preparationTime(start, endExclusive),
-                salesEvolution(start, endExclusive, days),
+                salesEvolution(start, endExclusive, granularity),
                 new DashboardMetricsDTO.ProductRankingsDTO(
                         productRanking(orderItemRepository.getTopProductsByQuantity(start, endExclusive), current.revenue()),
                         productRanking(orderItemRepository.getTopProductsByRevenue(start, endExclusive), current.revenue()),
@@ -56,9 +58,10 @@ public class DashboardService {
     private Summary summary(LocalDateTime start, LocalDateTime endExclusive) {
         OrderSummaryProjection summary = orderRepository.getValidOrderSummary(start, endExclusive);
         BigDecimal revenue = decimal(summary == null ? null : summary.getRevenue());
-        long orders = number(summary == null ? null : summary.getOrderCount());
-        BigDecimal ticket = orders == 0 ? BigDecimal.ZERO : revenue.divide(BigDecimal.valueOf(orders), SCALE, RoundingMode.HALF_UP);
-        return new Summary(revenue, orders, ticket);
+        long paidOrders = number(summary == null ? null : summary.getOrderCount());
+        long orders = orderRepository.countOrdersInPeriod(start, endExclusive);
+        BigDecimal ticket = paidOrders == 0 ? BigDecimal.ZERO : revenue.divide(BigDecimal.valueOf(paidOrders), SCALE, RoundingMode.HALF_UP);
+        return new Summary(revenue, orders, paidOrders, ticket);
     }
 
     private DashboardMetricsDTO.ChangeDTO compare(BigDecimal current, BigDecimal previous) {
@@ -115,17 +118,19 @@ public class DashboardService {
                 sampleSize == 0 ? null : decimal(preparation.getAverageMinutes()), sampleSize);
     }
 
-    private List<DashboardMetricsDTO.SalesPointDTO> salesEvolution(LocalDateTime start, LocalDateTime endExclusive, long days) {
-        String bucket = days == 1 ? "hour" : "day";
+    private List<DashboardMetricsDTO.SalesPointDTO> salesEvolution(LocalDateTime start, LocalDateTime endExclusive, String bucket) {
         Map<LocalDateTime, Object[]> sales = new LinkedHashMap<>();
         for (Object[] row : orderRepository.getSalesEvolution(start, endExclusive, bucket)) {
             sales.put(asLocalDateTime(row[0]), row);
         }
 
         List<DashboardMetricsDTO.SalesPointDTO> points = new ArrayList<>();
-        for (LocalDateTime point = start; point.isBefore(endExclusive); point = days == 1 ? point.plusHours(1) : point.plusDays(1)) {
+        for (LocalDateTime point = start; point.isBefore(endExclusive); point = "hour".equals(bucket) ? point.plusHours(1) : point.plusDays(1)) {
             Object[] row = sales.get(point);
-            points.add(new DashboardMetricsDTO.SalesPointDTO(point, decimal(row == null ? null : row[1]), number(row == null ? null : row[2])));
+            points.add(new DashboardMetricsDTO.SalesPointDTO(
+                    point.atZone(TimeConfig.STORE_ZONE).toOffsetDateTime(),
+                    decimal(row == null ? null : row[1]),
+                    number(row == null ? null : row[2])));
         }
         return points;
     }
@@ -159,5 +164,5 @@ public class DashboardService {
         return Timestamp.valueOf(value.toString()).toLocalDateTime();
     }
 
-    private record Summary(BigDecimal revenue, long orders, BigDecimal averageTicket) {}
+    private record Summary(BigDecimal revenue, long orders, long paidOrders, BigDecimal averageTicket) {}
 }

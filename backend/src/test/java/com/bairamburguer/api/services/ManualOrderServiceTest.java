@@ -1,5 +1,6 @@
 package com.bairamburguer.api.services;
 
+import com.bairamburguer.api.config.TimeConfig;
 import com.bairamburguer.api.dto.ManualOrderRequestDTO;
 import com.bairamburguer.api.dto.OrderItemRequestDTO;
 import com.bairamburguer.api.models.Addon;
@@ -20,6 +21,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +35,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class ManualOrderServiceTest {
+    private static final Clock FIXED_STORE_CLOCK = Clock.fixed(
+            Instant.parse("2026-08-09T03:30:00Z"), TimeConfig.STORE_ZONE);
     private OrderRepository orders;
     private ProductRepository products;
     private NeighborhoodRepository neighborhoods;
@@ -47,7 +53,7 @@ class ManualOrderServiceTest {
         addons = mock(AddonRepository.class);
         messaging = mock(SimpMessagingTemplate.class);
         service = new OrderService(orders, products, neighborhoods, mock(PixPaymentService.class),
-                mock(StoreSettingsService.class), messaging, addons);
+                mock(StoreSettingsService.class), messaging, addons, FIXED_STORE_CLOCK);
 
         product = new Product();
         product.setId(10);
@@ -74,6 +80,7 @@ class ManualOrderServiceTest {
         assertThat(saved.getPaymentStatus()).isEqualTo("AWAITING_PAYMENT");
         assertThat(saved.getOrderStatus()).isEqualTo("PENDING");
         assertThat(saved.getChangeFor()).isEqualByComparingTo("50.00");
+        assertThat(saved.getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 8, 9, 0, 30));
         verify(messaging).convertAndSend("/topic/orders/new", saved);
     }
 
@@ -210,6 +217,7 @@ class ManualOrderServiceTest {
         assertThat(paid.getPaymentStatus()).isEqualTo("PAID");
         assertThat(paid.getOrderStatus()).isEqualTo("PREPARING");
         assertThat(paid.getPaymentConfirmedAt()).isNotNull();
+        assertThat(paid.getPaymentConfirmedAt()).isEqualTo(LocalDateTime.of(2026, 8, 9, 0, 30));
         assertThat(paid.getPaymentConfirmedBy()).isEqualTo("admin@bairam.com");
 
         String dashboardQuery = OrderRepository.class

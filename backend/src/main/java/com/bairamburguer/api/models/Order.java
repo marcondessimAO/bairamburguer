@@ -1,5 +1,6 @@
 package com.bairamburguer.api.models;
 
+import com.bairamburguer.api.config.TimeConfig;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -67,7 +68,7 @@ public class Order {
     private String orderStatus = "RCVD";
 
     @Column(name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt = LocalDateTime.now(TimeConfig.STORE_ZONE);
 
     @Column(name = "production_started_at")
     private LocalDateTime productionStartedAt;

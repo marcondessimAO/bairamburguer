@@ -4,6 +4,7 @@ import com.bairamburguer.api.models.StoreSettings;
 import com.bairamburguer.api.repositories.StoreSettingsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @Service
@@ -11,12 +12,13 @@ import java.time.LocalDateTime;
 public class StoreSettingsService {
 
     private final StoreSettingsRepository storeSettingsRepository;
+    private final Clock storeClock;
 
     public StoreSettings getSettings() {
         return storeSettingsRepository.findById(1L).orElseGet(() -> {
             StoreSettings newSettings = new StoreSettings();
             newSettings.setIsOpen(true);
-            newSettings.setUpdatedAt(LocalDateTime.now());
+            newSettings.setUpdatedAt(LocalDateTime.now(storeClock));
             return storeSettingsRepository.save(newSettings);
         });
     }
@@ -24,7 +26,7 @@ public class StoreSettingsService {
     public StoreSettings toggleStoreStatus() {
         StoreSettings settings = getSettings();
         settings.setIsOpen(!settings.getIsOpen());
-        settings.setUpdatedAt(LocalDateTime.now());
+        settings.setUpdatedAt(LocalDateTime.now(storeClock));
         return storeSettingsRepository.save(settings);
     }
     

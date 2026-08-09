@@ -32,8 +32,8 @@ class DashboardControllerTest {
         LocalDate start = LocalDate.of(2026, 8, 1);
         LocalDate end = LocalDate.of(2026, 8, 7);
         DashboardMetricsDTO metrics = new DashboardMetricsDTO(
-                new DashboardMetricsDTO.PeriodDTO(start, end),
-                new DashboardMetricsDTO.SummaryDTO(BigDecimal.ZERO, 0, BigDecimal.ZERO),
+                new DashboardMetricsDTO.PeriodDTO(start, end, "day"),
+                new DashboardMetricsDTO.SummaryDTO(BigDecimal.ZERO, 0, 0, BigDecimal.ZERO),
                 new DashboardMetricsDTO.ComparisonDTO(null, null, null),
                 List.of(), new DashboardMetricsDTO.PreparationTimeDTO(null, 0),
                 List.of(), new DashboardMetricsDTO.ProductRankingsDTO(List.of(), List.of(), List.of()));

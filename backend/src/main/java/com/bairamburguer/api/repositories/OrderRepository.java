@@ -35,7 +35,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     OrderSummaryProjection getValidOrderSummary(@org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,
                                                  @org.springframework.data.repository.query.Param("endDate") java.time.LocalDateTime endDate);
 
-    @Query("SELECT o.orderStatus, COUNT(o) FROM Order o WHERE o.createdAt >= :startDate AND o.createdAt < :endDate GROUP BY o.orderStatus")
+    @Query("SELECT COUNT(DISTINCT o.id) FROM Order o WHERE o.createdAt >= :startDate AND o.createdAt < :endDate")
+    long countOrdersInPeriod(@Param("startDate") java.time.LocalDateTime startDate,
+                             @Param("endDate") java.time.LocalDateTime endDate);
+
+    @Query("SELECT o.orderStatus, COUNT(DISTINCT o.id) FROM Order o WHERE o.createdAt >= :startDate AND o.createdAt < :endDate GROUP BY o.orderStatus")
     List<Object[]> countOrdersByStatus(@org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,
                                        @org.springframework.data.repository.query.Param("endDate") java.time.LocalDateTime endDate);
 
@@ -50,7 +54,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query(value = "SELECT AVG(EXTRACT(EPOCH FROM (o.ready_at - o.production_started_at)) / 60.0) AS \"averageMinutes\", " +
            "COUNT(*) AS \"sampleSize\" " +
            "FROM orders o WHERE o.production_started_at IS NOT NULL AND o.ready_at IS NOT NULL " +
-           "AND o.ready_at >= :startDate AND o.ready_at < :endDate AND o.ready_at >= o.production_started_at", nativeQuery = true)
+           "AND o.created_at >= :startDate AND o.created_at < :endDate AND o.ready_at >= o.production_started_at", nativeQuery = true)
     PreparationTimeProjection getAveragePreparationTime(@org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,
                                                         @org.springframework.data.repository.query.Param("endDate") java.time.LocalDateTime endDate);
 }

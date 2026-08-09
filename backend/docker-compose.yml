@@ -6,6 +6,8 @@ services:
     container_name: bairamburguer-db
     restart: always
     environment:
+      TZ: America/Recife
+      PGTZ: America/Recife
       POSTGRES_USER: bairam_admin
       POSTGRES_PASSWORD: senha_super_segura_aqui
       POSTGRES_DB: bairamburguer
@@ -23,6 +25,8 @@ services:
     ports:
       - "8080:8080"
     environment:
+      TZ: America/Recife
+      JAVA_TOOL_OPTIONS: -Duser.timezone=America/Recife
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bairamburguer
       SPRING_DATASOURCE_USERNAME: bairam_admin
       SPRING_DATASOURCE_PASSWORD: senha_super_segura_aqui

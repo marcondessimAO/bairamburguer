@@ -1,5 +1,6 @@
 package com.bairamburguer.api.models;
 
+import com.bairamburguer.api.config.TimeConfig;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -42,13 +43,13 @@ public class Addon {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now(TimeConfig.STORE_ZONE);
+        updatedAt = createdAt;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now(TimeConfig.STORE_ZONE);
     }
 
     // Getters e Setters

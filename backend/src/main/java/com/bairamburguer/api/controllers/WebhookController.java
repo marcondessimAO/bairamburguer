@@ -14,6 +14,7 @@ import com.mercadopago.resources.payment.Payment;
 
 import java.util.Map;
 import java.util.Optional;
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @CrossOrigin(origins = "http://localhost:3000")
@@ -24,6 +25,7 @@ public class WebhookController {
 
     private final OrderRepository orderRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final Clock storeClock;
 
 
     @PostMapping("/mercadopago")
@@ -56,7 +58,7 @@ public class WebhookController {
                                 && order.getPaymentMethod() == PaymentMethod.PIX
                                 && "AWAITING_PAYMENT".equals(order.getPaymentStatus())) {
                             order.setPaymentStatus("PAID");
-                            order.setPaymentConfirmedAt(LocalDateTime.now());
+                            order.setPaymentConfirmedAt(LocalDateTime.now(storeClock));
                             order.setPaymentConfirmedBy("MERCADO_PAGO_WEBHOOK");
                             Order savedOrder = orderRepository.save(order);
                             

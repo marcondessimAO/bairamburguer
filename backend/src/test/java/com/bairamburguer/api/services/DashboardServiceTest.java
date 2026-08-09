@@ -34,6 +34,7 @@ class DashboardServiceTest {
         orders = mock(OrderRepository.class);
         items = mock(OrderItemRepository.class);
         service = new DashboardService(orders, items);
+        when(orders.countOrdersInPeriod(any(), any())).thenReturn(2L);
         when(orders.countOrdersByStatus(any(), any())).thenReturn(List.<Object[]>of(new Object[]{"PREPARING", 2L}));
         when(orders.getAveragePreparationTime(any(), any())).thenReturn(preparationTime("18.5", 2L));
         when(orders.getSalesEvolution(any(), any(), anyString())).thenReturn(List.of());
@@ -46,10 +47,12 @@ class DashboardServiceTest {
     void usesOnlyValidPaidOrderSummaryForRevenueOrdersAndAverageTicket() {
         when(orders.getValidOrderSummary(any(), any()))
                 .thenReturn(orderSummary("80.00", 4L), orderSummary("0", 0L));
+        when(orders.countOrdersInPeriod(any(), any())).thenReturn(5L, 0L);
 
         DashboardMetricsDTO metrics = service.getMetrics(LocalDate.of(2026, 7, 24), LocalDate.of(2026, 7, 30));
 
         assertThat(metrics.summary().revenue()).isEqualByComparingTo("80.00");
+        assertThat(metrics.summary().orders()).isEqualTo(5);
         assertThat(metrics.summary().paidOrders()).isEqualTo(4);
         assertThat(metrics.summary().averageTicket()).isEqualByComparingTo("20.00");
         assertThat(metrics.topProducts().mostSold().get(0).revenueShare()).isEqualByComparingTo("100.00");
@@ -59,11 +62,12 @@ class DashboardServiceTest {
     void comparesWithImmediatelyPreviousPeriodOfSameLength() {
         when(orders.getValidOrderSummary(any(), any()))
                 .thenReturn(orderSummary("120.00", 6L), orderSummary("100.00", 5L));
+        when(orders.countOrdersInPeriod(any(), any())).thenReturn(6L, 5L);
 
         DashboardMetricsDTO metrics = service.getMetrics(LocalDate.of(2026, 7, 24), LocalDate.of(2026, 7, 30));
 
         assertThat(metrics.comparison().revenue().percentage()).isEqualByComparingTo("20.00");
-        assertThat(metrics.comparison().paidOrders().percentage()).isEqualByComparingTo("20.00");
+        assertThat(metrics.comparison().orders().percentage()).isEqualByComparingTo("20.00");
         verify(orders).getValidOrderSummary(LocalDateTime.of(2026, 7, 17, 0, 0), LocalDateTime.of(2026, 7, 24, 0, 0));
     }
 
@@ -78,6 +82,8 @@ class DashboardServiceTest {
         DashboardMetricsDTO metrics = service.getMetrics(LocalDate.of(2026, 7, 24), LocalDate.of(2026, 7, 24));
 
         assertThat(metrics.salesEvolution()).hasSize(24);
+        assertThat(metrics.period().granularity()).isEqualTo("hour");
+        assertThat(metrics.salesEvolution().get(0).timestamp().getOffset().toString()).isEqualTo("-03:00");
         assertThat(metrics.salesEvolution().get(10).revenue()).isEqualByComparingTo("30.75");
         assertThat(metrics.salesEvolution().get(10).orders()).isEqualTo(2L);
         assertThat(metrics.salesEvolution().get(11).revenue()).isEqualByComparingTo("30.75");
@@ -96,6 +102,7 @@ class DashboardServiceTest {
         DashboardMetricsDTO metrics = service.getMetrics(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 2));
 
         assertThat(metrics.salesEvolution()).hasSize(2);
+        assertThat(metrics.period().granularity()).isEqualTo("day");
         assertThat(metrics.salesEvolution().get(0).revenue()).isEqualByComparingTo("40.00");
         assertThat(metrics.salesEvolution().get(0).orders()).isEqualTo(2L);
         assertThat(metrics.salesEvolution().get(1).revenue()).isEqualByComparingTo("35.00");
@@ -115,6 +122,25 @@ class DashboardServiceTest {
         assertThat(metrics.topProducts().mostSold().get(0).name()).isEqualTo("Mais pedido");
         assertThat(metrics.topProducts().highestRevenue().get(0).name()).isEqualTo("Maior receita");
         assertThat(metrics.topProducts().leastSold().get(0).name()).isEqualTo("Menos pedido");
+    }
+
+    @Test
+    void totalOrdersMatchesCanonicalStatusCountsWithoutDuplicatingCanceledAliases() {
+        when(orders.getValidOrderSummary(any(), any())).thenReturn(orderSummary("50.00", 2L));
+        when(orders.countOrdersInPeriod(any(), any())).thenReturn(6L, 0L);
+        when(orders.countOrdersByStatus(any(), any())).thenReturn(List.of(
+                new Object[]{"PENDING", 2L},
+                new Object[]{"DELIVERED", 2L},
+                new Object[]{"CANCELED", 1L},
+                new Object[]{"CANCELLED", 1L}
+        ));
+
+        DashboardMetricsDTO metrics = service.getMetrics(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 7));
+
+        assertThat(metrics.summary().orders()).isEqualTo(6L);
+        assertThat(metrics.ordersByStatus().stream().mapToLong(DashboardMetricsDTO.StatusCountDTO::count).sum()).isEqualTo(6L);
+        assertThat(metrics.ordersByStatus()).filteredOn(status -> status.status().equals("CANCELED"))
+                .singleElement().extracting(DashboardMetricsDTO.StatusCountDTO::count).isEqualTo(2L);
     }
 
     @Test
@@ -140,6 +166,12 @@ class DashboardServiceTest {
         Method rankingMethod = OrderItemRepository.class
                 .getMethod("getTopProductsByRevenue", LocalDateTime.class, LocalDateTime.class);
         String rankingQuery = rankingMethod.getAnnotation(Query.class).value();
+        String statusQuery = OrderRepository.class
+                .getMethod("countOrdersByStatus", LocalDateTime.class, LocalDateTime.class)
+                .getAnnotation(Query.class).value();
+        String preparationQuery = OrderRepository.class
+                .getMethod("getAveragePreparationTime", LocalDateTime.class, LocalDateTime.class)
+                .getAnnotation(Query.class).value();
 
         assertThat(summaryQuery).contains("paymentStatus = 'PAID'");
         assertThat(evolutionQuery).contains("payment_status = 'PAID'");
@@ -147,6 +179,8 @@ class DashboardServiceTest {
         assertThat(evolutionQuery).contains("GROUP BY 1", "ORDER BY 1");
         assertThat(rankingQuery).contains("payment_status = 'PAID'");
         assertThat(summaryQuery).doesNotContain("DINHEIRO", "CARTAO");
+        assertThat(statusQuery).contains("COUNT(DISTINCT o.id)");
+        assertThat(preparationQuery).contains("o.created_at >= :startDate", "o.created_at < :endDate");
     }
 
     private OrderSummaryProjection orderSummary(String revenue, long orderCount) {

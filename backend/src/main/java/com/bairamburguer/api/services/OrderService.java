@@ -4,6 +4,7 @@ import com.bairamburguer.api.dto.OrderCheckoutRequestDTO;
 import com.bairamburguer.api.dto.OrderCheckoutResponseDTO;
 import com.bairamburguer.api.dto.OrderItemRequestDTO;
 import com.bairamburguer.api.dto.ManualOrderRequestDTO;
+import com.bairamburguer.api.config.TimeConfig;
 import com.bairamburguer.api.models.Addon;
 import com.bairamburguer.api.models.Neighborhood;
 import com.bairamburguer.api.models.Order;
@@ -25,10 +26,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.bairamburguer.api.dto.OrderTrackResponseDTO;
 import com.bairamburguer.api.dto.TrackItemDTO;
-import java.time.format.DateTimeFormatter;
 import java.math.BigDecimal;
 import java.text.Normalizer;
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +62,7 @@ public class OrderService {
     private final StoreSettingsService storeSettingsService;
     private final SimpMessagingTemplate messagingTemplate;
     private final AddonRepository addonRepository;
+    private final Clock storeClock;
 
     @Transactional
     public OrderCheckoutResponseDTO createOrder(OrderCheckoutRequestDTO request) {
@@ -95,7 +98,7 @@ public class OrderService {
         order.setNumber(request.getNumber());
         order.setComplement(request.getComplement());
         order.setNeighborhood(neighborhood);
-        order.setCreatedAt(LocalDateTime.now());
+        order.setCreatedAt(LocalDateTime.now(storeClock));
         order.setOrderStatus("PENDING");
         order.setPaymentStatus("AWAITING_PAYMENT");
         order.setSource(OrderSource.ONLINE);
@@ -170,7 +173,7 @@ public class OrderService {
         order.setPaymentMethod(request.getPaymentMethod());
         order.setPaymentStatus("AWAITING_PAYMENT");
         order.setOrderStatus("PENDING");
-        order.setCreatedAt(LocalDateTime.now());
+        order.setCreatedAt(LocalDateTime.now(storeClock));
 
         BigDecimal subtotal = buildOrderItems(order, request.getItems(), productMap);
         BigDecimal deliveryFee = neighborhood == null ? BigDecimal.ZERO : resolveDeliveryFee();
@@ -237,7 +240,7 @@ public class OrderService {
         pedido.setPaymentStatus("AWAITING_PAYMENT");
         pedido.setSource(OrderSource.ONLINE);
         pedido.setPaymentMethod(PaymentMethod.PIX);
-        pedido.setCreatedAt(LocalDateTime.now());
+        pedido.setCreatedAt(LocalDateTime.now(storeClock));
 
         return orderRepository.save(pedido);
     }
@@ -269,7 +272,7 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transicao invalida: nao e permitido retroceder de " + currentStatus + " para " + novoStatus);
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(storeClock);
         if ("PREPARING".equals(novoStatus) && order.getProductionStartedAt() == null) {
             order.setProductionStartedAt(now);
         }
@@ -324,7 +327,7 @@ public class OrderService {
         }
 
         order.setPaymentStatus("PAID");
-        order.setPaymentConfirmedAt(LocalDateTime.now());
+        order.setPaymentConfirmedAt(LocalDateTime.now(storeClock));
         order.setPaymentConfirmedBy(trimToNull(confirmedBy));
         Order savedOrder = saveOrder(order);
         messagingTemplate.convertAndSend("/topic/orders/update", savedOrder);
@@ -633,8 +636,8 @@ public class OrderService {
         dto.setDeliveryFee(BigDecimal.ZERO);
         dto.setTotalAmount(order.getTotalAmount());
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        dto.setCreatedAt(order.getCreatedAt().format(formatter));
+        dto.setCreatedAt(order.getCreatedAt().atZone(TimeConfig.STORE_ZONE).toOffsetDateTime()
+                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
         return dto;
     }

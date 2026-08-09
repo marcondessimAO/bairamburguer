@@ -11,6 +11,9 @@ RUN mvn clean package -DskipTests
 # Estágio 2: Run (Apenas JRE para produção)
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+RUN apk add --no-cache tzdata
+ENV TZ=America/Recife
+ENV JAVA_TOOL_OPTIONS="-Duser.timezone=America/Recife"
 # Copiar o JAR gerado no primeiro estágio
 COPY --from=build /app/target/*.jar app.jar
 # Expor a porta 8080

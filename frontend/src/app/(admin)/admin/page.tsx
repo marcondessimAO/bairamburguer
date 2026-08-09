@@ -7,6 +7,7 @@ import { adminService, OrderDTO } from "@/services/admin";
 import { PrintOrderButton } from "@/components/ui/PrintOrderButton";
 import { ManualOrderModal } from "@/components/ui/ManualOrderModal";
 import { CancelOrderButton, removeCanceledOrder } from "@/components/admin/CancelOrderButton";
+import { apiDateTimeMillis, formatStoreTime } from "@/lib/storeTime";
 
 const BELL_SOUND_URL = "/sounds/campainha.mp3.mp3";
 
@@ -142,7 +143,7 @@ export default function AdminDashboard() {
             <span className={`${colors.text} font-black text-lg`}>#{order.id}</span>
             <h3 className="text-white font-bold">{order.customerName}</h3>
           </div>
-          <span className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          <span className="text-xs text-gray-400">{formatStoreTime(order.createdAt)}</span>
         </div>
 
         <div className="mb-3 flex flex-wrap gap-2">
@@ -225,7 +226,7 @@ export default function AdminDashboard() {
   const handleManualOrderCreated = (order: OrderDTO) => {
     setOrders((current) => current.some((entry) => entry.id === order.id)
       ? current.map((entry) => entry.id === order.id ? order : entry)
-      : [...current, order].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
+      : [...current, order].sort((a, b) => apiDateTimeMillis(a.createdAt) - apiDateTimeMillis(b.createdAt)));
   };
 
   const getButtonText = (status: string) => {
