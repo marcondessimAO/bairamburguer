@@ -65,6 +65,11 @@ class DatabaseSeederTest {
         assertThat(savedFees).containsEntry("Colibris", new BigDecimal("4.99"));
         assertThat(savedFees).containsEntry("Cidade Verde", new BigDecimal("4.99"));
         assertThat(savedFees).containsEntry("Bancários", new BigDecimal("4.99"));
+        assertThat(savedFees).containsEntry("Cristo", new BigDecimal("0.00"));
+        assertThat(savedFees).containsEntry("Altiplano", new BigDecimal("0.00"));
+        assertThat(savedFees).containsEntry("Castelo Branco", new BigDecimal("0.00"));
+        assertThat(savedFees).containsEntry("Cuiá", new BigDecimal("8.00"));
+        assertThat(savedFees).containsEntry("Planalto Boa Esperança", new BigDecimal("0.00"));
         assertThat(savedFees).doesNotContainKeys("Manaíra", "Bessa", "Colinas do Sul");
         verify(categories).findByNameIgnoreCase("MILKSHAKES");
     }
