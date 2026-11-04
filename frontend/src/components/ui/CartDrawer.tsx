@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart, NEIGHBORHOODS } from "@/contexts/CartContext";
 import { getImageUrl } from "@/utils/imageUrl";
-import { STORE_WHATSAPP_NUMBER } from "@/config/store";
+import { DELIVERY_ENABLED, STORE_WHATSAPP_NUMBER } from "@/config/store";
 
 type CheckoutPaymentMethod = "PIX" | "DINHEIRO" | "CARTAO";
 
@@ -87,7 +87,7 @@ export function CartDrawer() {
   const [number, setNumber] = useState("");
   const [complement, setComplement] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [deliveryMode, setDeliveryMode] = useState<"DELIVERY" | "TAKEOUT">("DELIVERY");
+  const [deliveryMode, setDeliveryMode] = useState<"DELIVERY" | "TAKEOUT">(DELIVERY_ENABLED ? "DELIVERY" : "TAKEOUT");
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>("PIX");
   const checkoutInFlightRef = useRef(false);
@@ -491,17 +491,25 @@ export function CartDrawer() {
               )}
               {/* ── Opção de Entrega (dentro da área scrollável) ── */}
               <div className="flex gap-4 pt-2">
-                <label className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl cursor-pointer border transition-colors ${deliveryMode === "DELIVERY" ? "bg-green-50 border-green-600 text-green-700" : "bg-white border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}>
-                  <input type="radio" name="deliveryMode" value="DELIVERY" checked={deliveryMode === "DELIVERY"} onChange={() => setDeliveryMode("DELIVERY")} className="hidden" />
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                  <span className="font-bold text-sm">Entregar em Casa</span>
-                </label>
-                <label className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl cursor-pointer border transition-colors ${deliveryMode === "TAKEOUT" ? "bg-green-50 border-green-600 text-green-700" : "bg-white border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}>
+                {DELIVERY_ENABLED && (
+                  <label className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl cursor-pointer border transition-colors ${deliveryMode === "DELIVERY" ? "bg-green-50 border-green-600 text-green-700" : "bg-white border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}>
+                    <input type="radio" name="deliveryMode" value="DELIVERY" checked={deliveryMode === "DELIVERY"} onChange={() => setDeliveryMode("DELIVERY")} className="hidden" />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    <span className="font-bold text-sm">Entregar em Casa</span>
+                  </label>
+                )}
+                <label className={`${DELIVERY_ENABLED ? "flex-1" : "w-full"} flex items-center justify-center gap-2 py-3 rounded-xl cursor-pointer border transition-colors ${deliveryMode === "TAKEOUT" ? "bg-green-50 border-green-600 text-green-700" : "bg-white border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}>
                   <input type="radio" name="deliveryMode" value="TAKEOUT" checked={deliveryMode === "TAKEOUT"} onChange={() => setDeliveryMode("TAKEOUT")} className="hidden" />
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                   <span className="font-bold text-sm">Retirar na Loja</span>
                 </label>
               </div>
+
+              {!DELIVERY_ENABLED && (
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-800">
+                  No momento, estamos atendendo somente com retirada na loja.
+                </p>
+              )}
 
               {deliveryMode === "DELIVERY" && (
                 <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
