@@ -210,8 +210,8 @@ export default function Cardapio() {
             <Truck className="h-5 w-5" strokeWidth={2.6} />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-black tracking-wide text-zinc-900">ENTREGA GRATIS EM TODOS OS BAIRROS</p>
-            <p className="mt-0.5 text-xs font-semibold text-zinc-600">O frete fica por nossa conta para voce aproveitar mais no pedido.</p>
+            <p className="text-sm font-black tracking-wide text-zinc-900">ENTREGA GRÁTIS EM MANGABEIRA</p>
+            <p className="mt-0.5 text-xs font-semibold text-zinc-600">Nos demais bairros, taxa fixa de R$ 8,00.</p>
           </div>
         </div>
       </div>
