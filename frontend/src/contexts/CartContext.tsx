@@ -56,23 +56,23 @@ export type PendingPayment = {
 
 export const NEIGHBORHOODS: Neighborhood[] = [
   { name: "Mangabeira", fee: 0.0 },
-  { name: "Valentina", fee: 0.0 },
-  { name: "Mucumagro", fee: 0.0 },
-  { name: "Gramame", fee: 0.0 },
-  { name: "Paratibe", fee: 0.0 },
-  { name: "Nova Mangabeira", fee: 0.0 },
-  { name: "Parque do Sol", fee: 0.0 },
-  { name: "Portal do Sol", fee: 0.0 },
-  { name: "Jose Americo", fee: 0.0 },
-  { name: "Colibris", fee: 0.0 },
-  { name: "Cidade Verde", fee: 0.0 },
-  { name: "Bancarios", fee: 0.0 },
-  { name: "Geisel", fee: 0.0 },
-  { name: "Cristo", fee: 0.0 },
-  { name: "Altiplano", fee: 0.0 },
-  { name: "Castelo Branco", fee: 0.0 },
-  { name: "Cuia", fee: 0.0 },
-  { name: "Planalto Boa Esperança", fee: 0.0 },
+  { name: "Valentina", fee: 8.0 },
+  { name: "Mucumagro", fee: 8.0 },
+  { name: "Gramame", fee: 8.0 },
+  { name: "Paratibe", fee: 8.0 },
+  { name: "Nova Mangabeira", fee: 8.0 },
+  { name: "Parque do Sol", fee: 8.0 },
+  { name: "Portal do Sol", fee: 8.0 },
+  { name: "Jose Americo", fee: 8.0 },
+  { name: "Colibris", fee: 8.0 },
+  { name: "Cidade Verde", fee: 8.0 },
+  { name: "Bancarios", fee: 8.0 },
+  { name: "Geisel", fee: 8.0 },
+  { name: "Cristo", fee: 8.0 },
+  { name: "Altiplano", fee: 8.0 },
+  { name: "Castelo Branco", fee: 8.0 },
+  { name: "Cuia", fee: 8.0 },
+  { name: "Planalto Boa Esperança", fee: 8.0 },
 ];
 
 const ADDON_PRICES: Record<NonNullable<CartAddonSelection["beverageAddon"]>, number> = {
@@ -154,7 +154,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [cartItems]
   );
 
-  const deliveryFee = 0;
+  const deliveryFee = deliveryNeighborhood?.fee ?? 0;
   const totalAmount = subtotal + deliveryFee;
 
   const addToCart = (product: Product, quantity: number = 1, addons: CartAddonSelection = {}) => {

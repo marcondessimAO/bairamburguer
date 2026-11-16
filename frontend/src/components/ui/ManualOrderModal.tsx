@@ -59,7 +59,10 @@ export function ManualOrderModal({ open, onClose, onCreated }: Props) {
       .reduce((addonSum, addon) => addonSum + Number(addon.price), 0);
     return sum + (Number(product.price) + addons) * line.quantity;
   }, 0), [lines, products]);
-  const deliveryFee = 0;
+  const selectedNeighborhood = neighborhoods.find((item) => item.name === neighborhoodName);
+  const deliveryFee = deliveryMode === "ENTREGA"
+    ? selectedNeighborhood?.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() === "mangabeira" ? 0 : 8
+    : 0;
 
   if (!open) return null;
 

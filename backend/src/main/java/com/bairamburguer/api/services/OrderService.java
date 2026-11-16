@@ -105,7 +105,7 @@ public class OrderService {
         order.setPaymentMethod(paymentMethod);
 
         BigDecimal totalAmount = buildOrderItems(order, request.getItems(), productMap);
-        BigDecimal deliveryFee = neighborhood == null ? BigDecimal.ZERO : resolveDeliveryFee();
+        BigDecimal deliveryFee = resolveDeliveryFee(neighborhood);
         BigDecimal paymentSurcharge = paymentSurchargeFor(paymentMethod);
         order.setDeliveryFee(deliveryFee);
         order.setPaymentSurcharge(paymentSurcharge);
@@ -176,7 +176,7 @@ public class OrderService {
         order.setCreatedAt(LocalDateTime.now(storeClock));
 
         BigDecimal subtotal = buildOrderItems(order, request.getItems(), productMap);
-        BigDecimal deliveryFee = neighborhood == null ? BigDecimal.ZERO : resolveDeliveryFee();
+        BigDecimal deliveryFee = resolveDeliveryFee(neighborhood);
         BigDecimal paymentSurcharge = paymentSurchargeFor(request.getPaymentMethod());
         order.setDeliveryFee(deliveryFee);
         order.setPaymentSurcharge(paymentSurcharge);
@@ -229,7 +229,7 @@ public class OrderService {
             item.setOrder(pedido);
         }
 
-        BigDecimal deliveryFee = resolveDeliveryFee();
+        BigDecimal deliveryFee = resolveDeliveryFee(neighborhood);
         totalAmount = totalAmount.add(deliveryFee);
 
         pedido.setTotalAmount(totalAmount);
@@ -473,8 +473,13 @@ public class OrderService {
         return BLOCKED_NEIGHBORHOODS.contains(normalizeName(value));
     }
 
-    private BigDecimal resolveDeliveryFee() {
-        return BigDecimal.ZERO;
+    private BigDecimal resolveDeliveryFee(Neighborhood neighborhood) {
+        if (neighborhood == null) {
+            return BigDecimal.ZERO;
+        }
+        return "mangabeira".equals(normalizeName(neighborhood.getName()))
+                ? BigDecimal.ZERO
+                : new BigDecimal("8.00");
     }
 
     private BigDecimal paymentSurchargeFor(PaymentMethod paymentMethod) {

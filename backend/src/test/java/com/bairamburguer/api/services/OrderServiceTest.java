@@ -77,7 +77,7 @@ class OrderServiceTest {
 
         OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("  JOSE   AMERICO  "));
 
-        assertThat(response.getTotalAmount()).isEqualByComparingTo("20.00");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("28.00");
         assertThat(response.getPaymentMethod()).isEqualTo(PaymentMethod.PIX);
         assertThat(response.getPaymentSurcharge()).isEqualByComparingTo("0.00");
         verify(pix).generatePixCharge(any(Order.class), anyString(), anyString());
