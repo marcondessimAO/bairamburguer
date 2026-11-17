@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart, Product } from "@/contexts/CartContext";
 import { ProductDetailModal } from "@/components/ui/ProductDetailModal";
-import { Flame, Truck } from "lucide-react";
+import { Flame } from "lucide-react";
 import { getImageUrl } from "@/utils/imageUrl";
 import Link from "next/link";
 
@@ -203,18 +203,6 @@ export default function Cardapio() {
           </div>
         </div>
       )}
-
-      <div className="w-full max-w-[560px] mx-auto px-4 mt-4">
-        <div className="flex items-center gap-3 rounded-2xl border border-[#B7D438]/60 bg-[#B7D438]/10 px-4 py-3 shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#B7D438] text-[#07110B]">
-            <Truck className="h-5 w-5" strokeWidth={2.6} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-black tracking-wide text-zinc-900">ENTREGA GRÁTIS EM MANGABEIRA</p>
-            <p className="mt-0.5 text-xs font-semibold text-zinc-600">Nos demais bairros, taxa fixa de R$ 8,00.</p>
-          </div>
-        </div>
-      </div>
 
       {/* Carrossel de Categorias */}
       <div className="px-4 mt-5 mb-6 w-full max-w-[560px] mx-auto sticky top-[166px] z-20 bg-[#F7F8FA]/95 backdrop-blur-md border-b border-zinc-200">
