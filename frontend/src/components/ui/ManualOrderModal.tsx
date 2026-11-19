@@ -61,7 +61,7 @@ export function ManualOrderModal({ open, onClose, onCreated }: Props) {
   }, 0), [lines, products]);
   const selectedNeighborhood = neighborhoods.find((item) => item.name === neighborhoodName);
   const deliveryFee = deliveryMode === "ENTREGA"
-    ? selectedNeighborhood?.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() === "mangabeira" ? 0 : 8
+    ? subtotal > 30 || selectedNeighborhood?.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() === "mangabeira" ? 0 : 8
     : 0;
 
   if (!open) return null;

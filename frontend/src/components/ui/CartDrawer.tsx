@@ -514,16 +514,15 @@ export function CartDrawer() {
               {deliveryMode === "DELIVERY" && (
                 <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
                   <p className="text-sm font-black text-green-800">Entrega grátis para todos os bairros</p>
-                  <p className="mt-1 text-xs font-semibold text-green-700">Seu pedido chega sem taxa extra. Aproveite para pedir mais um acompanhamento.</p>
+                  <p className="mt-1 text-xs font-semibold text-green-700">Em pedidos acima de R$ 30,00.</p>
                 </div>
               )}
 
               <fieldset className="space-y-2 rounded-2xl border border-zinc-200 bg-white p-4">
                 <legend className="px-1 text-sm font-black text-zinc-900">FORMA DE PAGAMENTO</legend>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-2">
                   {([
                     ["PIX", "Pix", "Pagamento instantâneo"],
-                    ["DINHEIRO", "Dinheiro", "Finalize pelo WhatsApp"],
                     ["CARTAO", "Cartão", "WhatsApp + R$ 2,00"],
                   ] as const).map(([method, title, description]) => (
                     <label key={method} className={`cursor-pointer rounded-xl border p-3 transition ${paymentMethod === method ? "border-green-600 bg-green-50 ring-1 ring-green-600" : "border-zinc-200 hover:border-zinc-300"}`}>
@@ -612,7 +611,7 @@ export function CartDrawer() {
                     </option>
                     {NEIGHBORHOODS.map((n) => (
                       <option key={n.name} value={n.name} className="bg-white text-zinc-900">
-                        {n.name} — {n.fee === 0 ? "Grátis" : BRL(n.fee)}
+                        {n.name} — {subtotal > 30 || n.fee === 0 ? "Grátis" : BRL(n.fee)}
                       </option>
                     ))}
                   </select>

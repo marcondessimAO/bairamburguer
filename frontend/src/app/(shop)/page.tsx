@@ -71,7 +71,7 @@ export default function Cardapio() {
 
     return product.name.toLowerCase().includes(normalizedSearch) ||
       Boolean(product.description?.toLowerCase().includes(normalizedSearch));
-  }), [products, searchTerm]);
+  }).sort((first, second) => Number(first.price) - Number(second.price)), [products, searchTerm]);
 
   const productSections = useMemo(() => categories
     .map(category => {
@@ -203,6 +203,16 @@ export default function Cardapio() {
           </div>
         </div>
       )}
+
+      <div className="mx-auto mt-4 w-full max-w-[560px] px-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-[#B7D438]/60 bg-[#B7D438]/10 px-4 py-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#B7D438] text-lg font-black text-[#07110B]">R$</div>
+          <div className="min-w-0">
+            <p className="text-sm font-black tracking-wide text-zinc-900">FRETE GRÁTIS EM TODOS OS BAIRROS</p>
+            <p className="mt-0.5 text-xs font-semibold text-zinc-600">Em pedidos acima de R$ 30,00.</p>
+          </div>
+        </div>
+      </div>
 
       {/* Carrossel de Categorias */}
       <div className="px-4 mt-5 mb-6 w-full max-w-[560px] mx-auto sticky top-[166px] z-20 bg-[#F7F8FA]/95 backdrop-blur-md border-b border-zinc-200">

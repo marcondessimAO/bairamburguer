@@ -154,7 +154,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [cartItems]
   );
 
-  const deliveryFee = deliveryNeighborhood?.fee ?? 0;
+  const deliveryFee = subtotal > 30 ? 0 : deliveryNeighborhood?.fee ?? 0;
   const totalAmount = subtotal + deliveryFee;
 
   const addToCart = (product: Product, quantity: number = 1, addons: CartAddonSelection = {}) => {
