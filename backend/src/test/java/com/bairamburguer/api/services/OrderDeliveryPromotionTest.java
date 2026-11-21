@@ -23,24 +23,30 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 class OrderDeliveryPromotionTest {
     @ParameterizedTest
     @CsvSource({
-            "Valentina,29.99,DINHEIRO,8.00,0.00",
-            "Valentina,30.00,DINHEIRO,8.00,0.00",
+            "Valentina,29.99,DINHEIRO,0.00,0.00",
+            "Valentina,30.00,DINHEIRO,0.00,0.00",
             "Valentina,30.01,DINHEIRO,0.00,0.00",
             "Valentina,50.00,PIX,0.00,0.00",
-            "Valentina,30.00,CARTAO,8.00,2.00",
+            "Valentina,30.00,CARTAO,0.00,2.00",
+            "Valentina,29.99,CARTAO,0.00,2.00",
+            "Valentina,29.99,PIX,0.00,0.00",
             "Valentina,30.01,CARTAO,0.00,2.00",
-            "Nova Mangabeira,30.00,DINHEIRO,8.00,0.00",
+            "Nova Mangabeira,30.00,DINHEIRO,0.00,0.00",
             "Mangabeira,29.99,DINHEIRO,0.00,0.00",
-            "Bancarios,50.00,DINHEIRO,0.00,0.00"
+            "Bancarios,50.00,DINHEIRO,0.00,0.00",
+            "RETIRADA,29.99,PIX,0.00,0.00",
+            "RETIRADA,30.00,PIX,0.00,0.00"
     })
     void savesDeliveryFeeAndChargesTotalBeforePaymentSurcharge(
             String neighborhoodName, String price, PaymentMethod method, String fee, String surcharge) {
@@ -60,7 +66,9 @@ class OrderDeliveryPromotionTest {
         neighborhood.setDeliveryFee(new BigDecimal("99.00"));
         when(store.isStoreOpen()).thenReturn(true);
         when(products.findAllById(List.of(10))).thenReturn(List.of(product));
-        when(neighborhoods.findFirstByNameIgnoreCase(neighborhoodName)).thenReturn(Optional.of(neighborhood));
+        if (!"RETIRADA".equals(neighborhoodName)) {
+            when(neighborhoods.findFirstByNameIgnoreCase(neighborhoodName)).thenReturn(Optional.of(neighborhood));
+        }
         when(orders.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
         if (method == PaymentMethod.PIX) {
             when(pix.generatePixCharge(any(Order.class), anyString(), anyString()))
@@ -77,11 +85,20 @@ class OrderDeliveryPromotionTest {
         request.setCustomerPhone("83999999999");
         request.setCustomerEmail("cliente@example.com");
         request.setCustomerCpf("12345678901");
-        request.setNeighborhoodName(neighborhoodName);
+        request.setNeighborhoodName("RETIRADA".equals(neighborhoodName) ? null : neighborhoodName);
         request.setStreet("Rua Teste");
         request.setNumber("123");
         request.setPaymentMethod(method);
         request.setItems(List.of(item));
+
+        if (new BigDecimal(price).compareTo(new BigDecimal("30.00")) < 0) {
+            assertThatThrownBy(() -> service.createOrder(request))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                    .hasMessageContaining("pedido minimo");
+            verify(orders, never()).save(any());
+            verify(pix, never()).generatePixCharge(any(), anyString(), anyString());
+            return;
+        }
 
         service.createOrder(request);
 

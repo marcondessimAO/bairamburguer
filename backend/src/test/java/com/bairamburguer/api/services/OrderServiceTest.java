@@ -45,7 +45,7 @@ class OrderServiceTest {
         Product product = new Product();
         product.setId(10);
         product.setName("Bairam Teste");
-        product.setPrice(new BigDecimal("20.00"));
+        product.setPrice(new BigDecimal("30.00"));
 
         Neighborhood joseAmerico = new Neighborhood();
         joseAmerico.setId(1);
@@ -77,7 +77,7 @@ class OrderServiceTest {
 
         OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("  JOSE   AMERICO  "));
 
-        assertThat(response.getTotalAmount()).isEqualByComparingTo("28.00");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("30.00");
         assertThat(response.getPaymentMethod()).isEqualTo(PaymentMethod.PIX);
         assertThat(response.getPaymentSurcharge()).isEqualByComparingTo("0.00");
         verify(pix).generatePixCharge(any(Order.class), anyString(), anyString());
@@ -113,7 +113,7 @@ class OrderServiceTest {
         assertThat(response.getPaymentMethod()).isEqualTo(PaymentMethod.DINHEIRO);
         assertThat(response.getPaymentStatus()).isEqualTo("AWAITING_PAYMENT");
         assertThat(response.getPaymentSurcharge()).isEqualByComparingTo("0.00");
-        assertThat(response.getTotalAmount()).isEqualByComparingTo("20.00");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("30.00");
         verify(pix, never()).generatePixCharge(any(), anyString(), anyString());
         verify(messaging).convertAndSend(org.mockito.ArgumentMatchers.eq("/topic/orders/new"), any(Order.class));
     }
@@ -145,7 +145,7 @@ class OrderServiceTest {
 
         assertThat(response.getPaymentMethod()).isEqualTo(PaymentMethod.CARTAO);
         assertThat(response.getPaymentSurcharge()).isEqualByComparingTo("2.00");
-        assertThat(response.getTotalAmount()).isEqualByComparingTo("22.00");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("32.00");
         verify(pix, never()).generatePixCharge(any(), anyString(), anyString());
     }
 
@@ -160,7 +160,7 @@ class OrderServiceTest {
         Product product = new Product();
         product.setId(10);
         product.setName("Bairam Teste");
-        product.setPrice(new BigDecimal("20.00"));
+        product.setPrice(new BigDecimal("30.00"));
 
         Neighborhood mangabeira = new Neighborhood();
         mangabeira.setId(1);
@@ -191,7 +191,7 @@ class OrderServiceTest {
 
         OrderCheckoutResponseDTO response = service.createOrder(checkoutRequest("Mangabeira"));
 
-        assertThat(response.getTotalAmount()).isEqualByComparingTo("20.00");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("30.00");
     }
 
     @Test
@@ -333,7 +333,7 @@ class OrderServiceTest {
         Product product = new Product();
         product.setId(10);
         product.setName("Bairam Teste");
-        product.setPrice(new BigDecimal("20.00"));
+        product.setPrice(new BigDecimal("30.00"));
         product.setIsAvailable(true);
         return product;
     }

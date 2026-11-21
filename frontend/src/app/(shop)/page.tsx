@@ -209,7 +209,7 @@ export default function Cardapio() {
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#B7D438] text-lg font-black text-[#07110B]">R$</div>
           <div className="min-w-0">
             <p className="text-sm font-black tracking-wide text-zinc-900">FRETE GRÁTIS EM TODOS OS BAIRROS</p>
-            <p className="mt-0.5 text-xs font-semibold text-zinc-600">Em pedidos acima de R$ 30,00.</p>
+            <p className="mt-0.5 text-xs font-semibold text-zinc-600">Pedido mínimo da loja: R$ 30,00.</p>
           </div>
         </div>
       </div>

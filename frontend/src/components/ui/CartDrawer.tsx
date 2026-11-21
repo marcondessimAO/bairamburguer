@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart, NEIGHBORHOODS } from "@/contexts/CartContext";
 import { getImageUrl } from "@/utils/imageUrl";
-import { DELIVERY_ENABLED, STORE_WHATSAPP_NUMBER } from "@/config/store";
+import { DELIVERY_ENABLED, MINIMUM_ORDER_AMOUNT, STORE_WHATSAPP_NUMBER } from "@/config/store";
 
 type CheckoutPaymentMethod = "PIX" | "DINHEIRO" | "CARTAO";
 
@@ -98,6 +98,10 @@ export function CartDrawer() {
   // ─── Integração da API do Backend ─────────────────────────────────────────
   const handleCheckout = async () => {
     if (cartItems.length === 0 || checkoutInFlightRef.current) return;
+    if (Math.round(subtotal * 100) < MINIMUM_ORDER_AMOUNT * 100) {
+      alert(`O pedido mínimo da loja é ${BRL(MINIMUM_ORDER_AMOUNT)}.`);
+      return;
+    }
     if (deliveryMode === "DELIVERY" && (!deliveryNeighborhood || !street || !number)) {
       alert("Por favor, preencha todos os campos de endereço de entrega.");
       return;
@@ -241,7 +245,8 @@ export function CartDrawer() {
   const totalItems = cartItems.reduce((acc, i) => acc + i.quantity, 0);
   const paymentSurcharge = paymentMethod === "CARTAO" ? CARD_SURCHARGE : 0;
   const orderTotal = (deliveryMode === "TAKEOUT" ? subtotal : totalAmount) + paymentSurcharge;
-  const isValidToSubmit = cartItems.length > 0 && customerName.trim() !== "" && customerPhone.trim() !== "" && customerEmail.trim() !== "" && customerCpf.trim() !== "" && (deliveryMode === "TAKEOUT" || (deliveryNeighborhood !== null && street.trim() !== "" && number.trim() !== ""));
+  const remainingForMinimum = Math.max(0, MINIMUM_ORDER_AMOUNT - Math.round(subtotal * 100) / 100);
+  const isValidToSubmit = remainingForMinimum === 0 && cartItems.length > 0 && customerName.trim() !== "" && customerPhone.trim() !== "" && customerEmail.trim() !== "" && customerCpf.trim() !== "" && (deliveryMode === "TAKEOUT" || (deliveryNeighborhood !== null && street.trim() !== "" && number.trim() !== ""));
 
   return (
     <>
@@ -514,7 +519,7 @@ export function CartDrawer() {
               {deliveryMode === "DELIVERY" && (
                 <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
                   <p className="text-sm font-black text-green-800">Entrega grátis para todos os bairros</p>
-                  <p className="mt-1 text-xs font-semibold text-green-700">Em pedidos acima de R$ 30,00.</p>
+                  <p className="mt-1 text-xs font-semibold text-green-700">Pedido mínimo da loja: {BRL(MINIMUM_ORDER_AMOUNT)}.</p>
                 </div>
               )}
 
@@ -611,7 +616,7 @@ export function CartDrawer() {
                     </option>
                     {NEIGHBORHOODS.map((n) => (
                       <option key={n.name} value={n.name} className="bg-white text-zinc-900">
-                        {n.name} — {subtotal > 30 || n.fee === 0 ? "Grátis" : BRL(n.fee)}
+                        {n.name} — Grátis
                       </option>
                     ))}
                   </select>
@@ -621,6 +626,11 @@ export function CartDrawer() {
 
             {/* ── Footer fixo: Totais + Botão (shrink-0 — sempre visível) ── */}
             <div className="px-6 py-5 bg-white border-t border-zinc-200 space-y-4 shrink-0">
+              {remainingForMinimum > 0 && (
+                <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+                  Pedido mínimo: {BRL(MINIMUM_ORDER_AMOUNT)}. Adicione mais {BRL(remainingForMinimum)} para finalizar.
+                </p>
+              )}
               {/* Resumo de Valores */}
               <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between text-zinc-500">
