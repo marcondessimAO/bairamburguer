@@ -14,6 +14,8 @@ interface ProductFormModalProps {
 export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFormModalProps) {
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
   const [loading, setLoading] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form state
@@ -44,6 +46,8 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
 
   useEffect(() => {
     const syncForm = () => {
+    setSaveError(null);
+    setImageError(null);
     if (product) {
       setName(product.name);
       setDescription(product.description || '');
@@ -73,6 +77,8 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
   }, [product]);
 
   const handleClose = () => {
+    setSaveError(null);
+    setImageError(null);
     onClose();
     if (!product) {
       setName('');
@@ -89,6 +95,18 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+        setImageError('Formato inválido. Escolha uma imagem JPG, PNG, WebP ou GIF.');
+        e.target.value = '';
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setImageError('A imagem deve ter no máximo 5 MB. Escolha uma imagem menor.');
+        e.target.value = '';
+        return;
+      }
+      setImageError(null);
+      setSaveError(null);
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -100,8 +118,10 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (imageError || loading) return;
     try {
       setLoading(true);
+      setSaveError(null);
       
       const formData = new FormData();
       const productPayload = {
@@ -130,8 +150,7 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
       onSave();
       handleClose();
     } catch (err) {
-      alert('Erro ao salvar produto');
-      console.error(err);
+      setSaveError(err instanceof Error ? err.message : 'Não foi possível salvar o produto. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -152,6 +171,11 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {saveError && (
+            <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {saveError}
+            </p>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-zinc-400">Nome do Produto</label>
@@ -225,7 +249,7 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
               <label className="block text-sm font-medium text-zinc-400">Imagem do Produto</label>
               <input 
                 type="file" 
-                accept="image/*" 
+                accept="image/jpeg,image/png,image/webp,image/gif"
                 ref={fileInputRef} 
                 onChange={handleImageChange} 
                 className="hidden" 
@@ -243,10 +267,11 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
                   <div className="flex flex-col items-center text-zinc-500">
                     <UploadCloud className="w-10 h-10 mb-2" />
                     <span className="text-sm font-medium">Clique para fazer upload</span>
-                    <span className="text-xs mt-1">PNG, JPG até 5MB</span>
                   </div>
                 )}
               </div>
+              <p className="text-xs text-zinc-400">JPG, PNG, WebP ou GIF, até 5 MB.</p>
+              {imageError && <p role="alert" className="text-sm text-red-300">{imageError}</p>}
             </div>
 
             <div className="space-y-3 md:col-span-2 bg-[#121212] p-4 rounded-xl border border-zinc-800">
@@ -312,7 +337,7 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || Boolean(imageError)}
               className="px-6 py-2.5 rounded-xl font-bold bg-[#F1C40F] text-black hover:bg-[#F39C12] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {loading ? 'A salvar...' : (

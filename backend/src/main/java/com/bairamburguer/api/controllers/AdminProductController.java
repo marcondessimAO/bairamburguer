@@ -6,20 +6,17 @@ import com.bairamburguer.api.models.Addon;
 import com.bairamburguer.api.repositories.CategoryRepository;
 import com.bairamburguer.api.repositories.ProductRepository;
 import com.bairamburguer.api.repositories.AddonRepository;
+import com.bairamburguer.api.services.ProductImageStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.List;
 
 @RestController
@@ -35,7 +32,8 @@ public class AdminProductController {
     @Autowired
     private AddonRepository addonRepository;
 
-    private final String UPLOAD_DIR = "uploads/";
+    @Autowired
+    private ProductImageStorage imageStorage;
 
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
@@ -66,7 +64,7 @@ public class AdminProductController {
             product.setOriginalPrice(request.originalPrice);
 
             if (image != null && !image.isEmpty()) {
-                String imageUrl = saveImage(image);
+                String imageUrl = imageStorage.save(image);
                 if (imageUrl != null) {
                     product.setImageUrl(imageUrl);
                 }
@@ -78,6 +76,8 @@ public class AdminProductController {
             }
 
             return ResponseEntity.ok(productRepository.save(product));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Erro ao processar dados do produto.");
@@ -117,7 +117,7 @@ public class AdminProductController {
             if (request.originalPrice != null) product.setOriginalPrice(request.originalPrice);
 
             if (image != null && !image.isEmpty()) {
-                String imageUrl = saveImage(image);
+                String imageUrl = imageStorage.save(image);
                 if (imageUrl != null) {
                     product.setImageUrl(imageUrl);
                 }
@@ -129,6 +129,8 @@ public class AdminProductController {
             }
 
             return ResponseEntity.ok(productRepository.save(product));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Erro ao processar dados do produto.");
@@ -163,24 +165,6 @@ public class AdminProductController {
 
     public static class ActiveRequest {
         public Boolean active;
-    }
-
-    private String saveImage(MultipartFile image) {
-        try {
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            String filename = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
-            Path filePath = uploadPath.resolve(filename);
-            Files.copy(image.getInputStream(), filePath);
-
-            return "/uploads/" + filename;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 
     public static class ProductRequest {

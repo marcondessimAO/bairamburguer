@@ -1,5 +1,34 @@
 import { fetchWithAuth } from './api';
 
+async function productRequestError(response: Response, fallback: string): Promise<Error> {
+  if (response.status === 413) {
+    return new Error('A imagem excedeu o limite de upload. Envie uma imagem de até 5 MB; se persistir, tente uma menor.');
+  }
+  if (response.status === 401 || response.status === 403) {
+    return new Error('Não foi possível autorizar a alteração. Entre novamente no painel.');
+  }
+  const contentType = response.headers.get('content-type') ?? '';
+  try {
+    if (contentType.includes('application/json')) {
+      const body: unknown = await response.json();
+      if (body && typeof body === 'object') {
+        for (const key of ['message', 'error_message', 'detail']) {
+          if (key in body) {
+            const message = (body as Record<string, unknown>)[key];
+            if (typeof message === 'string' && message.length <= 300) return new Error(message);
+          }
+        }
+      }
+    } else if (contentType.includes('text/plain')) {
+      const message = (await response.text()).trim();
+      if (message && message.length <= 300) return new Error(message);
+    }
+  } catch {
+    // A proxy may return an empty or non-JSON error response.
+  }
+  return new Error(`${fallback} (HTTP ${response.status}).`);
+}
+
 export interface OrderItemDTO {
   id: number;
   product: {
@@ -180,7 +209,7 @@ export const adminService = {
       method: 'POST',
       body: productData,
     });
-    if (!response.ok) throw new Error('Falha ao criar produto');
+    if (!response.ok) throw await productRequestError(response, 'Falha ao criar produto');
     return response.json();
   },
 
@@ -189,7 +218,7 @@ export const adminService = {
       method: 'PUT',
       body: productData,
     });
-    if (!response.ok) throw new Error('Falha ao atualizar produto');
+    if (!response.ok) throw await productRequestError(response, 'Falha ao atualizar produto');
     return response.json();
   },
 
