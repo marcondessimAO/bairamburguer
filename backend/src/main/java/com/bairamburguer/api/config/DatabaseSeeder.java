@@ -170,6 +170,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         upsertCategory("BAIRAM INDIVIDUAIS");
         upsertCategory("PETISCOS");
         upsertCategory("MILKSHAKES");
+        upsertCategory("SOBREMESAS");
         System.out.println("DatabaseSeeder: Categorias verificadas/atualizadas com sucesso!");
 
         // Seed Addons

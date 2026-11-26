@@ -10,7 +10,7 @@ import Link from "next/link";
 type Produto = Product;
 
 const PROMOTION_CATEGORY = "PROMOÇÕES BAIRAM";
-const CATEGORY_ORDER = [PROMOTION_CATEGORY, "BAIRAM MALUCA", "BAIRAM INDIVIDUAIS", "COMBOS", "COMPLEMENTOS", "PETISCOS", "MILKSHAKES"];
+const CATEGORY_ORDER = [PROMOTION_CATEGORY, "BAIRAM MALUCA", "BAIRAM INDIVIDUAIS", "COMBOS", "COMPLEMENTOS", "PETISCOS", "MILKSHAKES", "SOBREMESAS"];
 
 const normalizeName = (value: string) =>
   value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
@@ -23,6 +23,7 @@ const categoryLabel = (name: string) => {
   if (normalized.includes("complement")) return "COMPLEMENTOS";
   if (normalized.includes("petisco")) return "PETISCOS";
   if (normalized.includes("milkshake")) return "MILKSHAKES";
+  if (normalized.includes("sobremesa")) return "SOBREMESAS";
   return name.toUpperCase();
 };
 
