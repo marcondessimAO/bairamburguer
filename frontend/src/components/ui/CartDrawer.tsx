@@ -525,10 +525,9 @@ export function CartDrawer() {
 
               <fieldset className="space-y-2 rounded-2xl border border-zinc-200 bg-white p-4">
                 <legend className="px-1 text-sm font-black text-zinc-900">FORMA DE PAGAMENTO</legend>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   {([
                     ["PIX", "Pix", "Pagamento instantâneo"],
-                    ["CARTAO", "Cartão", "WhatsApp + R$ 2,00"],
                   ] as const).map(([method, title, description]) => (
                     <label key={method} className={`cursor-pointer rounded-xl border p-3 transition ${paymentMethod === method ? "border-green-600 bg-green-50 ring-1 ring-green-600" : "border-zinc-200 hover:border-zinc-300"}`}>
                       <input type="radio" name="paymentMethod" value={method} checked={paymentMethod === method} onChange={() => setPaymentMethod(method)} className="sr-only" />
