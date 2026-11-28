@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { adminService, ManualOrderPayload, OrderDTO, ProductDTO } from "@/services/admin";
 import { printOrder } from "@/components/ui/PrintOrderButton";
+import { getProductUnitPrice } from "@/utils/quantityPricing";
 
 type Props = {
   open: boolean;
@@ -57,7 +58,8 @@ export function ManualOrderModal({ open, onClose, onCreated }: Props) {
     const addons = (product.addons ?? [])
       .filter((addon) => line.addonIds.includes(addon.id))
       .reduce((addonSum, addon) => addonSum + Number(addon.price), 0);
-    return sum + (Number(product.price) + addons) * line.quantity;
+    const productQuantity = lines.reduce((count, entry) => count + (entry.productId === product.id ? entry.quantity : 0), 0);
+    return sum + (getProductUnitPrice(product, productQuantity) + addons) * line.quantity;
   }, 0), [lines, products]);
   const deliveryFee = 0;
 
@@ -169,7 +171,7 @@ export function ManualOrderModal({ open, onClose, onCreated }: Props) {
                     <p className="mb-2 text-xs font-black uppercase tracking-wider text-gray-400">Adicionais</p>
                     {(product.addons ?? []).filter((addon) => addon.active).length ? <div className="grid gap-2 sm:grid-cols-2">{(product.addons ?? []).filter((addon) => addon.active).map((addon) => <label key={addon.id} className={`flex cursor-pointer items-center justify-between rounded-lg border p-2.5 text-sm ${line.addonIds.includes(addon.id) ? "border-[#F1C40F] bg-[#F1C40F]/10" : "border-gray-700"}`}><span><input type={addon.selectionType === "SINGLE" ? "radio" : "checkbox"} name={`line-${line.key}-${addon.groupName}`} checked={line.addonIds.includes(addon.id)} onChange={() => selectAddon(line, product, addon.id)} className="mr-2" />{addon.name}</span><strong>+ {BRL(Number(addon.price))}</strong></label>)}</div> : <p className="text-sm text-gray-500">Este produto não possui adicionais disponíveis.</p>}
                   </div>}
-                  <div className="mt-3 text-right text-sm font-black text-[#F1C40F]">Item {index + 1}: {product ? BRL((Number(product.price) + (product.addons ?? []).filter((addon) => line.addonIds.includes(addon.id)).reduce((sum, addon) => sum + Number(addon.price), 0)) * line.quantity) : BRL(0)}</div>
+                  <div className="mt-3 text-right text-sm font-black text-[#F1C40F]">Item {index + 1}: {product ? BRL((getProductUnitPrice(product, lines.reduce((count, entry) => count + (entry.productId === product.id ? entry.quantity : 0), 0)) + (product.addons ?? []).filter((addon) => line.addonIds.includes(addon.id)).reduce((sum, addon) => sum + Number(addon.price), 0)) * line.quantity) : BRL(0)}</div>
                 </div>;
               })}
             </section>

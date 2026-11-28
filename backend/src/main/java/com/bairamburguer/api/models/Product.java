@@ -40,6 +40,12 @@ public class Product {
     @Column(name = "original_price", precision = 10, scale = 2)
     private BigDecimal originalPrice;
 
+    @Column(name = "quantity_promotion_min")
+    private Integer quantityPromotionMin;
+
+    @Column(name = "quantity_promotion_price", precision = 10, scale = 2)
+    private BigDecimal quantityPromotionPrice;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "product_addons",
@@ -68,6 +74,19 @@ public class Product {
     public void setIsPromotion(Boolean isPromotion) { this.isPromotion = isPromotion; }
     public BigDecimal getOriginalPrice() { return originalPrice; }
     public void setOriginalPrice(BigDecimal originalPrice) { this.originalPrice = originalPrice; }
+    public Integer getQuantityPromotionMin() { return quantityPromotionMin; }
+    public void setQuantityPromotionMin(Integer quantityPromotionMin) { this.quantityPromotionMin = quantityPromotionMin; }
+    public BigDecimal getQuantityPromotionPrice() { return quantityPromotionPrice; }
+    public void setQuantityPromotionPrice(BigDecimal quantityPromotionPrice) { this.quantityPromotionPrice = quantityPromotionPrice; }
+
+    public BigDecimal unitPriceForQuantity(long quantity) {
+        if (quantityPromotionMin != null && quantityPromotionMin >= 2 && quantity >= quantityPromotionMin
+                && quantityPromotionPrice != null && quantityPromotionPrice.signum() > 0
+                && quantityPromotionPrice.compareTo(price) < 0) {
+            return quantityPromotionPrice;
+        }
+        return price;
+    }
     public List<Addon> getAddons() { return addons; }
     public void setAddons(List<Addon> addons) { this.addons = addons; }
 }

@@ -35,6 +35,8 @@ public class ProductController {
             dto.setIsAvailable(p.getIsAvailable());
             dto.setIsPromotion(p.getIsPromotion());
             dto.setOriginalPrice(p.getOriginalPrice());
+            dto.setQuantityPromotionMin(p.getQuantityPromotionMin());
+            dto.setQuantityPromotionPrice(p.getQuantityPromotionPrice());
             
             if (p.getAddons() != null) {
                 List<AddonResponseDTO> activeAddons = p.getAddons().stream()

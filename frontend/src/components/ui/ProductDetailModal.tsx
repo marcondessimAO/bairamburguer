@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { Product, useCart } from "@/contexts/CartContext";
 import { getImageUrl } from "@/utils/imageUrl";
+import { getProductQuantity, getProductUnitPrice, getQuantityPromotionLabel } from "@/utils/quantityPricing";
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -11,7 +12,7 @@ interface ProductDetailModalProps {
 }
 
 export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailModalProps) {
-  const { addToCart } = useCart();
+  const { addToCart, cartItems } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedAddonIds, setSelectedAddonIds] = useState<number[]>([]);
 
@@ -67,7 +68,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   const formattedPrice = new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format((product.price + addonTotal) * quantity);
+  }).format((getProductUnitPrice(product, quantity + getProductQuantity(cartItems, product.id)) + addonTotal) * quantity);
 
   const handleSelectSingle = (addonId: number, groupAddonIds: number[]) => {
     setSelectedAddonIds(prev => {
@@ -139,6 +140,11 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
             </p>
 
             <div className="space-y-6">
+              {getQuantityPromotionLabel(product) && (
+                <p className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-800">
+                  {getQuantityPromotionLabel(product)}
+                </p>
+              )}
               {/* Dynamic Addons Sections */}
               {Object.entries(groupedAddons).map(([groupName, groupItems]) => {
                 const groupItemIds = groupItems.map(item => item.id);

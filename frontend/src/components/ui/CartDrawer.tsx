@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart, NEIGHBORHOODS } from "@/contexts/CartContext";
 import { getImageUrl } from "@/utils/imageUrl";
+import { getProductQuantity, getProductUnitPrice, getQuantityPromotionLabel } from "@/utils/quantityPricing";
 import { DELIVERY_ENABLED, MINIMUM_ORDER_AMOUNT, STORE_WHATSAPP_NUMBER } from "@/config/store";
 
 type CheckoutPaymentMethod = "PIX" | "DINHEIRO" | "CARTAO";
@@ -158,7 +159,7 @@ export function CartDrawer() {
         orderSnapshotRef.current = {
           customerName,
           customerPhone,
-          items: cartItems.map(i => ({ name: i.product.name, quantity: i.quantity, price: i.product.price, addonsSummary: i.addonsSummary, addonsTotal: i.addonsTotal })),
+          items: cartItems.map(i => ({ name: i.product.name, quantity: i.quantity, price: getProductUnitPrice(i.product, getProductQuantity(cartItems, i.product.id)), addonsSummary: i.addonsSummary, addonsTotal: i.addonsTotal })),
           street: deliveryMode === "DELIVERY" ? street : "",
           number: deliveryMode === "DELIVERY" ? number : "",
           complement: deliveryMode === "DELIVERY" ? complement : "",
@@ -454,8 +455,11 @@ export function CartDrawer() {
 
                       <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
                         <span className="text-green-700 font-black text-sm">
-                          {BRL((item.product.price + item.addonsTotal) * item.quantity)}
+                          {BRL((getProductUnitPrice(item.product, getProductQuantity(cartItems, item.product.id)) + item.addonsTotal) * item.quantity)}
                         </span>
+                        {getQuantityPromotionLabel(item.product) && (
+                          <span className="w-full text-xs font-semibold text-green-700">{getQuantityPromotionLabel(item.product)}</span>
+                        )}
                         {item.addonsSummary && (
                           <span className="w-full text-[11px] text-zinc-500 line-clamp-2">
                             {item.addonsSummary}

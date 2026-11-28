@@ -6,6 +6,7 @@ import { ProductDetailModal } from "@/components/ui/ProductDetailModal";
 import { Flame } from "lucide-react";
 import { getImageUrl } from "@/utils/imageUrl";
 import Link from "next/link";
+import { getQuantityPromotionLabel } from "@/utils/quantityPricing";
 
 type Produto = Product;
 
@@ -315,6 +316,9 @@ export default function Cardapio() {
                   )}
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.price)}
                 </span>
+                {getQuantityPromotionLabel(produto) && (
+                  <p className="mt-1 text-xs font-bold text-[#B7D438]">{getQuantityPromotionLabel(produto)}</p>
+                )}
               </div>
 
               {/* O BotÃ£o de Adicionar (+) */}

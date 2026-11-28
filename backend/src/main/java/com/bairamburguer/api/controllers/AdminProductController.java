@@ -62,6 +62,9 @@ public class AdminProductController {
             product.setIsAvailable(request.isAvailable == null || request.isAvailable);
             product.setIsPromotion(request.isPromotion != null && request.isPromotion);
             product.setOriginalPrice(request.originalPrice);
+            product.setQuantityPromotionMin(request.quantityPromotionMin);
+            product.setQuantityPromotionPrice(request.quantityPromotionPrice);
+            validateQuantityPromotion(product);
 
             if (image != null && !image.isEmpty()) {
                 String imageUrl = imageStorage.save(image);
@@ -115,6 +118,12 @@ public class AdminProductController {
             if (request.isAvailable != null) product.setIsAvailable(request.isAvailable);
             if (request.isPromotion != null) product.setIsPromotion(request.isPromotion);
             if (request.originalPrice != null) product.setOriginalPrice(request.originalPrice);
+            if (objectMapper.readTree(productJson).has("quantityPromotionMin")
+                    || objectMapper.readTree(productJson).has("quantityPromotionPrice")) {
+                product.setQuantityPromotionMin(request.quantityPromotionMin);
+                product.setQuantityPromotionPrice(request.quantityPromotionPrice);
+            }
+            validateQuantityPromotion(product);
 
             if (image != null && !image.isEmpty()) {
                 String imageUrl = imageStorage.save(image);
@@ -167,6 +176,18 @@ public class AdminProductController {
         public Boolean active;
     }
 
+    private void validateQuantityPromotion(Product product) {
+        Integer minimum = product.getQuantityPromotionMin();
+        BigDecimal promotionalPrice = product.getQuantityPromotionPrice();
+        if (minimum == null && promotionalPrice == null) return;
+        if (minimum == null || minimum < 2 || promotionalPrice == null || promotionalPrice.signum() <= 0
+                || promotionalPrice.scale() > 2 || product.getPrice() == null
+                || promotionalPrice.compareTo(product.getPrice()) >= 0) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "Informe quantidade minima de 2 unidades e preco promocional positivo, com ate duas casas decimais e menor que o preco normal.");
+        }
+    }
+
     public static class ProductRequest {
         public String name;
         public String description;
@@ -175,6 +196,8 @@ public class AdminProductController {
         public Boolean isAvailable;
         public Boolean isPromotion;
         public BigDecimal originalPrice;
+        public Integer quantityPromotionMin;
+        public BigDecimal quantityPromotionPrice;
         public List<Long> addonIds;
     }
 }

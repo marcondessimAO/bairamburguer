@@ -110,6 +110,8 @@ export interface ProductDTO {
   isAvailable: boolean;
   isPromotion?: boolean;
   originalPrice?: number;
+  quantityPromotionMin?: number | null;
+  quantityPromotionPrice?: number | null;
   category: {
     id: number;
     name: string;

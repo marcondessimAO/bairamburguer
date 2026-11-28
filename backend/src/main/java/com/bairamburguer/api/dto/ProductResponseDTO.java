@@ -14,6 +14,8 @@ public class ProductResponseDTO {
     private Boolean isAvailable;
     private Boolean isPromotion;
     private BigDecimal originalPrice;
+    private Integer quantityPromotionMin;
+    private BigDecimal quantityPromotionPrice;
     private List<AddonResponseDTO> addons;
 
     // Getters e Setters
@@ -35,6 +37,10 @@ public class ProductResponseDTO {
     public void setIsPromotion(Boolean isPromotion) { this.isPromotion = isPromotion; }
     public BigDecimal getOriginalPrice() { return originalPrice; }
     public void setOriginalPrice(BigDecimal originalPrice) { this.originalPrice = originalPrice; }
+    public Integer getQuantityPromotionMin() { return quantityPromotionMin; }
+    public void setQuantityPromotionMin(Integer quantityPromotionMin) { this.quantityPromotionMin = quantityPromotionMin; }
+    public BigDecimal getQuantityPromotionPrice() { return quantityPromotionPrice; }
+    public void setQuantityPromotionPrice(BigDecimal quantityPromotionPrice) { this.quantityPromotionPrice = quantityPromotionPrice; }
     public List<AddonResponseDTO> getAddons() { return addons; }
     public void setAddons(List<AddonResponseDTO> addons) { this.addons = addons; }
 }

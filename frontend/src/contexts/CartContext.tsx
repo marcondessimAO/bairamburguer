@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useMemo, useState, ReactNode } from "react";
+import { getProductQuantity, getProductUnitPrice } from "@/utils/quantityPricing";
 
 export type Product = {
   id: number;
@@ -11,6 +12,8 @@ export type Product = {
   isAvailable: boolean;
   isPromotion: boolean;
   originalPrice?: number;
+  quantityPromotionMin?: number | null;
+  quantityPromotionPrice?: number | null;
   category: { name: string };
   addons?: {
     id: number;
@@ -150,7 +153,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const subtotal = useMemo(
-    () => cartItems.reduce((acc, item) => acc + (item.product.price + item.addonsTotal) * item.quantity, 0),
+    () => cartItems.reduce((acc, item) => acc
+      + (getProductUnitPrice(item.product, getProductQuantity(cartItems, item.product.id)) + item.addonsTotal) * item.quantity, 0),
     [cartItems]
   );
 

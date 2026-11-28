@@ -30,6 +30,9 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
   const [originalPrice, setOriginalPrice] = useState('');
   const [addonsList, setAddonsList] = useState<AddonDTO[]>([]);
   const [selectedAddons, setSelectedAddons] = useState<number[]>([]);
+  const [quantityPromotionEnabled, setQuantityPromotionEnabled] = useState(false);
+  const [quantityPromotionMin, setQuantityPromotionMin] = useState('3');
+  const [quantityPromotionPrice, setQuantityPromotionPrice] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -59,6 +62,9 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
       setImagePreview(product.imageUrl || null);
       setImageFile(null);
       setSelectedAddons(product.addons?.map(a => a.id) || []);
+      setQuantityPromotionEnabled(product.quantityPromotionMin != null && product.quantityPromotionPrice != null);
+      setQuantityPromotionMin(product.quantityPromotionMin?.toString() || '3');
+      setQuantityPromotionPrice(product.quantityPromotionPrice?.toString() || '');
     } else {
       setName('');
       setDescription('');
@@ -70,6 +76,9 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
       setImagePreview(null);
       setImageFile(null);
       setSelectedAddons([]);
+      setQuantityPromotionEnabled(false);
+      setQuantityPromotionMin('3');
+      setQuantityPromotionPrice('');
     }
     };
 
@@ -89,6 +98,9 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
       setIsPromotion(false);
       setImagePreview(null);
       setImageFile(null);
+      setQuantityPromotionEnabled(false);
+      setQuantityPromotionMin('3');
+      setQuantityPromotionPrice('');
     }
   };
 
@@ -119,6 +131,12 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (imageError || loading) return;
+    if (quantityPromotionEnabled && (!Number.isInteger(Number(quantityPromotionMin)) || Number(quantityPromotionMin) < 2
+      || !Number.isFinite(Number(quantityPromotionPrice)) || Number(quantityPromotionPrice) <= 0
+      || Number(quantityPromotionPrice) >= Number(price))) {
+      setSaveError('Informe a quantidade mínima e um preço promocional maior que zero e menor que o preço normal.');
+      return;
+    }
     try {
       setLoading(true);
       setSaveError(null);
@@ -132,7 +150,9 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
         isAvailable,
         isPromotion,
         originalPrice: originalPrice ? parseFloat(originalPrice.replace(',', '.')) : null,
-        addonIds: selectedAddons
+        addonIds: selectedAddons,
+        quantityPromotionMin: quantityPromotionEnabled ? Number(quantityPromotionMin) : null,
+        quantityPromotionPrice: quantityPromotionEnabled ? Number(quantityPromotionPrice) : null,
       };
       
       formData.append('product', JSON.stringify(productPayload));
@@ -217,6 +237,25 @@ export function ProductFormModal({ isOpen, onClose, onSave, product }: ProductFo
                   placeholder="0.00"
                 />
               </div>
+            </div>
+
+            <div className="space-y-3 md:col-span-2 border-t border-zinc-800 pt-4">
+              <label className="flex items-center gap-3 text-sm font-semibold text-zinc-300">
+                <input type="checkbox" checked={quantityPromotionEnabled} onChange={e => setQuantityPromotionEnabled(e.target.checked)} className="h-5 w-5 accent-[#F1C40F]" />
+                Promoção por quantidade
+              </label>
+              {quantityPromotionEnabled && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <label className="text-sm font-medium text-zinc-400">
+                    A partir de quantas unidades
+                    <input type="number" min="2" step="1" required value={quantityPromotionMin} onChange={e => setQuantityPromotionMin(e.target.value)} className="mt-2 w-full rounded-lg border border-zinc-800 bg-[#121212] px-4 py-3 text-zinc-100" />
+                  </label>
+                  <label className="text-sm font-medium text-zinc-400">
+                    Preço promocional por unidade (R$)
+                    <input type="number" min="0.01" step="0.01" required value={quantityPromotionPrice} onChange={e => setQuantityPromotionPrice(e.target.value)} className="mt-2 w-full rounded-lg border border-zinc-800 bg-[#121212] px-4 py-3 text-zinc-100" />
+                  </label>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2 md:col-span-2">

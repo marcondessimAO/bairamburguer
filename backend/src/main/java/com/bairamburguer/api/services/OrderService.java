@@ -210,6 +210,8 @@ public class OrderService {
                 .collect(Collectors.toMap(Product::getId, p -> p));
 
         BigDecimal totalAmount = BigDecimal.ZERO;
+        Map<Integer, Long> productQuantities = pedido.getItems().stream().collect(Collectors.groupingBy(
+                item -> item.getProduct().getId(), Collectors.summingLong(OrderItem::getQuantity)));
         for (OrderItem item : pedido.getItems()) {
             Product product = productMap.get(item.getProduct().getId());
             if (product == null) {
@@ -221,9 +223,10 @@ public class OrderService {
 
             item.setProduct(product);
             item.setProductNameSnapshot(product.getName());
-            item.setProductPriceSnapshot(product.getPrice());
+            BigDecimal unitPrice = product.unitPriceForQuantity(productQuantities.get(product.getId()));
+            item.setProductPriceSnapshot(unitPrice);
 
-            BigDecimal subtotal = product.getPrice().multiply(new BigDecimal(item.getQuantity()));
+            BigDecimal subtotal = unitPrice.multiply(new BigDecimal(item.getQuantity()));
             item.setSubtotal(subtotal);
 
             totalAmount = totalAmount.add(subtotal);
@@ -494,6 +497,8 @@ public class OrderService {
     private BigDecimal buildOrderItems(Order order, List<OrderItemRequestDTO> itemDtos, Map<Integer, Product> productMap) {
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
+        Map<Integer, Long> productQuantities = itemDtos.stream().collect(Collectors.groupingBy(
+                item -> item.getProductId().intValue(), Collectors.summingLong(OrderItemRequestDTO::getQuantity)));
 
         for (OrderItemRequestDTO itemDto : itemDtos) {
             Product product = productMap.get(itemDto.getProductId().intValue());
@@ -506,12 +511,13 @@ public class OrderService {
 
             AddonCalculation addons = calculateAddons(product, itemDto);
             BigDecimal quantity = BigDecimal.valueOf(itemDto.getQuantity());
-            BigDecimal subtotal = product.getPrice().add(addons.total()).multiply(quantity);
+            BigDecimal unitPrice = product.unitPriceForQuantity(productQuantities.get(product.getId()));
+            BigDecimal subtotal = unitPrice.add(addons.total()).multiply(quantity);
 
             OrderItem orderItem = new OrderItem();
             orderItem.setProduct(product);
             orderItem.setProductNameSnapshot(product.getName());
-            orderItem.setProductPriceSnapshot(product.getPrice());
+            orderItem.setProductPriceSnapshot(unitPrice);
             orderItem.setQuantity(itemDto.getQuantity());
             orderItem.setAddonsSummary(addons.summary());
             orderItem.setAddonsTotal(addons.total().multiply(quantity));
